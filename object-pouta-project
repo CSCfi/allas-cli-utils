@@ -43,7 +43,7 @@ else
         # authenticate and get return values
         OUT=`curl -sS -X POST -D - -d "$OS_AUTH_DATA" -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1`
         CURL_EXIT="$?"
-        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l`
+        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
         if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
             echo "FAILED" >&2
             echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2

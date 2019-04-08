@@ -1,0 +1,12 @@
+.DS_Store
+._.DS_Store
+.idea
+.eclipse
+.vscode
+*~
+*.log
+*.dump
+*.swp
+TODO
+tags
+__pycache__/
