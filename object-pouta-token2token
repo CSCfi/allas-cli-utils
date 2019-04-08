@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+ 
+# Usage: source this_script [-h] [oldtoken [projectid]]
+ 
+# Script to get new token from pouta object storage with the help of existing and valid project token
+# If the script is run as a script, then the new token is echoed to stdout
+# If the script is sourced, then the new token replaces the old token in the environment variable OS_AUTH_TOKEN
+# By default the script uses OS_AUTH_TOKEN for old token and OS_STORAGE_URL to get the project id
+# This script requires curl
+ 
+# constants
+OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
+TOKEN_HEADER_RE='^X-Subject-Token: '
+PROJECT_ID_SED='s+^https://object.pouta.csc.fi:443/swift/v[1-9]/AUTH_\([A-Za-z0-9]*\)$+\1+'
+
+if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
+    echo "curl command is missing" >&2
+else
+    if [ "$1" = "-h" -o $# -gt 2 ]; then
+        echo "Usage: source $BASH_SOURCE [-h] [oldtoken [projectid]]"
+        echo "   or: $BASH_SOURCE [-h] [oldtoken [projectid]]"
+    else
+        if [ -n "$1" ]; then
+            export OS_AUTH_TOKEN="$2"
+        fi
+        OS_PROJECT_ID=`echo "$OS_STORAGE_URL" | sed "$PROJECT_ID_SED"`
+        if [ -n "$2" ]; then
+            OS_PROJECT_ID="$1"
+        fi
+ 
+        OS_AUTH_TOKEN_DATA='{ "auth": { "identity": { "methods": [ "token" ], "token": { "id": "'$OS_AUTH_TOKEN'" }
+                     }, "scope": { "project": { "id": "'$OS_PROJECT_ID'" } } } } '
+
+        # authenticate and get return values
+        OUT=`curl -sS -X POST -D - -d "$OS_AUTH_TOKEN_DATA" -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+        else
+            if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+                # return the token
+                echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"
+            else
+                # save token to environment variable
+                export OS_AUTH_TOKEN=`echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"`
+            fi
+        fi
+    fi
+fi
