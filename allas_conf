@@ -1,0 +1,303 @@
+#!/bin/bash 
+
+# To use an OpenStack cloud you need to authenticate against the Identity
+# service named keystone, which returns a **Token** and **Service Catalog**.
+# The catalog contains the endpoints for all services the user/tenant has
+# access to - such as Compute, Image Service, Identity, Object Storage, Block
+# Storage, and Networking (code-named nova, glance, keystone, swift,
+# cinder, and neutron).
+#
+# *NOTE*: Using the 3 *Identity API* does not necessarily mean any other
+# OpenStack API is version 3. For example, your cloud provider may implement
+# Image API v1.1, Block Storage API v2, and Compute API v2.0. OS_AUTH_URL is
+# only for the Identity API served through keystone.
+
+if [[ $1 == "-h" ||  $1 == "-help" ||  $1 == "--help" ]]
+then
+  echo "This script sets up the swift and/or s3cmd environment so that you can access your Pouta Object Storage service "
+  echo "The name of the cPouta project to be used can be defined as a command line argument."
+  echo ""
+  echo "   source allas_configure <proj_name>"
+  echo ""
+  echo "If the project name is not defined, the available project names are listed and"
+  echo "you are asked to define the project name"
+  echo ""
+  echo "The program always asks your CSC password before starting the configuration process"
+  echo ""
+  echo "By default, this tool sets up access tokens that are used by swift and rclone connections"
+  echo " "
+  echo "Definition:"
+  echo ""
+  echo "-mode s3cmd" 
+  echo ""
+  echo "will initiate s3cmd configuration in stead of swift configuration."
+  echo ""
+  echo "Deinition:"
+  echo ""
+  echo "-mode both" 
+  echo ""
+  echo "will initiate both swift and s3cmd configuration."
+  echo ""
+  echo "During s3cmd configuration, you will be asked to confirm several values and settings"
+  echo "You should accept the default values in all exept the last setep."
+  echo " WHEN THE TOOL ASKS:"
+  echo '     Save settings? [y/N]' 
+  echo "YOU SHOULD ANSVER: y"
+  echo " "
+  echo "Other opyions:"
+  echo "  -user <username>    Define usename to be used for authentication to the storage server."
+  echo "                      If this option is not defined, current username will be used."
+  echo "  -keeppasswd         Don't reset the OS_PASSWORD environment variable once the configuration"
+  echo "                      is done. This can be useful if you use this tool in scripts that need to"
+  echo "                      switch between projects."
+  echo "  -silent             Less output"
+              
+  return
+fi
+
+
+#interenal variables
+show_keys=(0)
+use_swift=(1)
+use_s3cmd=(0)
+keep_password=(0)
+silent_mode=(0)
+#default evironmnet variables
+export OS_PROJECT_NAME="" 
+export OS_PROJECT_ID=""
+export OS_STORAGE_URL=""
+export OS_AUTH_TOKEN=""
+export OS_USERNAME=$(whoami)
+export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
+export OS_USER_DOMAIN_NAME="Default"
+export OS_REGION_NAME="regionOne"
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+
+
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '-mode')
+             if [ $2 == "s3cmd" ]; then
+                use_swift=(0)
+                use_s3cmd=(1)
+             fi 
+             if [ $2 == "both" ]; then             
+                use_swift=(1)
+                use_s3cmd=(1)
+             fi             
+             shift
+             shift
+             ;;
+             '-show_keys')
+              show_keys=(1)
+              shift
+             ;;
+             '-user')
+             export OS_USERNAME=$2
+             shift
+             shift
+             ;;
+             '-keeppasswd')
+             keep_password=(1)
+             shift
+             ;;
+             '-silent')
+             silent_mode=(1)
+             shift
+             ;;
+             *)
+             export OS_PROJECT_NAME=$1 
+             shift                       # No more switches
+             ;;
+    esac
+done
+
+if [[ $use_s3cmd -eq 1 ]]
+then
+   if [[ $(which s3cmd 2>/dev/null | wc -c) -eq 0 ]]
+   then 
+      echo ""
+      echo "s3cmd command not found!"
+      return
+   fi
+fi
+
+if [[ $use_swift -eq 1 ]]
+then
+   if [[ $(which swift 2>/dev/null | wc -c) -eq 0 ]]
+   then 
+      echo ""
+      echo "swift command not found!"
+      return
+   fi
+fi
+
+# With Keystone you pass the keystone password.
+if [ -z "$OS_PASSWORD" ]; then 
+   echo "Please enter CSC password for account ${OS_USERNAME}: "
+   read -sr OS_PASSWORD_INPUT
+   export OS_PASSWORD=$OS_PASSWORD_INPUT
+fi
+
+#Check that we see something
+if [ -z "$OS_PROJECT_NAME" ]; then
+   
+   echo "Checking projects available for your account."
+   echo "Please wait."
+  
+   if [[ $(which openstack 2>/dev/null | wc -c) -eq 0 ]]
+   then 
+        echo "openstack command not found!"
+        echo ""
+        echo "In Taito, try executing setup command:"
+        echo ""
+        echo "  module load bioconda/3 "
+        echo ""
+        echo "To make openstack available"
+        return
+   fi
+
+   all_projects=$(openstack project list --my-projects -c Name -f value)
+   echo $all_projetcs
+   num_projects=$(echo $all_projects | wc -w )
+   if [[ $num_projects -lt 1 ]]
+   then
+      echo ""
+      echo "No cPouta projects found!"
+      echo "Please check that you typed your password correctly"
+      return
+   fi
+
+   # If user has just one projcet, use it
+   if [[ $OS_PROJECT_NAME == "" && $num_projects -eq 1 ]]
+   then 
+      export OS_PROJECT_NAME=$all_projects
+      echo "Configuration will be done for project: $OS_PROJECT_NAME"
+    fi
+
+   if [[ $OS_PROJECT_NAME == "" ]]
+   then 
+     echo "You have access to following cPouta projects."
+     echo $all_projects | tr " " "\n"
+     echo ""
+     echo "Please define the name of the project to be used:"
+     read OS_PROJECT_NAME
+     export OS_PROJECT_NAME=$(echo $OS_PROJECT_NAME | tr -d " " )
+   fi  
+fi
+##############################################
+# swift authentication is the default option
+##############################################
+
+if [ $use_swift -eq 1 ]; then
+    # authenticate and save token to environment variable
+    source <(swift auth)
+    
+    if [[ $(grep -c '\[pouta\]'  $HOME/.config/rclone/rclone.conf) -lt 1 ]]
+    then
+       echo '[pouta]' >> $HOME/.config/rclone/rclone.conf 
+       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
+       echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
+       if [ $silent_mode -ne 1 ]; then
+           echo ""
+           echo "pouta service added to the rclone configuration file"
+       fi
+    else 
+       if [ $silent_mode -ne 1 ]; then
+          echo ""
+          echo "pouta definition already found in the rclone configuration file."
+          echo "Configuration was not changed"
+       fi
+    fi
+   
+    if [ $silent_mode -ne 1 ]; then
+        echo "swift connection configured"
+        echo " "
+        echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+        echo "OS_STORAGE_URL = $OS_STORAGE_URL"
+    fi
+fi
+
+
+#########################
+# s3cmd configuration
+#########################
+if [ $use_s3cmd -eq 1 ]; then
+   
+   if [[ $(which openstack 2>/dev/null | wc -c) -eq 0 ]]
+   then 
+        echo "openstack command not found!"
+        echo ""
+        echo "Try executing setup command:"
+        echo ""
+        echo "  module load bioconda/3 "
+        echo ""
+        echo "To make openstack available"
+        return
+   fi
+
+   export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+   openstack project show $OS_PROJECT_NAME
+
+   ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+   if [[ $ACCESS_KEY == "" ]]
+   then
+     openstack ec2 credentials create
+     ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+   fi
+
+   SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
+
+    echo "Please define the chunk size for a multipart upload."
+    echo "Files bigger than SIZE are automatically uploaded as multithreaded-"
+    echo "multipart, smaller files are uploaded using the" 
+    echo "traditional method. SIZE is in Mega-Bytes, default"
+    echo "chunk size is 500MB, minimum allowed chunk size is 5MB,"
+    echo "maximum is 5000MB."
+    echo
+    echo "chunk size[500]:"
+    read chunk_size
+    if [[ $chunk_size == "" ]]
+    then
+        chunk_size=500
+    fi
+    if [[ $chunk_size -gt 5000 ]]
+    then
+        echo "ERROR: Chunk size exceeds the maximum 5000 MB"
+        return
+   fi
+   if [[ $chunk_size -lt 5 ]]
+   then
+      echo "ERROR: Chunk size can't be less than 5 MB"
+      return
+   fi
+
+   echo "---------------------------------------------------------------"
+   echo ""
+   echo "Starting s3cmd configuration"
+   echo ""
+   echo "Accept the default values except in for the last step:"
+   echo " WHEN THE TOOL ASKS:"
+   echo '     Save settings? [y/N]' 
+   echo "YOU SHOULD ANSVER: y"
+   echo ""
+   echo "---------------------------------------------------------------"
+
+   s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
+   --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
+   --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
+fi
+
+# unset variables unnecessary for token access or user/project info for the user
+unset OS_AUTH_URL
+unset OS_PASSWORD_INPUT
+unset OS_USER_DOMAIN_NAME
+if [ $keep_password -eq 0 ];then
+  unset OS_PASSWORD
+fi
+unset OS_REGION_NAME
+unset OS_INTERFACE
+unset OS_IDENTITY_API_VERSION
+
