@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+ 
+# Usage: source this_script projectname [username]
+ 
+# Script to get OS_AUTH_TOKEN and OS_STORAGE_URL from pouta object storage for swift applications like python-swiftclient, rclone or curl
+# OS_PROJECT_NAME and OS_USERNAME are also saved
+
+# This script requires curl
+# This script needs to be sourced instead of runnig it
+ 
+# constants
+OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
+TOKEN_HEADER_RE='^X-Subject-Token: '
+STORAGE_URL_RE='https://object.pouta.csc.fi:443/swift'
+STORAGE_URL_INTERFACE_RE='"interface": "public"'
+STORAGE_URL_SED='s+.*"\(https://object.pouta.csc.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
+
+if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+    echo "In odred to be useful this script needs to be sourced instead of runnig it" >&2
+    exit 1
+fi
+ 
+if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
+    echo "curl command is missing" >&2
+else
+    if [ -z "$1" ]; then
+        echo "Usage: source $BASH_SOURCE projectname [username]"
+    else
+        export OS_PROJECT_NAME="$1"
+        export OS_USERNAME="$USER"
+        if [ -n "$2" ]; then
+            export OS_USERNAME="$2"
+        fi
+ 
+        # get password
+        echo "Please enter your CSC password to authenticate to pouta object storage for project $OS_PROJECT_NAME as user $OS_USERNAME: "
+        read -sr OS_PASSWORD_INPUT
+        OS_PASSWORD="$OS_PASSWORD_INPUT"
+ 
+        OS_AUTH_DATA='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+                     "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
+
+        # authenticate and get return values
+        OUT=`curl -sS -X POST -D - -d "$OS_AUTH_DATA" -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+        else
+            # save token to environment variable
+            export OS_AUTH_TOKEN=`echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"`
+
+            # save also the storage url, figure it out with just basic tools without dependency to any json tool
+            export OS_STORAGE_URL=`echo "$OUT"|tr '}' '\n'|grep "$STORAGE_URL_RE"|grep "$STORAGE_URL_INTERFACE_RE"|sed "$STORAGE_URL_SED"`
+        fi
+    fi
+fi
