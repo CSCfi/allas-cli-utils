@@ -21,11 +21,11 @@ else
         echo "   or: $BASH_SOURCE [-h] [oldtoken [projectid]]"
     else
         if [ -n "$1" ]; then
-            export OS_AUTH_TOKEN="$2"
+            export OS_AUTH_TOKEN="$1"
         fi
         OS_PROJECT_ID=`echo "$OS_STORAGE_URL" | sed "$PROJECT_ID_SED"`
         if [ -n "$2" ]; then
-            OS_PROJECT_ID="$1"
+            OS_PROJECT_ID="$2"
         fi
  
         OS_AUTH_TOKEN_DATA='{ "auth": { "identity": { "methods": [ "token" ], "token": { "id": "'$OS_AUTH_TOKEN'" }
