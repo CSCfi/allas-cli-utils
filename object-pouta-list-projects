@@ -19,7 +19,7 @@ if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
     echo "curl command is missing" >&2
 else
     if [ "$#" -gt 1 ]; then
-        echo "Usage: source $BASH_SOURCE projectname [username]"
+        echo "Usage: $BASH_SOURCE projectname [username]"
     else
         OS_USERNAME="$USER"
         if [ -n "$1" ]; then
