@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
  
-# Usage: source this_script [username]
+# Usage: this_script [username]
  
 # Script to get list of project names from pouta object storage
 
