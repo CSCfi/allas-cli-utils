@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+ 
+# Usage: source this_script [username]
+ 
+# Script to get list of project names from pouta object storage
+
+# This script requires curl
+ 
+# constants
+OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
+OS_PROJECTS_URL='https://pouta.csc.fi:5001/v3/auth/projects'
+TOKEN_HEADER_RE='^X-Subject-Token: '
+
+if [ "$0" = "bash" -o "$0" = "-bash" ]; then
+    echo "You should run this as a script instead of sourcing. If you source this and this encounters an error, your original shell would exit" >&2
+fi
+ 
+if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
+    echo "curl command is missing" >&2
+else
+    if [ "$#" -gt 1 ]; then
+        echo "Usage: source $BASH_SOURCE projectname [username]"
+    else
+        OS_USERNAME="$USER"
+        if [ -n "$1" ]; then
+            OS_USERNAME="$1"
+        fi
+ 
+        # get password
+        echo "Please enter your CSC password to authenticate to pouta object storage as user $OS_USERNAME: "
+        read -sr OS_PASSWORD_INPUT
+        OS_PASSWORD="$OS_PASSWORD_INPUT"
+ 
+        OS_AUTH_DATA='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+                     "password": "'$OS_PASSWORD'" } } } } }'
+
+        # authenticate and get return values
+        OUT=`curl -sS -X POST -D - -d "$OS_AUTH_DATA" -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+            exit 1
+        fi
+
+        # save token to environment variable
+        OS_UNSCOPED_AUTH_TOKEN=`echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"`
+
+        OUT=`curl -s -S -X GET -D - -H "X-Auth-Token: $OS_UNSCOPED_AUTH_TOKEN" "$OS_PROJECTS_URL" 2>&1`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+            exit 1
+        fi
+
+        # echo the values, figure them out with just basic tools without dependency to any json tool
+        echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"'
+    fi
+fi
