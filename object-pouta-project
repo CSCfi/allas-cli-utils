@@ -41,7 +41,7 @@ else
                      "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
 
         # authenticate and get return values
-        OUT=`curl -sS -X POST -D - -d "$OS_AUTH_DATA" -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1`
+        OUT=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 <<< "$OS_AUTH_DATA"`
         CURL_EXIT="$?"
         STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
         if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
