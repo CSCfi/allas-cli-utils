@@ -57,6 +57,7 @@ fi
 
 
 #interenal variables
+storage_service=("pouta")
 show_keys=(0)
 use_swift=(1)
 use_s3cmd=(0)
@@ -167,6 +168,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
       echo ""
       echo "No cPouta projects found!"
       echo "Please check that you typed your password correctly"
+      unset OS_PASSWORD
       return
    fi
 
@@ -179,8 +181,20 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 
    if [[ $OS_PROJECT_NAME == "" ]]
    then 
-     echo "You have access to following cPouta projects."
-     echo $all_projects | tr " " "\n"
+     echo "You have access to following cPouta projects:"
+     echo ""
+     # If saldo command is available, use it to obtain project descriptions"
+     if [[ $(which saldo 2>/dev/null | wc -c) -ne 0 ]]
+     then 
+        for proj in $all_projects 
+        do
+          projnum=$( echo $proj | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
+          nimi=$(saldo -p $projnum | grep "^Project"| cut -c16-150 )
+          echo "$proj $nimi"
+        done
+     else
+        echo $all_projects | tr " " "\n"
+     fi 
      echo ""
      echo "Please define the name of the project to be used:"
      read OS_PROJECT_NAME
@@ -195,19 +209,19 @@ if [ $use_swift -eq 1 ]; then
     # authenticate and save token to environment variable
     source <(swift auth)
     
-    if [[ $(grep -c '\[pouta\]'  $HOME/.config/rclone/rclone.conf) -lt 1 ]]
+    if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]
     then
-       echo '[pouta]' >> $HOME/.config/rclone/rclone.conf 
+       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
        echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
        if [ $silent_mode -ne 1 ]; then
            echo ""
-           echo "pouta service added to the rclone configuration file"
+           echo "$storage_service service added to the rclone configuration file"
        fi
     else 
        if [ $silent_mode -ne 1 ]; then
           echo ""
-          echo "pouta definition already found in the rclone configuration file."
+          echo "$storage_service definition already found in the rclone configuration file."
           echo "Configuration was not changed"
        fi
     fi
@@ -257,11 +271,11 @@ if [ $use_s3cmd -eq 1 ]; then
     echo "chunk size is 500MB, minimum allowed chunk size is 5MB,"
     echo "maximum is 5000MB."
     echo
-    echo "chunk size[500]:"
+    echo "chunk size[5000]:"
     read chunk_size
     if [[ $chunk_size == "" ]]
     then
-        chunk_size=500
+        chunk_size=5000
     fi
     if [[ $chunk_size -gt 5000 ]]
     then
