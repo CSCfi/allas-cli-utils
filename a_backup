@@ -13,6 +13,11 @@ if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 ==
 then
    task=("$1")
    shift
+else
+   echo "$1 is not a valid task for a_backup"
+   echo "Please define one of the following tasks as the first argument."
+   echo "  add, list, restore, delete or find"
+   exit 1
 fi
 
 
@@ -74,6 +79,13 @@ do
               ;;
     esac
 done
+
+
+if [ ! -e $input ] ; then
+   echo "File or directory $input does not exist!"
+   exit 1
+fi
+
 
 if [[ $(which restic 2>/dev/null | wc -c) -eq 0 ]]
    then 

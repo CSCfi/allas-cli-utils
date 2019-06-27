@@ -32,7 +32,7 @@ then
   echo ""
   echo "will initiate s3cmd configuration in stead of swift configuration."
   echo ""
-  echo "Deinition:"
+  echo "Definition:"
   echo ""
   echo "-mode both" 
   echo ""
@@ -183,6 +183,9 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    then 
      echo "You have access to following cPouta projects:"
      echo ""
+     echo -e  "Project ID        Description"
+     echo "--------------------------------------------"
+     
      # If saldo command is available, use it to obtain project descriptions"
      if [[ $(which saldo 2>/dev/null | wc -c) -ne 0 ]]
      then 
@@ -196,9 +199,9 @@ if [ -z "$OS_PROJECT_NAME" ]; then
         echo $all_projects | tr " " "\n"
      fi 
      echo ""
-     echo "Please define the name of the project to be used:"
+     echo "Please define the Project ID of the project to be used:"
      read OS_PROJECT_NAME
-     export OS_PROJECT_NAME=$(echo $OS_PROJECT_NAME | tr -d " " )
+     export OS_PROJECT_NAME=$(echo $OS_PROJECT_NAME | awk '{print $1}')
    fi  
 fi
 ##############################################
@@ -225,12 +228,22 @@ if [ $use_swift -eq 1 ]; then
           echo "Configuration was not changed"
        fi
     fi
-   
-    if [ $silent_mode -ne 1 ]; then
-        echo "swift connection configured"
-        echo " "
-        echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-        echo "OS_STORAGE_URL = $OS_STORAGE_URL"
+       
+    os_test=("${OS_AUTH_TOKEN}x")
+    if [  $os_test == "x" ] ; then 
+       echo ""
+       echo "Swift authentication failed!"
+       echo "Are you sure that the used password and projet ID are valid?"
+       echo "Please try again."
+       return 
+    else 
+        if [ $silent_mode -ne 1 ]; then
+          echo "swift connection configured"
+          echo " "
+          echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+          echo "OS_STORAGE_URL = $OS_STORAGE_URL"
+        fi
+
     fi
 fi
 
