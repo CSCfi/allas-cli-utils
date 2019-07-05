@@ -210,10 +210,11 @@ fi
 
 if [ $use_swift -eq 1 ]; then
     # authenticate and save token to environment variable
-    source <(swift auth)
+    source <(swift auth)    
     
     if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]
     then
+       mkdir -p  $HOME/.config/rclone/
        echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
        echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf

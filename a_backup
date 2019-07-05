@@ -3,7 +3,7 @@
 
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the at least the 1) operation (add, list, retrieve, delete) and 2) name of a directory or file 
+  echo "Please give the at least the 1) operation (add, list, find, retrieve, delete) and 2) name of a directory or file 
   to be backuped to allas as an argument of this command."
   echo ""
   exit 1
@@ -80,10 +80,11 @@ do
     esac
 done
 
-
-if [ ! -e $input ] ; then
-   echo "File or directory $input does not exist!"
-   exit 1
+if [ $task == "add" ]; then
+  if [ ! -e $input ] ; then
+     echo "File or directory $input does not exist!"
+     exit 1
+  fi
 fi
 
 
