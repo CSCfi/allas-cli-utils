@@ -231,7 +231,7 @@ do
      if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
      then
         bucket_name=("${user}-${project_label}-SCRATCH")
-        partial_path=$(pwd | sed -e s/"\/wrk\/$user\/"/""/g)
+        partial_path=$(pwd | sed -e s/"\/wrk\/$user"/""/g)
       #  quota_s=($(lfs quota -q -u $USER $WRKDIR))
       #  free_space=$(expr ${quota_s[2]} - ${quota_s[1]}) 
      fi
@@ -429,7 +429,7 @@ do
   echo ""
   echo "-------------------------------------------------------------------------------"
   echo "$num_files files from $input uploaded to bucket $bucket_name in Allas as one compressed file: "
-  echo "${bucket_name}:${partial_path}/$tmp_file"
+  echo "${bucket_name}${partial_path}/$tmp_file"
   tmp_file=("not_defined")
 
 done
