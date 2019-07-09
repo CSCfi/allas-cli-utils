@@ -246,7 +246,7 @@ else
      a_find 
 
      echo ""
-     echo "Object $object_name was not find"
+     echo "Object $object_name was not found"
      echo ""
      echo "You can list all the available objects with command:"
      echo "   a_find"
