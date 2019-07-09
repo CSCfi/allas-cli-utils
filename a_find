@@ -2,9 +2,10 @@
 
 # variables
 storage_server=("pouta")
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 user=($USER)
 bucket_name=("not_defined")
-tmp_file=("not_defined")
+silent=(0)
 print_help=(0)
 os_project_name=("none")
 input_def=("")
@@ -29,16 +30,15 @@ do
                   shift
                   shift
                 ;;
-             '-os_file')
-                  tmp_file=($2)
-                  shift
+             '-silent')
+                  silent=(1)
                   shift
                 ;;
-            '-show')
+            '-files')
                   show_filelist=(1)
                   shift
                 ;;
-
+               
              '-h' )
                   print_help=(1)
                   shift
@@ -54,12 +54,6 @@ do
                 ;;
     esac
 done
-
-if [[ $query == "" ]]
-then
-  echo "Please give the query term:"
-  read query 
-fi
 
 
 if [ $print_help -eq 1 ]; then
@@ -81,20 +75,27 @@ The most commonly occurring special characters are listed below:
     ^ means the beginning of a line
     $ means the end of a line
     [ ] matches any of the characters inside the brackets. For example [abc] would match a,b or c.
-    [^ ] matches any character, except the characters inside the brackets. For example [^abc] would select all rows that contain also other characters than just a,b and c.
+    [^ ] matches any character, except the characters inside the brackets. 
+    For example [^abc] would select all rows that contain also other characters
+    than just a,b and c.
     * matchs zero or more of the preceding character or expression
     \{n,m\} matches n to m occurrences of the preceding character or expression
 
 Options:
 
--show                   Lists the names of the matching files inside the objects in addition to the object name.
+-files                  Lists the names of the matching files inside the objects in addition to the object name.
 
 -project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project. 
 
 -bucket <bucket_name>   By default all the buckets, used by a_put, are searched. Option -bucket allows you to specify a 
                         single bucket that will be used for the search.
 
+-silent                 Ouput just the object names and number of hits. If -file in cluded print object name and 
+                        matching file name on one row.
+
 EOF
+
+exit
 
 fi 
 
@@ -129,19 +130,19 @@ then
      if [[ $os_project_name != $OS_PROJECT_NAME ]]
      then 
         echo "Switching allas configuration to use project $os_project_name"
-        source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
         export OS_PROJECT_NAME=$os_project_name
      fi 
   else
      echo "Default project is not defined"
-     source /appl/opt/allas_conf -user $user
+     source $allas_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
   fi
   else
      echo "Switching allas configuration to use project $os_project_name"
-     source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
      export OS_PROJECT_NAME=$os_project_name
 fi
 
@@ -158,10 +159,48 @@ then
     echo "Please try setting the the connection again."
     echo "by running command:"
     echo ""
-    echo "   source /appl/opt/allas_conf"
+    echo "   source $allas_conf_path"
     exit 1
   fi 
 fi
+
+
+#list all objects if query is not defined
+if [[ $query == "" ]]
+then
+  echo ""
+  echo "No query term given!" 
+  echo "Listing all objects but not files within them:"
+  echo " "
+
+  #check all buckerts if a specific bucket is not defines
+  if [ $bucket_name == "not_defined" ]
+  then
+     buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
+     #echo $buckets
+  else
+     buckets=$bucket_name 
+  fi
+  for bn in $buckets
+  do 
+    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
+    do
+        os_dirname=$(dirname "$metafile" )
+        if [ $os_dirname == "." ]; then
+           os_dirname=""
+        else
+           os_dirname="/$os_dirname"
+        fi
+        os_filename=$(basename "$metafile" _meta)
+        os_object=("${bn}${os_dirname}/${os_filename}")
+        echo $os_object
+    done
+  done
+  exit
+fi
+
+
+
 
 #source /appl/opt/allas_conf
 #input=("$1")
@@ -181,7 +220,7 @@ for bn in $buckets
 do 
   for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
   do
-     num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | grep -c "$query")
+     num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep -c "$query")
      if [[ $num_hits -gt 0 ]]; then
         os_dirname=$(dirname "$metafile" )
         if [ $os_dirname == "." ]; then
@@ -192,16 +231,24 @@ do
         os_filename=$(basename "$metafile" _meta)
         os_object=("${bn}${os_dirname}/${os_filename}")
         if [ $show_filelist -eq 1 ]; then
-           #echo "Matching files in object ${bn}/$(dirname "$metafile" | sed -e s  )/$(basename "$metafile" _meta) :"
-           echo "Matching files in object $os_object :" 
-           rclone cat ${storage_server}:${bn}/$metafile | grep "$query"
-           echo ""  
+           if [ $silent -eq 0 ]; then
+              echo "Matching files in object $os_object :" 
+              rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep "$query"
+              echo ""
+           else
+              #silent output
+              rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep "$query" | awk '{print "'$os_object' "$0}'  
+           fi  
         else 
-           echo ""      
-           #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _meta)"
-           echo " Object: $os_object"
-           echo " includes $num_hits file names that that match query: $query"
-           echo "" 
+           if [ $silent -eq 0 ]; then
+             echo ""      
+             #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _meta)"
+             echo " Object: $os_object"
+             echo " includes $num_hits file names that that match query: $query"
+             echo ""
+           else
+             echo $os_object $num_hits
+           fi 
         fi   
         (( total_objects = total_objects + 1 ))
         (( total_hits = total_hits + num_hits ))
@@ -210,9 +257,11 @@ do
 
 done
 
-echo "------------------------------------------------ "
-echo "Query: $query"
-echo "Total of $total_hits hits were found in $total_objects objects"
-echo "-------------------------------------------------"
+if [ $silent -eq 0 ]; then
+  echo "------------------------------------------------ "
+  echo "Query: $query"
+  echo "Total of $total_hits hits were found in $total_objects objects"
+  echo "-------------------------------------------------"
+fi
 exit
 

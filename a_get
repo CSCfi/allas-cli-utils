@@ -2,15 +2,16 @@
 
 # variables
 storage_server=("pouta")
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 user=($USER)
 object_name=("")
-target_file=("not_defined")
+file_name=("")
 print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_root=("$WRKDIR")
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
+tmp_root=("/tmp")
+tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 
@@ -31,7 +32,9 @@ do
                 ;;
              '-file')
                   file_name=($2)
-
+                  shift
+                  shift
+                ;;
              '-h' )
                   print_help=(1)
                   shift
@@ -151,7 +154,7 @@ then
     echo "Please try setting the the connection again."
     echo "by running command:"
     echo ""
-    echo "   source /appl/opt/allas_conf"
+    echo "   source $allas_conf_path"
     exit 1
   fi 
 fi
@@ -160,68 +163,146 @@ fi
 #input=("$1")
 
 #check that object exists
-check_os=$(rclone ls ${storage_server}:$object_name | wc -l)
+check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
-  echo "Try running command:"
-  echo "   a_find $object_name"
+  objects=($(a_find | grep "$object_name"))
+  if [ ${#objects[@]} -eq 1 ]; then
+    echo "Did you mean this object:"
+    echo "  $objects"
+  fi
+  if  [ ${#objects[@]} -gt 1 ]; then   
+    echo "Did you mean some of these objects:"
+    for on in ${objects[@]}
+    do 
+        echo "  $on"
+    done
+  fi
+  if [ ${#objects[@]} -eq 0 ]; then
+    echo "Try running command:"
+    echo "   a_find $object_name"
+  fi
   exit 1
 fi
 
 
 
 
-
 # check if object name congains bucket
 object_with_bucket=(0)
-if [ $(cat $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
+if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
 then 
   object_with_bucket=(1) 
+  bucket=("${user}-${project_label}-MISC")
 fi
-if [ $(cat $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
+if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
 then 
   object_with_bucket=(1) 
+  bucket=("${user}-${project_label}-HOME")
 fi
-if [ $(cat $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
+if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
 then 
   object_with_bucket=(1) 
+  bucket=("${user}-${project_label}-HOME")
 fi
 
+
+# check all buckets if the buckte is not deifned
 if [ $object_with_bucket == 0 ]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
-  #echo $buckets
-  total_hits=(0)
-  total_objects=(0)
+  num_buckets=(0)
+
+  # go through the buckets
   for bn in $buckets
   do 
+    bucket_found=$(rclone ls ${storage_server}:$bn/$object_name 2> /dev/null | wc -l)
+    if [ $bucket_found -eq 1 ]; then
+       echo "Bucket: $bn contains object:$object_name"
+      (( num_buckets = num_buckets + 1 ))
+      bucket=("$bn")
+    fi
+  done
+  
+  if [[ $num_buckets -eq 0 ]]; then
+     echo ""
+     echo "Could not find object: $object_name "
+     exit 1
+  fi
+  if [[ $num_buckets -gt 1 ]]; then
+     echo ""
+     echo "Object $object_name was found in several buckets!"
+     echo "Please ionclude bucket name in the object name"
+     exit 1
+  fi
+  
+  #add bucket to the object name
+  object_name=("$bucket/$object_name")
+else
+  #check if object exists
+  bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
+  if [ $bucket_found -ne 1 ]; then
+     a_find 
+
+     echo ""
+     echo "Object $object_name was not find"
+     echo ""
+     echo "You can list all the available objects with command:"
+     echo "   a_find"
+  fi
+fi 
    
 
-  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
-  do
-     num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | grep -c "$query")
-     if [[ $num_hits -gt 0 ]]; then
-        if [ $show_filelist -eq 1 ]; then
-           echo "Matching files in object ${bn}/$(basename $metafile _meta) :"
-           rclone cat ${storage_server}:${bn}/$metafile | grep "$query"
-           echo ""  
-        else 
-           echo ""      
-           echo " Object:  ${bn}/$(basename $metafile _meta)"
-           echo " includes $num_hits file names that that match query: $query"
-           echo "" 
-        fi   
-        (( total_objects = total_objects + 1 ))
-        (( total_hits = total_hits + num_hits ))
-     fi
-  done
 
-done
-fi 
-echo "------------------------------------------------ "
-echo "Query: $query"
-echo "Total of $total_hits hits were found in $total_objects objects"
-echo "-------------------------------------------------"
+
+#assign name for output file if not defined 
+if [[ $file_name == "" ]];then 
+   file_name=$(basename $object_name .zst)
+fi
+
+if [[ -e $file_name ]]; then
+   echo "File name: $file_name already exists!"
+   echo "Please remove file $file_name or define a different output file name with option: -file " 
+   exit 1
+fi
+  
+
+echo "Starting to copy data from $storage_server..."
+
+rclone cat ${storage_server}:/$object_name | zstd -d >  $file_name
+
+echo ""
+echo "Object:"
+echo "  $object_name "
+echo "copied and uncompressed form $storage_server into:"
+echo "   $file_name"
+
+
 exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

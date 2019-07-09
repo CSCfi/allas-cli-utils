@@ -11,6 +11,7 @@ fi
 max_size=500000000
 max_files=100000
 storage_server=("pouta")
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 user=($USER)
 bucket_name=("not_defined")
 tmp_file=("not_defined")
@@ -18,7 +19,7 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_root=("$WRKDIR")
+tmp_root=("/tmp")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -115,6 +116,9 @@ as object:  project2/sample3/test_1.txt.zst
 
 
 EOF
+
+exit 
+
 fi 
 
 #Configure rclone
@@ -146,11 +150,11 @@ then
      if [[ $os_project_name != $OS_PROJECT_NAME ]]
      then 
         echo "Switching allas configuration to use project $os_project_name"
-        source /appl/opt/allas_conf -user $user $os_project_name
+        source $allas_conf_path -user $user $os_project_name
      fi 
   else
      echo "Default project is not defined"
-     source /appl/opt/allas_conf -user $user
+     source $allas_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
@@ -275,7 +279,8 @@ do
 
   #collect and count metadata
   echo "user: $user" >> ${tmp_dir}/${tmp_file}_meta
-  echo "original_location_in_Taito: $file_path" >>  ${tmp_dir}/${tmp_file}_meta
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_meta
+  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_meta
   echo ""
   num_files=0
   for f in $(find $input)

@@ -1,26 +1,16 @@
-#!/bin/bash 
-
+#!/bin/bash
 
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the at least the 1) operation (add, list, find, retrieve, delete) and 2) name of a directory or file 
-  to be backuped to allas as an argument of this command."
+  echo ""
+  echo "Please define one of the following tasks as the first argument:"
+  echo "  add, list, files, restore, delete or find"
   echo ""
   exit 1
 fi
 
-if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" ]]
-then
-   task=("$1")
-   shift
-else
-   echo "$1 is not a valid task for a_backup"
-   echo "Please define one of the following tasks as the first argument."
-   echo "  add, list, restore, delete or find"
-   exit 1
-fi
 
-
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
 bucket_name=("${project_label}-BACKUP")
@@ -30,6 +20,31 @@ input=("")
 options=("")
 target=(./)
 help=(0)
+
+if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" || $1 == "files" ]]
+then
+   task=("$1")
+   shift
+else
+   if [[ -e $1 ]] ;then
+     task=("add")
+     echo ""
+     echo "Do you want to backup $1? [yes/no]"
+     read a 
+     if [ $a == "yes" ] || [ $a == "y" ] ; then
+         input=("$1")
+         shift
+     else
+        exit
+     fi
+   else
+      echo "$1 is not a valid task for a_backup"
+      echo "Please define one of the following tasks as the first argument."
+      echo "  add, list, files, restore, delete or find"
+      exit 1
+   fi
+fi
+
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -100,7 +115,7 @@ fi
 
 
 
-if [ $help -eq 1 ]; then
+if [[ $help -eq 1 ]]; then
 cat <<EOF
 
 a_backup
@@ -120,17 +135,19 @@ BACKUP OPERATIONS
 
 a_backup can be used for following five operations:
 
-  a_backup add <file_name>   Add a new backup version (snapshot) of the given file 
-                             or directory to the back up repository.
+  a_backup add <file_name>       Add a new backup version (snapshot) of the given file 
+                                 or directory to the back up repository.
 
-  a_backup list              Lists the snapshots saved to the repository. 
-                             Option: -last lists only the latest versions of different snapshots.
+  a_backup list                  Lists the snapshots saved to the repository. 
+                                 Option: -last lists only the latest versions of different snapshots.
+ 
+  a_backup files <snapshot_id>   List the files that the snapshot includes.
 
-  a_backup find <query>      Find snapshots that contain file or directory that match the given query term.
+  a_backup find <query>          Find snapshots that contain file or directory that match the given query term.
 
-  a_backup restore <snapshot_id>  Retrieves the data of the given snapshot to the local environment. By default the
-                             stored data is restored to the local directorty. Other locations can be defined with
-                             -target option.
+  a_backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. By default 
+                                 the stored data is restored to the local directorty. Other locations can be 
+                                 defined with -target option.
 
   a_backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
 
@@ -146,7 +163,7 @@ then
    echo ""
    echo "Allas connection is not set up or has expired!"
    echo "Please run command:"
-   echo "   source /appl/opt/allas_conf"
+   echo "   source $allas_conf_path"
    exit 1
 fi
 
@@ -154,34 +171,57 @@ project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
 bucket_name=("${project_label}-BACKUP")
 repository=("swift:${bucket_name}:/backup")
 
-if [ ! -e $HOME/.backup_passwd_${project_label} ]
+if [[ ! -e $HOME/.backup_passwd_${project_label} ]]
 then
   echo restic_$project_label >  $HOME/.backup_passwd_${project_label}
 fi 
 
+
+
+
+
 #check if restic repository already exists
 #echo "restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots"
 snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots 2> /dev/null | wc -l)
-if [ $snum -lt 1 ]
+if [[ $snum -lt 1 ]]
 then
    restic init --repo $repository -p $HOME/.backup_passwd_${project_label} $options
 fi 
 
 
-if [ $task == "add" ]
+if [[ $task == "add" ]]
 then
   restic backup  --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER  $input
 fi
 
-if [ $task == "list" ]
+if [[ $task == "list" ]]
 then
   #echo "restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options"
   restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
 fi
 
-if [ $task == "find" ]
+if [[ $task == "files" ]]
+then
+  if [[ $input == "" ]]; then
+     echo ""
+     echo "No snapshot name defined for command: a_backup files."
+     echo "Please give the snapshot name as a command line argumnet."
+     echo ""
+     exit 1
+  fi
+  #echo "restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options"
+  restic ls --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
+fi
+
+if [[ $task == "find" ]]
 then
   echo "-------------------------------------------------------"
+  if [[ $input == "" ]]; then
+     echo "No query term defined for command: a_backup find"
+     echo " Please give the query term as a command line argumnet."
+     echo ""
+     exit 1
+  fi
   #echo "restic find --repo $repository -p $HOME/.backup_passwd_${project_label} $options"
   restic find --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options > .find_list_$$
   numhits=$(grep -v "Found matching entries" .find_list_$$ | grep . | wc -l)
@@ -192,12 +232,22 @@ then
   rm -f  .find_lits_$$
 fi
 
-if [ $task == "restore" ]
+if [[ $task == "restore" ]]
 then
+  if [[ $input == "" ]] ; then
+     echo "No snapshotname defined. Please give the snapshot name as a command line argumnet."
+     echo ""
+     exit 1
+  fi
   restic restore --repo $repository -p $HOME/.backup_passwd_${project_label} $input --target $target $options
 fi
   
-if [ $task == "delete" ]
+if [[ $task == "delete" ]]
 then
+  if [[ $input == "" ]]; then
+     echo "No snapshotname defined. Please give the snapshot name as a command line argumnet."
+     echo ""
+     exit 1
+  fi
   restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input 
 fi 
