@@ -35,13 +35,6 @@ do
                   object_with_bucket=(1)
                   shift
                 ;;
-
-
-              '-user')
-                  user=($2)
-                  shift
-                  shift
-                ;;
              '-h' )
                   print_help=(1)
                   shift
@@ -58,11 +51,6 @@ do
     esac
 done
 
-if [[ $object_name == "" ]]
-then
-  echo "Please give the query term:"
-  read object_name 
-fi
 
 
 if [ $print_help -eq 1 ]; then
@@ -149,6 +137,13 @@ then
   fi 
 fi
 
+if [[ $object_name == "" ]] ; then 
+  a_find
+  echo ""
+  echo "Total summary of data in ${storage_server}"
+  rclone about ${storage_server}:
+  exit
+fi
 #source /appl/opt/allas_conf
 #input=("$1")
 
@@ -223,7 +218,7 @@ then
   if [[ $num_buckets -gt 1 ]]; then
      echo ""
      echo "Object $object_name was found in several buckets!"
-     echo "Please ionclude bucket name in the object name"
+     echo "Please include the bucket name in the object name"
      exit 1
   fi
   
@@ -240,29 +235,10 @@ else
      echo "   a_find"
   fi
 fi 
-   
+  
+rclone lsl ${storage_server}:/${object_name}
+rclone cat ${storage_server}:/${object_name}_meta
 
-object_owner=$(rclone cat ${storage_server}:/${object_name}_meta |grep "^user:" | awk '{print $2}')
-
-if [[ $user == $object_owner ]]; then
-  echo ""
-  echo "Are you sure want to remove object:"
-  echo $object_name
-  echo "[yes/no]"
-  read ansver
-  if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
-     rclone deletefile ${storage_server}:/${object_name}
-     rclone deletefile ${storage_server}:/${object_name}_meta
-     echo "${object_name} was deleted."
-  else
-     echo "${object_name} was not deleted."
-  fi
-else
-  echo ""
-  echo "Your username ($user) is not matching to the username assigned to the object ($object_owner)"
-  echo "You can use option -user to enforce the deteltion tool to use aspecific user name" 
-  echo "${object_name} was not deleted"
-fi
 
 exit
 

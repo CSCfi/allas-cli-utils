@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
 export OS_USER_DOMAIN_NAME="Default"
@@ -70,8 +73,8 @@ for pro in $all_projects
 do
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
-  saldo -p $projnum | grep "^Project"
-  source /appl/opt/allas_conf -silent -keeppasswd $pro
+  saldo -p $projnum 2> /dev/null | grep "^Project"
+  source $allas_conf_path -silent -keeppasswd $pro
   for kont in $(swift list )
   do 
     if [ $buk -ne 1 ]; then
