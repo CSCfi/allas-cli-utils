@@ -83,7 +83,7 @@ do
     esac
 done
 
-if [ $task == "add" ]; then
+if [[ $task == "add" ]]; then
   if [ ! -e $input ] ; then
      echo "File or directory $input does not exist!"
      exit 1
