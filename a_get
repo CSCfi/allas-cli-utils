@@ -85,6 +85,7 @@ Options:
 -target <dir_name>      If this option is defined, a new target directory is created and the data is retrieved there.
 
 
+Related commands: a_put, a_find, a_info
 
 EOF
 
@@ -100,12 +101,12 @@ then
    rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
    if [ $rc_check -lt 1 ]
    then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+      echo '['"$storage_service"']'  >>  $HOME/.config/rclone/rclone.conf
       echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
       echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
    fi
 else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+   echo '['"$storage_service"']' >>  $HOME/.config/rclone/rclone.conf
    echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
    echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
 fi
@@ -121,19 +122,19 @@ then
      if [[ $os_project_name != $OS_PROJECT_NAME ]]
      then 
         echo "Switching allas configuration to use project $os_project_name"
-        source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
         export OS_PROJECT_NAME=$os_project_name
      fi 
   else
      echo "Default project is not defined"
-     source /appl/opt/allas_conf -user $user
+     source $allas_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
   fi
   else
      echo "Switching allas configuration to use project $os_project_name"
-     source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
      export OS_PROJECT_NAME=$os_project_name
 fi
 

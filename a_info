@@ -32,8 +32,10 @@ do
                 ;;
 
              '-bucket')
-                  object_with_bucket=(1)
+                  bucket=($2)
+                  object_with_bucket=(2)
                   shift
+                  shift 
                 ;;
              '-h' )
                   print_help=(1)
@@ -55,10 +57,10 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to remove data that has been uploaded to Allas service using the a_put command.
+This tool is used to show information about data that has been uploaded to Allas service using the a_put command.
 The basic syntax of the comand is:
 
-   a_delete object_name
+   a_info object_name
 
 
 Options:
@@ -67,8 +69,8 @@ Options:
 
 -bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 
--user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
 
+Related commands: a_put, a_get, a_delete, a_find
 EOF
 
 fi 
@@ -103,19 +105,19 @@ then
      if [[ $os_project_name != $OS_PROJECT_NAME ]]
      then 
         echo "Switching allas configuration to use project $os_project_name"
-        source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
         export OS_PROJECT_NAME=$os_project_name
      fi 
   else
      echo "Default project is not defined"
-     source /appl/opt/allas_conf -user $user
+     source  $allas_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
   fi
   else
      echo "Switching allas configuration to use project $os_project_name"
-     source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
      export OS_PROJECT_NAME=$os_project_name
 fi
 
@@ -146,32 +148,10 @@ if [[ $object_name == "" ]] ; then
 fi
 #source /appl/opt/allas_conf
 #input=("$1")
-
-#check that object exists
-check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
-if [ $check_os -ne 1 ]; then
-  echo "Object name: $object_name not found in $storage_server."
-  echo ""
-  objects=($(a_find | grep "$object_name"))
-  if [ ${#objects[@]} -eq 1 ]; then
-    echo "Did you mean this object:"
-    echo "  $objects"
-  fi
-  if  [ ${#objects[@]} -gt 1 ]; then   
-    echo "Did you mean some of these objects:"
-    for on in ${objects[@]}
-    do 
-        echo "  $on"
-    done
-  fi
-  if [ ${#objects[@]} -eq 0 ]; then
-    echo "Try running command:"
-    echo "   a_find $object_name"
-  fi
-  exit 1
+if [[ $object_with_bucket == 2 ]]; then
+     object_name=("${bucket}/${object_name}")
+     object_with_bucket=(1)
 fi
-
-
 
 
 # check if object name contains bucket (if not defined with bucket)

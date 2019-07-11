@@ -93,6 +93,8 @@ Options:
 -silent                 Ouput just the object names and number of hits. If -file in cluded print object name and 
                         matching file name on one row.
 
+
+Related commands: a_put, a_get, a_delete, a_info
 EOF
 
 exit
@@ -205,7 +207,7 @@ fi
 #source /appl/opt/allas_conf
 #input=("$1")
 
-# check all buckerts if a specific bucket is not defines
+# check all buckerts if a specific bucket is not defined
 if [ $bucket_name == "not_defined" ]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
@@ -218,6 +220,10 @@ total_hits=(0)
 total_objects=(0)
 for bn in $buckets
 do 
+  if [ $silent -eq 0 ]; then
+    echo "----------------------------------------------"
+    echo "Cheking bucket: $bn"; echo ""
+  fi
   for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
   do
      num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep -c "$query")
