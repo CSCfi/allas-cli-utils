@@ -185,7 +185,7 @@ then
   fi
   for bn in $buckets
   do 
-    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
+    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_meta$")
     do
         os_dirname=$(dirname "$metafile" )
         if [ $os_dirname == "." ]; then

@@ -81,6 +81,8 @@ Options:
 
 -user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
 
+
+Related commands: a_put, a_get, a_find, a_info
 EOF
 
 fi 

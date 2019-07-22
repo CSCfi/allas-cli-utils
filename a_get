@@ -254,6 +254,12 @@ fi
 
 
 #assign name for output file if not defined 
+is_compressed=(0)
+if [[ ${object_name:(-4):4} == ".zst" ]]; then
+  is_compressed=(1) 
+fi
+
+
 is_tar_file=(0)
 if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
   is_tar_file=(1) 
@@ -269,7 +275,7 @@ fi
 
 if [[ -e $target_name ]]; then
    echo "File name: $target_name already exists!"
-   echo "Please remove $target_name or define a different output file opr directory name with option: -target " 
+   echo "Please remove $target_name or define a different output file or directory name with option: -target " 
    exit 1
 fi
   
@@ -280,17 +286,22 @@ if [[ $is_tar_file -eq 1 ]]; then
        mkdir -p $target_name
        cd $target_name
      fi
-       rclone cat ${storage_server}:/$object_name | zstd -d | tar -x -o $file_name  
+     rclone cat ${storage_server}:/$object_name | zstd -d | tar -x -o $file_name  
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi
 else
-     rclone cat ${storage_server}:/$object_name | zstd -d >  $target_name
+    # uncompress if needed
+    if [[ $is_compressed -eq 1 ]]; then 
+       rclone cat ${storage_server}:/$object_name | zstd -d >  $target_name
+    else 
+       rclone copy ${storage_server}:/$object_name  $target_name
+    fi
 fi 
 echo ""
 echo "Object:"
 echo "  $object_name "
-echo "copied and uncompressed form $storage_server into:"
+echo "copied and uncompressed from $storage_server into:"
 echo "   $target_name"
 
 

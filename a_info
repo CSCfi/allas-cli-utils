@@ -57,7 +57,7 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to show information about data that has been uploaded to Allas service using the a_put command.
+This tool is used to show information about a data object that has been uploaded to Allas service using the a_put command.
 The basic syntax of the comand is:
 
    a_info object_name
@@ -71,8 +71,9 @@ Options:
 
 
 Related commands: a_put, a_get, a_delete, a_find
-EOF
 
+EOF
+exit 0
 fi 
 
 #Configure rclone
