@@ -11,7 +11,7 @@ fi
 max_size=500000000
 max_files=100000
 storage_server=("pouta")
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+allas_conf_path=("/appl/opt/allas_conf")
 user=($USER)
 bucket_name=("not_defined")
 tmp_file=("not_defined")
@@ -20,7 +20,7 @@ os_project_name=("none")
 input_def=("")
 mode=("swift")
 compression=(1)
-tmp_root=("/tmp")
+tmp_root=("$WRKDIR")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -235,7 +235,7 @@ do
   fi
 
   file_path=$(abspath $input)
-
+  
   echo "Checking total size of $input. Please wait."
   tot_size=$(du -s $input | cut -f1)
   #echo $tot_size
@@ -265,7 +265,7 @@ do
      if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
      then
         bucket_name=("${user}-${project_label}-HOME")
-        partial_path=$(pwd | sed -e s/"\/homeappl\/home\/$user"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
         echo "Partial_path: $partial_path"
       #  quota_s=($(lfs quota -q -u $USER $HOME))
       #  free_space=$(expr ${quota_s[2]} - ${quota_s[1]}) 
@@ -273,7 +273,7 @@ do
      if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
      then
         bucket_name=("${user}-${project_label}-SCRATCH")
-        partial_path=$(pwd | sed -e s/"\/wrk\/$user"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
       #  quota_s=($(lfs quota -q -u $USER $WRKDIR))
       #  free_space=$(expr ${quota_s[2]} - ${quota_s[1]}) 
      fi
@@ -290,8 +290,8 @@ do
       echo "A file/directory with the same name has already been uploaded into"
       echo "bucket $bucket_name in $storage_server"
       echo ""
-      echo "rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file  "
-      rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file  
+      echo "   ${bucket_name}${partial_path}/$tmp_file  "
+      rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file 
       echo ""
       echo "Remove the old file if you wish to upload a new version of $input to $storage_server."
       echo "Optionally you can define different bucket name using option -bucket ."
@@ -302,7 +302,6 @@ do
   if [ $mode == "s3cmd" ]
   then
     echo "cheking s3cmd"
-    s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file
      
     if [[ $(s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
     then
@@ -405,8 +404,8 @@ do
   echo "Compression ready. Compression rate was: $comp_rate"
   echo ""
 
-  #upload
 
+  #upload
   if [ $mode == "swift" ]
   then
     # For less than 5GB files rclone is used for uploading
