@@ -14,32 +14,36 @@ tmp_root=("$WRKDIR")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 show_filelist=(0)
 query=("")
+all_buckets=(0)
 
 #Process command line
 while [[ $# -ge 1 ]]
 do
   case "$1" in
-             '-bucket')
+             '--bucket' | '-b' )
              # query file
                   bucket_name=($2)
                   shift
                   shift
                 ;;
-             '-project')
+             '--project' | '-p')
                   os_project_name=($2)
                   shift
                   shift
                 ;;
-             '-silent')
+             '-silent' | '-s')
                   silent=(1)
                   shift
                 ;;
-            '-files')
+            '--files' | '-f' )
                   show_filelist=(1)
                   shift
                 ;;
-               
-             '-h' )
+            '--all_bukets' | '-a' )
+                  bucket_name=("$(swift list| tr  '\n' ' ')")
+                  shift
+                ;;               
+             '-h' | '--help' )
                   print_help=(1)
                   shift
                 ;;
@@ -55,6 +59,9 @@ do
     esac
 done
 
+#echo "buk $bucket_name"
+
+#exit
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
@@ -83,14 +90,17 @@ The most commonly occurring special characters are listed below:
 
 Options:
 
--files                  Lists the names of the matching files inside the objects in addition to the object name.
+-f, --files                  Lists the names of the matching files inside the objects in addition to the object name.
 
--project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project. 
 
--bucket <bucket_name>   By default all the buckets, used by a_put, are searched. Option -bucket allows you to specify a 
+-b, --bucket <bucket_name>   By default all the standard buckets, used by a_put, are searched. Option --bucket allows you to specify a 
                         single bucket that will be used for the search.
 
--silent                 Ouput just the object names and number of hits. If -file in cluded print object name and 
+-a, --all                    By default all the standard buckets, used by a_put, are searched. Option --all defines that all the bukets of
+                             of the project will be included in the search.
+
+-s, --silent                 Ouput just the object names and number of hits. If -file in cluded print object name and 
                         matching file name on one row.
 
 
@@ -176,7 +186,7 @@ then
   echo " "
 
   #check all buckerts if a specific bucket is not defines
-  if [ $bucket_name == "not_defined" ]
+  if [[ "$bucket_name" == "not_defined" ]]
   then
      buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
      #echo $buckets
@@ -208,7 +218,7 @@ fi
 #input=("$1")
 
 # check all buckerts if a specific bucket is not defined
-if [ $bucket_name == "not_defined" ]
+if [[ "$bucket_name" == "not_defined" ]]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
   #echo $buckets
@@ -224,7 +234,7 @@ do
     echo "----------------------------------------------"
     echo "Cheking bucket: $bn"; echo ""
   fi
-  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "zst_meta$")
+  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_meta$")
   do
      num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep -c "$query")
      if [[ $num_hits -gt 0 ]]; then

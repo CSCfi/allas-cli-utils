@@ -19,30 +19,30 @@ object_with_bucket=(0)
 while [[ $# -ge 1 ]]
 do
   case "$1" in
-             '-object')
+             '--object' | '-o' )
              # query file
                   object_name=($2)
                   shift
                   shift
                 ;;
-             '-project')
+             '--project' | '-p' )
                   os_project_name=($2)
                   shift
                   shift
                 ;;
 
-             '-bucket')
+             '--bucket' | '-b' )
                   object_with_bucket=(1)
                   shift
                 ;;
 
-
-              '-user')
+             '--user' | '-u')
                   user=($2)
                   shift
                   shift
                 ;;
-             '-h' )
+
+             '-h' | '--help' )
                   print_help=(1)
                   shift
                 ;;
@@ -75,11 +75,11 @@ The basic syntax of the comand is:
 
 Options:
 
--project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project. 
 
--bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
+-b --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 
--user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
+-u, --user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
 
 
 Related commands: a_put, a_get, a_find, a_info
