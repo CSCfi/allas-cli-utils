@@ -59,11 +59,6 @@ do
     esac
 done
 
-if [[ $object_name == "" ]]
-then
-  echo "Please give the query term:"
-  read object_name 
-fi
 
 
 if [ $print_help -eq 1 ]; then
@@ -90,6 +85,13 @@ Related commands: a_put, a_find, a_info
 EOF
 
 fi 
+
+if [[ $object_name == "" ]]
+then
+  echo "Please give the object to retrieve:"
+  read object_name 
+fi
+
 
 #Configure rclone
 if [ ! -e $HOME/.config/rclone ]
@@ -286,14 +288,14 @@ if [[ $is_tar_file -eq 1 ]]; then
        mkdir -p $target_name
        cd $target_name
      fi
-     rclone cat ${storage_server}:/$object_name | zstd -d | tar -x -o $file_name  
+     rclone cat ${storage_server}:/$object_name | zstdmt -d | tar -x -o $file_name  
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi
 else
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
-       rclone cat ${storage_server}:/$object_name | zstd -d >  $target_name
+       rclone cat ${storage_server}:/$object_name | zstdmt -d >  $target_name
     else 
        rclone copy ${storage_server}:/$object_name  $target_name
     fi
