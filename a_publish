@@ -39,7 +39,8 @@ do
                   shift
                 ;;
              '--os_file' | '-o' )
-                  tmp_file=($2)
+                  partial_path=$(dirname $2)
+                  tmp_file=$(basename $2)
                   shift
                   shift
                 ;;
@@ -234,7 +235,7 @@ do
     exit 1
   fi
 
-  file_path=$(abspath $1)
+  file_path=$(abspath $input)
 
   echo "Checking total size of $input. Please wait."
   tot_size=$(du -s $input | cut -f1)
@@ -243,7 +244,7 @@ do
   #tmp file name. Depens on compression and is file is a directory
   if [  $tmp_file == "not_defined" ]
   then
-     tmp_file=($(echo $input | tr " " "_" ))
+     tmp_file=($(basename $input | tr " " "_" ))
   fi
 
 
@@ -302,7 +303,7 @@ do
     # For less than 5GB files rclone is used for uploading
     
     echo "Uploading data to allas."
-    echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+    # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
     rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
     exitcode=$?
     if [ $exitcode -ne 0 ]; then
@@ -352,7 +353,7 @@ do
 
   echo "$input uploaded to ${bucket_name}"
 
-  echo "Publick link: https://object.pouta.csc.fi/${bucket_name}${partial_path}/$tmp_file"
+  echo "Publick link: https://object.pouta.csc.fi/${bucket_name}/${partial_path}/$tmp_file"
   tmp_file=("not_defined")
 
 done

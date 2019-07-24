@@ -9,8 +9,6 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_root=("/tmp")
-tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 object_with_bucket=(0)
@@ -159,7 +157,7 @@ check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
-  objects=($(a_find | grep "$object_name"))
+  objects=($(a_find -a | grep "$object_name"))
   if [ ${#objects[@]} -eq 1 ]; then
     echo "Did you mean this object:"
     echo "  $objects"

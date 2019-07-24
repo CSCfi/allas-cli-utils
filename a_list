@@ -1,0 +1,149 @@
+#!/bin/bash 
+
+# variables
+storage_server=("pouta")
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+user=($USER)
+bucket_name=("")
+print_help=(0)
+os_project_name=("none")
+options=("")
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--lh' | '-l' )
+                  options=("$options --lh")
+                  shift
+                ;;
+                '-p' )
+                  options=("$options -p $2")
+                  shift
+                  shift
+                ;;
+             '--help' | '-h' )
+                  print_help=(1)
+                  shift
+                ;;
+             *)
+                   if [[ $bucket_name != "" ]]; then
+                      echo "unknown option: $1"
+                      echo "Bucket name is: $bucket_name"
+                      exit 1
+                   fi
+                   bucket_name=("$1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+This tool is used to list buckets and objects in Allas. If bucket name is not defined, all buckets are listed.
+
+   a_list <bucket_name>
+
+Options:
+
+-l, --lh <project_ID>   Print out detaled listing of the bukects or objects in a bucket.
+
+-p                      List only objects startting with the given prefix
+
+Related commands: a_put, a_get, a_delete, a_find
+
+EOF
+exit 0
+fi 
+
+#Configure rclone
+if [ ! -e $HOME/.config/rclone ]
+then 
+  mkdir -p  $HOME/.config/rclone
+fi
+if [ -e $HOME/.config/rclone/rclone.conf ]
+then 
+   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
+   if [ $rc_check -lt 1 ]
+   then
+      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
+   fi
+else
+   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
+fi
+
+#Assign project to be used if not defined 
+if [ $os_project_name == "none" ]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+     #echo      $os_project_name    $OS_PROJECT_NAME
+     if [[ $os_project_name != $OS_PROJECT_NAME ]]
+     then 
+        echo "Switching allas configuration to use project $os_project_name"
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
+        export OS_PROJECT_NAME=$os_project_name
+     fi 
+  else
+     echo "Default project is not defined"
+     source  $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+  else
+     echo "Switching allas configuration to use project $os_project_name"
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
+     export OS_PROJECT_NAME=$os_project_name
+fi
+
+# run list command
+#Check if connection works
+
+test=$(swift stat 2> /dev/null | grep -c "Account:")
+if [[ $test -lt 1 ]]
+then 
+  echo "No connection to Allas!"
+  echo "Please try setting the the connection again."
+  echo "by running command:"
+  echo ""
+  echo "   source $allas_conf_path"
+  exit 1 
+fi
+
+#echo "swift list $options $bucket_name | grep -v '_meta$'"
+swift list $options $bucket_name | grep -v "_meta$"
+
+exit 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
