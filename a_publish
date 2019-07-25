@@ -1,5 +1,8 @@
 #!/bin/bash 
 
+#read static variables
+source $(dirname "$0")/a_env_conf
+
 if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a file to be uploaded to allas as an argument of this command."
@@ -7,11 +10,7 @@ then
   exit 1
 fi
 
-# max size in KB
-max_size=500000000
-max_files=100000
-storage_server=("pouta")
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+# local variables
 user=($USER)
 tmp_file=("not_defined")
 bucket_name=("not_defined")
@@ -19,7 +18,6 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_root=("/tmp")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 

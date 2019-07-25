@@ -6,12 +6,10 @@ then
   echo ""
   exit 1
 fi
+#read static variables
+source $(dirname "$0")/a_env_conf
 
-# max size in KB
-max_size=500000000
-max_files=100000
-storage_server=("pouta")
-allas_conf_path=("/appl/opt/allas_conf")
+#local variables
 user=($USER)
 bucket_name=("not_defined")
 tmp_file=("not_defined")
@@ -20,7 +18,6 @@ os_project_name=("none")
 input_def=("")
 mode=("swift")
 compression=(1)
-tmp_root=("/tmp")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 

@@ -1,7 +1,9 @@
 #!/bin/bash
 
+#read common variables
+source $(dirname "$0")/a_env_conf
 
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
 bucket_name=("${project_label}-BACKUP")

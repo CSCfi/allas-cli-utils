@@ -1,8 +1,9 @@
 #!/bin/bash 
 
-# variables
-storage_server=("pouta")
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#read common variables
+source $(dirname "$0")/a_env_conf
+
+#local variables
 user=($USER)
 bucket_name=("not_defined")
 silent=(0)
@@ -10,7 +11,6 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_root=("$WRKDIR")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 show_filelist=(0)
 query=("")

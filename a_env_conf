@@ -1,0 +1,7 @@
+#Common settngs for a_ -tools
+storage_server=("pouta")
+
+allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+max_size=500000000
+max_files=100000
+tmp_root=("/tmp")

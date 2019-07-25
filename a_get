@@ -1,8 +1,10 @@
 #!/bin/bash 
 
-# variables
-storage_server=("pouta")  
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#read static variables
+source $(dirname "$0")/a_env_conf
+
+
+# local variables
 user=($USER)
 object_name=("")              #object to retrieve
 file_name=("")                #file to retrieve
@@ -11,7 +13,6 @@ new_target=(0)                #do we create a new directory
 print_help=(0)
 os_project_name=("none")     
 mode=("swift")
-tmp_root=("/tmp")
 tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
