@@ -1,7 +1,8 @@
 #!/bin/bash
 
-#read common variables
-source $(dirname "$0")/a_env_conf
+#read static variables
+inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
 
 #allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 os_project_name=$OS_PROJECT_NAME
