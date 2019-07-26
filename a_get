@@ -16,6 +16,7 @@ mode=("swift")
 tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
+object_with_bucket=(0)
 
 
 #Process command line
@@ -166,6 +167,7 @@ fi
 #input=("$1")
 
 #check that object exists
+
 check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
@@ -187,32 +189,33 @@ if [ $check_os -ne 1 ]; then
     echo "   a_find $object_name"
   fi
   exit 1
+else
+  echo object_with_bucket
+  object_with_bucket=(1)
 fi
 
 
+## check if object name congains bucket
+
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-MISC")
+#fi
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-HOME")
+#fi
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-HOME")
+#fi
 
 
-# check if object name congains bucket
-object_with_bucket=(0)
-if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
-then 
-  object_with_bucket=(1) 
-  bucket=("${user}-${project_label}-MISC")
-fi
-if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
-then 
-  object_with_bucket=(1) 
-  bucket=("${user}-${project_label}-HOME")
-fi
-if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
-then 
-  object_with_bucket=(1) 
-  bucket=("${user}-${project_label}-HOME")
-fi
-
-
-# check all buckets if the buckte is not deifned
-if [ $object_with_bucket == 0 ]
+# check all buckets if the bucket is not deifned
+if [[ $object_with_bucket -eq 0 ]]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
   num_buckets=(0)
@@ -227,7 +230,6 @@ then
       bucket=("$bn")
     fi
   done
-  
   if [[ $num_buckets -eq 0 ]]; then
      echo ""
      echo "Could not find object: $object_name "

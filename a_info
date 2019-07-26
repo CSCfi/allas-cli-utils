@@ -155,6 +155,11 @@ if [[ $object_with_bucket == 2 ]]; then
      object_with_bucket=(1)
 fi
 
+# this checks os objectname contains bucket name
+check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
+if [ $check_os -eq 1 ]; then
+  object_with_bucket=(1)
+fi
 
 # check if object name contains bucket (if not defined with bucket)
 if [[ $object_with_bucket == 0 ]]; then
