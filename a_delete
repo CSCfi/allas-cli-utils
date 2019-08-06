@@ -1,11 +1,13 @@
 #!/bin/bash 
 
+#default user
+user=($USER)
+
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
 
 #local variables
-user=($USER)
 object_name=("")
 print_help=(0)
 os_project_name=("none")

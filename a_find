@@ -21,6 +21,11 @@ all_buckets=(0)
 while [[ $# -ge 1 ]]
 do
   case "$1" in
+             '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;               
              '--bucket' | '-b' )
              # query file
                   bucket_name=($2)

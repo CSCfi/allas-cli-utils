@@ -7,12 +7,15 @@ then
   exit 1
 fi
 
+
+#default user
+user=($USER)
+
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
 
 #local variables
-user=($USER)
 bucket_name=("not_defined")
 tmp_file=("not_defined")
 print_help=(0)
@@ -22,6 +25,12 @@ mode=("swift")
 compression=(1)
 silent=(0)
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
+
+
+
+
+
+
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -60,6 +69,13 @@ do
                   print_help=(1)
                   shift
                 ;;
+             '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;
+
+
              *)
                    input_def=("$input_def $1")
                    shift                       # No more switches
@@ -252,7 +268,7 @@ do
   #tmp file name. Depens on compression and is file is a directory
   if [  $tmp_file == "not_defined" ]
   then
-    if [[ $(file -b $input ) != "directory" ]]
+    if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
     then
        if [[ $compression -eq 1 ]]; then
           tmp_file=($(basename $input | tr " " "_" )".zst")
@@ -328,7 +344,7 @@ do
   num_files=0
   for f in $(find $input)
   do 
-    if [[ $(file -b $f ) != "directory" ]]
+    if [[ $(file -b $f | grep -c directory) -ne 1 ]]
     then     
        ls -l $f >>  ${tmp_dir}/${tmp_file}_meta
        (( num_files = num_files + 1 ))
@@ -384,7 +400,7 @@ do
 
   #Pakkaaminen
   if [[ $compression -eq 1 ]]; then
-     if [[ $(file -b $input ) != "directory" ]]
+     if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
      then
         if [[ $silent -eq 0 ]] ; then
           echo "Compressing $input"

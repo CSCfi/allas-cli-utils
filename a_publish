@@ -1,5 +1,9 @@
 #!/bin/bash 
 
+
+#default user
+user=($USER)
+
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
@@ -12,7 +16,6 @@ then
 fi
 
 # local variables
-user=($USER)
 tmp_file=("not_defined")
 bucket_name=("not_defined")
 print_help=(0)
@@ -219,7 +222,7 @@ do
     exit 1
   fi
   
-  if [[ $(file -b $input ) == "directory" ]]
+  if [[ $(file -b $input | grep -c directory ) -eq 1 ]]
   then
     echo "This command can only be used to publish files, not directories."
     exit 1

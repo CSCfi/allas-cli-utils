@@ -26,16 +26,16 @@ buk=(1)
 while [[ $# -ge 1 ]]
 do
   case "$1" in
-             '-objects')
+             '-o' | '--objects')
              buk=(0)
              shift
              ;;
-             '-user')
+             '-u' | '--user')
              export OS_USERNAME=$2
              shift
              shift
              ;;
-             '-keeppasswd')
+             '-k' | '--keeppasswd')
              keep_password=(1)
              shift
              ;;
@@ -74,7 +74,7 @@ do
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
-  source $allas_conf_path -silent -keeppasswd $pro
+  source $allas_conf_path --silent --keeppasswd $pro
   for kont in $(swift list )
   do 
     if [ $buk -ne 1 ]; then

@@ -81,7 +81,7 @@ export OS_IDENTITY_API_VERSION=3
 while [[ $# -ge 1 ]]
 do
   case "$1" in
-             '-mode')
+             '-m' | '--mode')
              if [ $2 == "s3cmd" ]; then
                 use_swift=(0)
                 use_s3cmd=(1)
@@ -93,20 +93,20 @@ do
              shift
              shift
              ;;
-             '-show_keys')
+             '-w' | '--show_keys')
               show_keys=(1)
               shift
              ;;
-             '-user')
+             '-u' | '--user')
              export OS_USERNAME=$2
              shift
              shift
              ;;
-             '-keeppasswd')
+             '-k' | '--keeppasswd')
              keep_password=(1)
              shift
              ;;
-             '-silent')
+             '-s'| '--silent')
              silent_mode=(1)
              shift
              ;;
@@ -174,7 +174,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
       return
    fi
 
-   # If user has just one projcet, use it
+   # If user has just one project, use it
    if [[ $OS_PROJECT_NAME == "" && $num_projects -eq 1 ]]
    then 
       export OS_PROJECT_NAME=$all_projects
@@ -236,7 +236,7 @@ if [ $use_swift -eq 1 ]; then
     if [  $os_test == "x" ] ; then 
        echo ""
        echo "Swift authentication failed!"
-       echo "Are you sure that the used password and projet ID are valid?"
+       echo "Are you sure that the password and project ID are valid?"
        echo "Please try again."
        return 
     else 
@@ -319,6 +319,10 @@ if [ $use_s3cmd -eq 1 ]; then
    --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
    --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
 fi
+
+#reset allas_default
+echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+echo "user=$USER" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
 unset OS_AUTH_URL

@@ -1,11 +1,13 @@
 #!/bin/bash 
 
+#default user
+user=($USER)
+
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
 
 # local variables
-user=($USER)
 object_name=("")              #object to retrieve
 file_name=("")                #file to retrieve
 target_name=("")              #where to store the results
