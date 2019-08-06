@@ -322,7 +322,7 @@ fi
 
 #reset allas_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-echo "user=$USER" >>  $HOME/.allas_default
+echo "user=$OS_USERNAME" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
 unset OS_AUTH_URL
