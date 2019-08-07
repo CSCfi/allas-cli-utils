@@ -435,7 +435,16 @@ do
   else
      #this is not a good approach.
      #test if a symbolic link would do
-     cp $input ${tmp_dir}/$tmp_file  
+       if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+       then
+           cp $input ${tmp_dir}/$tmp_file
+       else
+           echo ""
+           echo "Error:"
+           echo "a_put can not upload directories without zstdmt compression."
+           echo "If you wish to skip compression, you can upload only individual files."
+           exit 1
+       fi
   fi
   
   if [[ $silent -eq 0 ]] ; then

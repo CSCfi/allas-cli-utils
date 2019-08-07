@@ -63,75 +63,26 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tools is used to upload data from the disk environment of Taito and Puhti to 
-allas storage environmnet. The basic syntax of the command is:
 
-   a_put directory_or_file
+a_publish copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
+uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*. 
+a_publish works mostly like a_put but there are some differences: 
+1) a_publish can upload only files, not directories. 
+2) files are not compressed but they uploaded as they are. 
+3) the access control of the target bucket is set so that it is available in read-only mode to the internet.
 
-By defualt this tool performs followiong operations:
+The basic syntax of the command is:
 
-1. Ensures that you have working connection to Allas storage service and 
-defines the project that will be used to store the data.
+```
+a_publish file_name
+```
+By default, the file is uploaded to a bucket _username-projectNumber_-pub. You can define other bucket names too using option _-b_ but you should note that this command will make all data in the bucket publicly accessible, including data that has been previously uploaded to the bucket.
 
-2. In case of directory, the content of the directory is collected into single file
-(using tar command).
+The public URL to a data object is:
 
-3. Data is compressed using zstdmt command unles you diable compression  with option: --nc
+https://object.pouta.csc.fi/_username_-_projectNumber_-pub/_object_name_
 
-4. The compressed data is uploaded to Allas using rclone command and swift protocol.
-
-The location were data is stored in allas can be defined with options
---bucket (-b) and --os_file (-b).
-
- The default option is that data that locates in 
-  a) $WRKDIR is uploaded to bucket:  username-poject_number-SCRATCH
-and the data that locates in
-  b) $HOME is uploaded to: username-poject_number-HOME
-
-  c) in other cases the data uploaded to: username-poject_number-MISC
-
-For example for user kkaytaj belonging in project_12345,data locatioing in home directory
-will be uploaded to bucket:  kkayttaj-12345-HOME.
-
-THe compressed dataset will be stored as one object. The object name depends on the
-file name and location.  The logic used is that the possible subdirectory path in Taito is included 
-in the object name. E.g. a file called test_1.txt in $WRKDIR can be stored with commands:
-
-   cd $WRKDIR
-   a_put test_1.txt
-
-In this case the file is stored to bucket: kkayttaj-12345-SCRATCH 
-as object: test_1.txt.zst
-
-If you have another file called test_1.txt that locates in location $WRKDIR/project2/sample3
-you can store it with commands:
-   
-  cd $WRKDIR/project2/sample3
-  a_put test_1.txt
-  
-Or commmands
-  cd $WRKDIR
-  a_put project2/sample3/test_1.txt
-
-In this case the file is stored to bucket: kkayttaj-12345-SCRATCH 
-as object:  project2/sample3/test_1.txt.zst
-
-Options
-
--b, --bucket <bucket_name>  Define a name of the bucket into which the data is uploaded.
-
--p, --project <project_ID>  Upload data into buckets of the defined project in stead of the currently configured project.
-
--o, --os_file <object_name> Define a name for the new object top be created.
-
---s3cmd                     Use s3cmd protocol for upoload in stead of swift protocol.
-
--n, --nc                    Do not compress the data that will be uploaded.
-
--h, --help                  Print this help.
-
-
-Related commands: a_find, a_get, a_delete, a_info
+An object uploaded with _a_publish_ can be removed from Allas with command _a_delete_.
 EOF
 
 exit 

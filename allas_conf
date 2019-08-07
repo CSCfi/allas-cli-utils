@@ -162,7 +162,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
         return
    fi
 
-   all_projects=$(openstack project list --my-projects -c Name -f value)
+   all_projects=$(openstack project list --my-projects -c Name -f value --os-username $OS_USERNAME)
    echo $all_projetcs
    num_projects=$(echo $all_projects | wc -w )
    if [[ $num_projects -lt 1 ]]
