@@ -266,7 +266,17 @@ fi
 #assign name for output file if not defined 
 is_compressed=(0)
 if [[ ${object_name:(-4):4} == ".zst" ]]; then
-  is_compressed=(1) 
+  is_compressed=(1)
+  #check if zstdmt is available
+   if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""      
+      echo "The data object you are trying to retrteve is compressed"
+      echo "with program: zstdmt that is not found in this server!"
+      echo ""
+      echo "Please install and add zstdmt to your command path."
+      echo ""
+      exit 1
+   fi 
 fi
 
 

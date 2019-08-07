@@ -10,6 +10,7 @@ fi
 
 #default user
 user=($USER)
+compression=(1)
 
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
@@ -22,12 +23,8 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-compression=(1)
 silent=(0)
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
-
-
-
 
 
 
@@ -57,6 +54,10 @@ do
                   mode=("s3cmd")
                   shift
                 ;;
+             '--compress' | '-c')
+                  compression=(1)
+                  shift
+                ;;              
              '--nc' | '-n' )
                   compression=(0)
                   shift
@@ -98,9 +99,12 @@ defines the project that will be used to store the data.
 2. In case of directory, the content of the directory is collected into single file
 (using tar command).
 
-3. Data is compressed using zstdmt command unles you diable compression  with option: --nc
+3. By default option --compress (-c), is used. This means that the data is compressed using zstd command.
+   This is the recommended way if you will be using the data only in CSC computing servers. 
+   If you plan to use the uploaded dataset in other that Linux servers, where zstd compression may not be available,
+   you can disable compression with option --nc (-n).
 
-4. The compressed data is uploaded to Allas using rclone command and swift protocol.
+4. The data is uploaded to Allas using rclone command and swift protocol.
 
 The location were data is stored in allas can be defined with options
 --bucket (-b) and --os_file (-b).
@@ -211,6 +215,17 @@ then
     echo "Please try setting the the connection again."
     exit 1
   fi 
+fi
+
+#Check if zstdmt is needed and available
+if [[ $compression -eq 1 ]]; then
+   if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo "Compression command: zstdmt is not available"
+      echo "Please install zstdmt or use option --nc:"
+      echo "  a_put --nc "
+      echo "To skip zstdmt compression during upload."
+      exit 1
+   fi
 fi
 
 #source /appl/opt/allas_conf
