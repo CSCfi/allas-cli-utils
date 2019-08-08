@@ -228,6 +228,19 @@ if [[ $compression -eq 1 ]]; then
    fi
 fi
 
+#Check if rclone is needed and available
+if [[ $mode == "swift" ]]; then
+   if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+   fi
+fi
+
+
+
+
 #source /appl/opt/allas_conf
 #input=("$1")
 
@@ -264,9 +277,9 @@ do
     input=$(echo $input | cut -c 1-$sl)
   fi
  
-  #check that file name does not end with _meta
-  if [[ ${input:(-5):5} == "_meta" ]]; then
-    echo "Found a file/directoryname which ends with _meta"
+  #check that file name does not end with _ameta
+  if [[ ${input:(-5):5} == "_ameta" ]]; then
+    echo "Found a file/directoryname which ends with _ameta"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of a_put"
@@ -352,16 +365,16 @@ do
   fi
 
   #collect and count metadata
-  echo "user: $user" >> ${tmp_dir}/${tmp_file}_meta
-  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_meta
-  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_meta
+  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
  
   num_files=0
   for f in $(find $input)
   do 
     if [[ $(file -b $f | grep -c directory) -ne 1 ]]
     then     
-       ls -l $f >>  ${tmp_dir}/${tmp_file}_meta
+       ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
        (( num_files = num_files + 1 ))
     fi
   done
@@ -371,7 +384,7 @@ do
     echo ""
     echo "$input contains no files!"
     echo "This is probably an old directory that has been emptied by the automatic \$WRKDIR cleaning process."
-    rm -f ${tmp_dir}/${tmp_file}_meta
+    rm -f ${tmp_dir}/${tmp_file}_ameta
     rmdir ${tmp_dir} 
     exit 1
   fi
@@ -381,7 +394,7 @@ do
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
-    rm -f ${tmp_dir}/${tmp_file}_meta
+    rm -f ${tmp_dir}/${tmp_file}_ameta
     rmdir ${tmp_dir} 
     exit 1
   fi 
@@ -392,7 +405,7 @@ do
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
     echo "Available free space is ${free_space}K"
     echo ""
-    rm -f ${tmp_dir}/${tmp_file}_meta
+    rm -f ${tmp_dir}/${tmp_file}_ameta
     rmdir ${tmp_dir}
     exit 1
   fi
@@ -404,7 +417,7 @@ do
      echo "This directory contains too many files for this tool"
      echo "Number of files: $num_files is larger the $max_files"
      echo "Please use swift or rclone command to upload the data to allas"
-     rm -f ${tmp_dir}/${tmp_file}_meta
+     rm -f ${tmp_dir}/${tmp_file}_ameta
      rmdir ${tmp_dir} 
      exit 1
   fi 
@@ -479,7 +492,7 @@ do
        echo "File upload for $infile failed"
        rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file 
-       rm -f ${tmp_dir}/${tmp_file}_meta
+       rm -f ${tmp_dir}/${tmp_file}_ameta
        rmdir ${tmp_dir}
        exit 1
     fi
@@ -501,7 +514,7 @@ do
          echo "Cleaning the failed upload"
          rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
          rm -f ${tmp_dir}/$tmp_file 
-         rm -f ${tmp_dir}/${tmp_file}_meta
+         rm -f ${tmp_dir}/${tmp_file}_ameta
          rmdir ${tmp_dir}
          exit 1
        fi
@@ -519,7 +532,7 @@ do
         echo "File upload for $infile failed"
         s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
         rm -f ${tmp_dir}/$tmp_file 
-        rm -f ${tmp_dir}/${tmp_file}_meta
+        rm -f ${tmp_dir}/${tmp_file}_ameta
         rmdir ${tmp_dir}
         exit 1
      fi
@@ -534,18 +547,18 @@ do
     echo ""
     echo "Adding metadata for uploaded $input"
   fi
-  #echo "rclone copy ./${tmp_file}_meta ${storage_server}:${bucket_name}/${partial_path}"
+  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
   if [ $mode == "swift" ]; then
       if [[ $silent -eq 0 ]] ; then
-          rclone copy  ${tmp_dir}/${tmp_file}_meta ${storage_server}:${bucket_name}/${partial_path}
+          rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
       else
-           rclone copy  ${tmp_dir}/${tmp_file}_meta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+           rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
       fi 
   fi
   if [ $mode == "s3cmd" ]; then
-      s3cmd put ${tmp_dir}/${tmp_file}_meta s3://${bucket_name}/${partial_path}/${tmp_file}_meta
+      s3cmd put ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
   fi
-  rm -f ${tmp_dir}/${tmp_file}_meta
+  rm -f ${tmp_dir}/${tmp_file}_ameta
 
   if [[ $silent -eq 0 ]] ; then
     echo ""

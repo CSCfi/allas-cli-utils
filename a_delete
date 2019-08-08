@@ -283,7 +283,7 @@ else
 fi 
    
 
-object_owner=$(rclone cat ${storage_server}:/${object_name}_meta |grep "^user:" | awk '{print $2}')
+object_owner=$(rclone cat ${storage_server}:/${object_name}_ameta |grep "^user:" | awk '{print $2}')
 
 if [[ $user != $object_owner ]]; then
   echo ""
@@ -296,7 +296,7 @@ fi
 #remove object
 if [[ $force -eq 1 ]]; then
    rclone deletefile ${storage_server}:/${object_name}
-   rclone deletefile ${storage_server}:/${object_name}_meta
+   rclone deletefile ${storage_server}:/${object_name}_ameta
 else
   echo ""
   echo "Are you sure want to remove object:"
@@ -305,7 +305,7 @@ else
   read ansver
   if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
      rclone deletefile ${storage_server}:/${object_name}
-     rclone deletefile ${storage_server}:/${object_name}_meta
+     rclone deletefile ${storage_server}:/${object_name}_ameta
      echo "${object_name} was deleted."
   else
      echo "${object_name} was not deleted."

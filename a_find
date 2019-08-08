@@ -1,5 +1,14 @@
 #!/bin/bash 
 
+#rclone is needed
+if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+fi
+
+
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
@@ -201,7 +210,7 @@ then
   fi
   for bn in $buckets
   do 
-    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_meta$")
+    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ameta$")
     do
         os_dirname=$(dirname "$metafile" )
         if [ $os_dirname == "." ]; then
@@ -209,7 +218,7 @@ then
         else
            os_dirname="/$os_dirname"
         fi
-        os_filename=$(basename "$metafile" _meta)
+        os_filename=$(basename "$metafile" _ameta)
         os_object=("${bn}${os_dirname}/${os_filename}")
         echo $os_object
     done
@@ -240,7 +249,7 @@ do
     echo "----------------------------------------------"
     echo "Cheking bucket: $bn"; echo ""
   fi
-  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_meta$")
+  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ameta$")
   do
      num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep -c "$query")
      if [[ $num_hits -gt 0 ]]; then
@@ -250,7 +259,7 @@ do
         else
            os_dirname="/$os_dirname"
         fi
-        os_filename=$(basename "$metafile" _meta)
+        os_filename=$(basename "$metafile" _ameta)
         os_object=("${bn}${os_dirname}/${os_filename}")
         if [ $show_filelist -eq 1 ]; then
            if [ $silent -eq 0 ]; then
@@ -264,7 +273,7 @@ do
         else 
            if [ $silent -eq 0 ]; then
              echo ""      
-             #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _meta)"
+             #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _ameta)"
              echo " Object: $os_object"
              echo " includes $num_hits file names that that match query: $query"
              echo ""

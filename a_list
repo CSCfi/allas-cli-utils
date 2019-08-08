@@ -16,6 +16,11 @@ options=("")
 while [[ $# -ge 1 ]]
 do
   case "$1" in
+             '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;
              '--lh' | '-l' )
                   options=("$options --lh")
                   shift
@@ -132,8 +137,8 @@ then
 fi
 
 
-#echo "swift list $options $bucket_name | grep -v '_meta$'"
-swift list $options $bucket_name | grep -v "_meta$"
+#echo "swift list $options $bucket_name | grep -v '_ameta$'"
+swift list $options $bucket_name | grep -v "_ameta$"
 
 exit 0
 

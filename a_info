@@ -227,7 +227,7 @@ else
 fi 
   
 rclone lsl ${storage_server}:/${object_name}
-rclone cat ${storage_server}:/${object_name}_meta
+rclone cat ${storage_server}:/${object_name}_ameta
 
 
 exit
