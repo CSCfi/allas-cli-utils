@@ -313,8 +313,8 @@ if [[ $target_name == "" ]];then
    fi 
 fi
 
-if [[ -e $target_name ]]; then
-   echo "File name: $target_name already exists!"
+if [[ -e ${target_dir}/${target_name} ]]; then
+   echo "File name:  ${target_dir}.${target_name} already exists!"
    echo "Please remove $target_name or define a different target directory name with option: --target_dir " 
    exit 1
 fi
