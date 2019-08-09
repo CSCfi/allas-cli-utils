@@ -12,6 +12,7 @@ object_name=("")              #object to retrieve
 file_name=("")                #file to retrieve
 target_name=("")              #where to store the results
 new_target=(0)                #do we create a new directory
+new_target_file=(0)
 print_help=(0)
 os_project_name=("none")     
 mode=("swift")
@@ -36,8 +37,14 @@ do
                   shift
                   shift
                 ;;
-             '--target' | '-t' )
+             '--target_file' | '-t' )
                   target_name=($2)
+                  new_target_file=(1)
+                  shift
+                  shift
+                ;;
+             '--target_dir' | '-d' )
+                  target_dir=($2)
                   new_target=(1)
                   shift
                   shift
@@ -153,6 +160,14 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
+  #here we check that rclone is available
+  if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+  fi
+  #connection test
   test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
@@ -303,19 +318,27 @@ fi
 echo "Starting to copy data from $storage_server..."
 if [[ $is_tar_file -eq 1 ]]; then
      if [[ $new_target -eq 1 ]];then
-       mkdir -p $target_name
-       cd $target_name
+       mkdir -p $target_dir
+       cd $target_dir
      fi
      rclone cat ${storage_server}:/$object_name | zstdmt -d | tar -x -o $file_name  
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi
 else
+    if [[ $new_target -eq 1 ]];then
+       target_dir=$(
+       mkdir -p $target_name
+       cd $target_name
+    fi
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
        rclone cat ${storage_server}:/$object_name | zstdmt -d >  $target_name
     else 
        rclone copy ${storage_server}:/$object_name  $target_name
+    fi
+    if [[ $new_target -eq 1 ]];then
+       cd -   
     fi
 fi 
 echo ""
