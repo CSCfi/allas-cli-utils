@@ -22,11 +22,11 @@ do
                   shift
                 ;;
              '--lh' | '-l' )
-                  options=("$options --lh")
+                  options=("$options --lh ")
                   shift
                 ;;
              '-p' | '--prefix' )
-                  options=("$options -p $2")
+                  options=("$options -p $2 ")
                   shift
                   shift
                 ;;
@@ -41,6 +41,12 @@ do
                       exit 1
                    fi
                    bucket_name=("$1")
+                   bucket_name=$(echo $1 | awk -F / '{print $1}')
+                   #split bucket and onject if needed
+                   if [[ $bucket_name != "$1" ]]; then
+                      prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)
+                      options=("$options -p $prefix_string ") 
+                   fi
                    shift                       # No more switches
                 ;;
     esac
@@ -136,10 +142,12 @@ then
   exit 1 
 fi
 
-
 #echo "swift list $options $bucket_name | grep -v '_ameta$'"
-swift list $options $bucket_name | grep -v "_ameta$"
-
+if [[ $bucket_name == "" ]]; then
+  swift list $options
+else
+  swift list $options $bucket_name | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+fi 
 exit 0
 
 
