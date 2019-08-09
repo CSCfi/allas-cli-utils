@@ -20,6 +20,7 @@ tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 object_with_bucket=(0)
+target_directory=(".")
 
 
 #Process command line
@@ -38,7 +39,11 @@ do
                   shift
                 ;;
              '--target_file' | '-t' )
-                  target_name=($2)
+                  target_name=$(basenamme $2)
+                  if [[ $(dirname $2) != "." ]]; then
+                     target_dir=$(dirname $2)
+                     new_target=(1)
+                  fi
                   new_target_file=(1)
                   shift
                   shift
@@ -310,7 +315,7 @@ fi
 
 if [[ -e $target_name ]]; then
    echo "File name: $target_name already exists!"
-   echo "Please remove $target_name or define a different output file or directory name with option: -target " 
+   echo "Please remove $target_name or define a different target directory name with option: --target_dir " 
    exit 1
 fi
   
