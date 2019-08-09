@@ -326,10 +326,9 @@ if [[ $is_tar_file -eq 1 ]]; then
        cd -   
      fi
 else
-    if [[ $new_target -eq 1 ]];then
-       target_dir=$(
-       mkdir -p $target_name
-       cd $target_name
+    if [[ $new_target_dir -eq 1 ]];then
+       mkdir -p $target_dir
+       cd $target_dir
     fi
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
