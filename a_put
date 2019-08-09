@@ -278,7 +278,7 @@ do
   fi
  
   #check that file name does not end with _ameta
-  if [[ ${input:(-5):5} == "_ameta" ]]; then
+  if [[ ${input:(-6):6} == "_ameta" ]]; then
     echo "Found a file/directoryname which ends with _ameta"
     echo "  $input"
     echo ""
@@ -370,14 +370,37 @@ do
   echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
  
   num_files=0
-  for f in $(find $input)
-  do 
-    if [[ $(file -b $f | grep -c directory) -ne 1 ]]
-    then     
-       ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
-       (( num_files = num_files + 1 ))
-    fi
+  
+  #initial check of file or directory count
+  num_check=$(find $input | wc -l )
+  if [[ $num_check -gt 100000 ]]; then
+    echo ""
+    echo "Refusing to process the data."
+    echo " "
+    echo "$input containts $num_check directories or files."
+    echo "Collecting information about all these items would take too long time"
+    echo ""
+    echo "Try uploading subdirectories of $input:"
+    echo ""
+    echo "  cd $input"
+    echo "  a_put * "
+    exit 1
+  fi
+
+
+  if [[ $num_check -gt 10000 ]]; then
+    echo "$input containts $num_check directories or files."
+    echo "Collecting information about all these items will take a long time."
+    echo "Please wait"
+  fi
+
+
+  for f in $(find $input |  file -f - | awk '{if  ( $2 != "directory") print $1}' | sed -e s/":$"/""/g )
+  do      
+    ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
+    (( num_files = num_files + 1 ))
   done
+
 
   if [ $num_files -eq 0 ]
   then
