@@ -50,7 +50,7 @@ allas_conf script requires:
  * OpenStack client (3.19 or newer)
  * swift and/or s3cmd client
 
-I additrion to the above, A_ -tools requre:
+I addition to the above, A_ -tools requre:
 
  * rclone
  * zstdmt
