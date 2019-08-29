@@ -21,7 +21,7 @@ or s3cmd to manage data in allas.
 
 
 
-A_ -tools for easy access to Allas
+1.48 tA_ -tools for easy access to Allas
 
     a_list : list buckets and objects in Allas
     a_put : upload a file or directory to Allas as one object
@@ -52,7 +52,7 @@ allas_conf script requires:
 
 I addition to the above, A_ -tools requre:
 
- * rclone
+ * rclone (1.48 or newer)
  * zstdmt
 
 
