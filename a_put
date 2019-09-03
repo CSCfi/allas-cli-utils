@@ -454,9 +454,6 @@ do
     (( num_files = num_files + 1 ))
   done
 
-  #check links 
-  num_links=$(cut -c1 ${tmp_dir}/${tmp_file}_ameta | grep -c l)
- 
 
   if [ $num_files -eq 0 ]
   then
@@ -650,17 +647,6 @@ do
   fi
   echo "${bucket_name}${partial_path}/$tmp_file"
   tmp_file=("not_defined")
-  if [[ $num_links -gt 0 ]]; then
-     if [[ $silet -eq 0 ]]; then
-       if [[ $(file -b $input | grep -c directory ) -eq 1 ]];then
-          echo ""
-          echo "NOTE: $input contains $num_links links."
-          echo "a_put will store the link information to the object"
-          echo "but the data that the links point to is not stored!"
-          echo ""
-       fi
-     fi
-  fi
 
 done
 
