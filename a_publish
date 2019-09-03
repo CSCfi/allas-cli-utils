@@ -65,24 +65,26 @@ if [ $print_help -eq 1 ]; then
 cat <<EOF
 
 a_publish copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
-uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*. 
+uploaded data object can read and download the data with a web browser or tools like wget and curl. 
 a_publish works mostly like a_put but there are some differences: 
+
 1) a_publish can upload only files, not directories. 
 2) files are not compressed but they uploaded as they are. 
 3) the access control of the target bucket is set so that it is available in read-only mode to the internet.
 
 The basic syntax of the command is:
 
-```
 a_publish file_name
-```
-By default, the file is uploaded to a bucket _username-projectNumber_-pub. You can define other bucket names too using option _-b_ but you should note that this command will make all data in the bucket publicly accessible, including data that has been previously uploaded to the bucket.
+
+By default, the file is uploaded to a bucket username-projectNumber-pub. You can define other bucket names too using option -b
+but you should note that this command will make all data in the bucket publicly accessible, 
+including data that has been previously uploaded to the bucket.
 
 The public URL to a data object is:
 
-https://object.pouta.csc.fi/_username_-_projectNumber_-pub/_object_name_
+https://object.pouta.csc.fi/username-projectNumber-pub/object_name
 
-An object uploaded with _a_publish_ can be removed from Allas with command _a_delete_.
+An object uploaded with a_publish can be removed from Allas with command a_delete.
 EOF
 
 exit 
@@ -158,9 +160,6 @@ then
    bucket_name=("${user}-${project_label}-pub")
 fi 
 echo "Bucket: $bucket_name"
-
-
-
 
 
 mkdir $tmp_dir
@@ -305,8 +304,11 @@ do
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
-
-  echo "Publick link: https://object.pouta.csc.fi/${bucket_name}/${partial_path}/$tmp_file"
+  if [[ $partial_path == "" ]]; then 
+     echo "Publick link: https://object.pouta.csc.fi/${bucket_name}/$tmp_file"
+  else 
+     echo "Publick link: https://object.pouta.csc.fi/${buket_name}/${partial_path}/$tmp_file"
+  fi
   tmp_file=("not_defined")
 
 done

@@ -8,12 +8,15 @@ then
 fi
 
 
+
 #default user
 user=($USER)
 compression=(1)
 
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
+inst_root=("/appl/opt/allas-cli-utils/")
+
 source $inst_root/a_env_conf
 
 #local variables
@@ -248,8 +251,12 @@ fi
 
 if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
 then
-  quota_s=($(lfs quota -q -u $USER $WRKDIR))
-  free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
+  quota_s=($(lfs quota -q -u $USER $SCRATCH | tail -1 ))
+   lfs quota -q -u $USER $SCRATCH | tail -1
+  
+  #echo "a${quota_s[0]}a x${quota_s[1]}x - y${quota_s[2]}y y${quota_s[3]}y"
+
+  free_space=$(expr ${quota_s[0]} - ${quota_s[1]})
 else
   free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
 fi
@@ -313,18 +320,64 @@ do
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
   if [ $bucket_name == "not_defined" ]
   then
+     ## Taito
+     #Taito home
      bucket_name=("${user}-${project_label}-MISC")
      if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
      then
         bucket_name=("${user}-${project_label}-HOME")
         partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
-        echo "Partial_path: $partial_path"
-         fi
+     fi
+     #Taito wrk
      if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
      then
-        bucket_name=("${user}-${project_label}-SCRATCH")
+        bucket_name=("${user}-${project_label}-WRKDIR")
         partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
      fi
+     echo $file_path  | cut -c1-8
+ 
+     ## Puhti
+     # In Puhti we check if puhti-project and Allas project match
+     #Puhti scratch
+     if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]]; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/scartch\/$puhti_project"/""/g)
+     fi
+     #Puhti projappl
+     if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]]; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/scartch\/$puhti_project"/""/g)
+     fi
+
   fi 
 
 
