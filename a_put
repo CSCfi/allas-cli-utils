@@ -252,7 +252,7 @@ fi
 if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
 then
   quota_s=($(lfs quota -q -u $USER $SCRATCH | tail -1 ))
-   lfs quota -q -u $USER $SCRATCH | tail -1
+  # lfs quota -q -u $USER $SCRATCH | tail -1
   
   #echo "a${quota_s[0]}a x${quota_s[1]}x - y${quota_s[2]}y y${quota_s[3]}y"
 
