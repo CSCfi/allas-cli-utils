@@ -59,8 +59,7 @@ I addition to the above, A_ -tools requre:
 
 Exaple: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
 
-
-
+```text
 #install pip and openstack client
 sudo apt install python-pip python-dev
 sudo apt-get install python-setuptools
@@ -73,5 +72,5 @@ curl https://rclone.org/install.sh | sudo bash
 git clone https://github.com/CSCfi/allas-cli-utils
 cd  allas-cli-utils/
 export PATH=${PATH}:$(pwd)
-
+```
  
