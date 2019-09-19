@@ -7,18 +7,18 @@ In many cases, effective usage of Allas requires that the user knows the feature
 both Object Storage systems and the software or protocol that is used to manage data in Allas.
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, 
-CSC provides a set of commands for moving data between CSC computing environment and Allas. 
-The available Allas tools are:
+CSC provides a set of commands (a_ tools ) for moving data between CSC computing environment and Allas.
 
 
 Connection configuration tool: allas_conf can be used to configure swift or s3cmd connections to
 allas. The basic syntax of this tool is
 
+```text
    source allas_conf --user your-CSC-user-account
+```
 
 After successfull connection configuration you can start using tools like, swift, rclone, restic, A_tools
 or s3cmd to manage data in allas.
-
 
 
 1.48 tA_ -tools for easy access to Allas
