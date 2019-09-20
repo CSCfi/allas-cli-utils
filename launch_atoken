@@ -1,0 +1,32 @@
+#!/bin/bash
+
+
+if [[ ! ${SLURM_JOB_ACCOUNT+x} ]]; then
+   echo ""
+   echo "This command can only be used inside a batch job"
+   exit 1
+fi
+
+test=$(swift stat 2> /dev/null | grep -c "Account:")
+if [[ $test -lt 1 ]]
+then 
+  echo "Unable to launch active token process as there is no athenticated connection to Allas!"
+  echo "Please try setting the the connection again."
+  echo "by running command:"
+  echo ""
+  echo "   source /appl/opt/allas_conf"
+  echo ""
+  echo "Ending the batch job."
+  scancel $SLURM_JOB_ID
+  exit 1 
+fi
+
+
+if [[ ! -e "/scratch/${SLURM_JOB_ACCOUNT}/.active_tokens" ]]; then
+  mkdir /scratch/${SLURM_JOB_ACCOUNT}/.active_tokens
+fi
+
+password=$(openssl rand -base64 32| tr ":" "p" )
+tokenfile=("/scratch/${SLURM_JOB_ACCOUNT}/.active_tokens/token_${SLURM_JOBID}")
+keep_tokens_alive.sh $password  $tokenfile  > /dev/null 2>&1  &
+echo ${password}:${tokenfile}

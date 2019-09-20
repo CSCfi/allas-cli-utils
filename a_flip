@@ -1,0 +1,319 @@
+#!/bin/bash 
+
+
+#default user
+user=($USER)
+
+#read static variables
+inst_root="/appl/opt/allas-cli-utils"
+#inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
+
+if [[ $# -lt 1 ]]
+then
+  echo "Please give the name of a file to be uploaded to allas as an argument of this command."
+  echo ""
+  exit 1
+fi
+
+# local variables
+tmp_file=("not_defined")
+bucket_name=("not_defined")
+print_help=(0)
+os_project_name=("none")
+input_def=("")
+mode=("swift")
+tmp_dir=("${tmp_root}/a_put_$$_tmp")
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--project' | '-p' )
+                  os_project_name=($2)
+                  shift
+                  shift
+                ;;
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+                ;;
+             *)
+                   input_def=("$input_def $1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+a_flip is a tool to make individual files temporaraily available in the internet.
+
+a_flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
+uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*. 
+a_publish works mostly like a_publich but there are some differences: 
+1) only the predfined bucket name ( _username-projectNumber_-flip ) can be used
+2) When the command is executed it automatically deletes objects that are oldes than two days
+
+The basic syntax of the command is:
+
+```
+a_flip file_name
+```
+The file is uploaded to a bucket _username-projectNumber_-flip. You can define other bucket names can't be used.
+The URL to the uploaded object is:
+
+https://a3s.fi/username-projectNumber-flip/object_name
+
+After uploading the file to the public flip bucket, it checks the the content of the bucket and
+removes object that were uploaded more than two days ago. 
+
+EOF
+
+exit 
+
+fi 
+
+#Configure rclone
+if [ ! -e $HOME/.config/rclone ]
+then 
+  mkdir -p  $HOME/.config/rclone
+fi
+if [ -e $HOME/.config/rclone/rclone.conf ]
+then 
+   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
+   if [ $rc_check -lt 1 ]
+   then
+      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
+   fi
+else
+   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
+fi
+
+#Assign project to be used if not defined 
+if [ $os_project_name == "none" ]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+     if [[ $os_project_name != $OS_PROJECT_NAME ]]
+     then 
+        echo "Switching allas configuration to use project $os_project_name"
+        source $allas_conf_path -user $user $os_project_name
+     fi 
+  else
+     echo "Default project is not defined"
+     source $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+fi
+source $HOME/.allas_default
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+  test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then 
+    echo "No connection to Allas!"
+    echo "Please try setting the the connection again."
+    exit 1
+  fi 
+fi
+
+#source /appl/opt/allas_conf
+#input=("$1")
+
+#check free space in $WRKDIR
+#quota_s=($(lfs quota -q -u $USER $WRKDIR))
+#free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
+
+echo "Files to be uploaded: $input_def"
+
+#set default bucket
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+bucket_name=("${user}-${project_label}-flip")
+
+mkdir $tmp_dir
+
+for input in $input_def
+do 
+  echo "Processing: $input"
+  if [ ! -e $input ] ; then
+    echo "File: $input does not exist!"
+    exit 1
+  fi
+  
+  if [[ $(file -b $input | grep -c directory ) -eq 1 ]]
+  then
+    echo "This command can only be used to publish files, not directories."
+    exit 1
+  fi
+ 
+  #check that file name does not end with _ameta
+  if [[ ${input:(-5):5} == "_ameta" ]]; then
+    echo "Found a file/directoryname which ends with _ameta"
+    echo "  $input"
+    echo ""
+    echo "Please rename this file as it will mix up a the metadata management of a_put"
+    exit 1
+  fi
+
+  file_path=$(abspath $input)
+
+  echo "Checking total size of $input. Please wait."
+  tot_size=$(du -s $input | cut -f1)
+  #echo $tot_size
+
+  #tmp file name. Depens on compression and is file is a directory
+  if [  $tmp_file == "not_defined" ]
+  then
+     tmp_file=($(basename $input | tr " " "_" ))
+  fi
+
+
+  #Check if stored file already exitst 
+  echo "rclone ls ${storage_server}:${bucket_name}/$tmp_file"
+
+  if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
+  then
+    echo ""
+    echo "A file/directory with the same name has already been uploaded into"
+    echo "bucket $bucket_name in $storage_server"
+    echo ""
+    echo "rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file  "
+    rclone ls ${storage_server}:${bucket_name}/$tmp_file  
+    echo ""
+    echo "Remove the old file if you wish to upload a new version of $input to $storage_server."
+    echo "Optionally you can define different bucket name using option -bucket ."
+    exit 1
+  fi
+
+  #collect and count metadata
+  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
+  echo ""
+  ls -l $input >>  ${tmp_dir}/${tmp_file}_ameta
+  
+  if [[ $tot_size -gt $max_size ]]
+  then 
+    echo "This file or directory is too big for this tool"
+    echo "Total size: ${tot_size}K"
+    echo "Please use swift or rclone command to upload the data to allas"
+    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rmdir ${tmp_dir} 
+    exit 1
+  fi 
+
+#  if [[ $tot_size -gt $free_space ]]
+#  then 
+#    echo "There is not enough space for the temporary files."
+#    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
+#    echo "Available free space is ${free_space}K"
+#    echo ""
+#    rm -f ${tmp_dir}/${tmp_file}_ameta
+#    rmdir ${tmp_dir}
+#    exit 1
+#  fi
+
+  #this is not a good approach.
+  #test if a symbolic link would do
+  cp $input ${tmp_dir}/$tmp_file  
+
+  #upload
+
+  if [ $mode == "swift" ]
+  then
+    # For less than 5GB files rclone is used for uploading
+    
+    echo "Uploading data to allas."
+    # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+    rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+    exitcode=$?
+    if [ $exitcode -ne 0 ]; then
+       echo ""
+       echo "File upload for $infile failed"
+       rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+       rm -f ${tmp_dir}/$tmp_file 
+       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rmdir ${tmp_dir}
+       exit 1
+    fi
+
+    # rclone md5sums can be calculated only for files that are smaller than 5GB
+    if [[ $tmp_size -lt 5000000 ]]
+    then
+       echo "Confirming upload..."
+       #checksums for local and allas files 
+       sum1=($(md5sum ${tmp_dir}/$tmp_file))
+       sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
+ 
+       #check is cheksums match 
+       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+       then 
+         echo "Upload of $input was not successfull!"
+         echo "Cleaning the failed upload"
+         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+         rm -f ${tmp_dir}/$tmp_file 
+         rm -f ${tmp_dir}/${tmp_file}_ameta
+         rmdir ${tmp_dir}
+         exit 1
+       fi
+       echo "$input OK"
+    fi
+  fi
+
+
+  #echo "Remopving temporary file"
+  rm -f  ${tmp_dir}/$tmp_file
+
+  #update metadata
+  echo ""
+  echo "Adding metadata for uploaded $input"
+  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}" 
+  rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+  
+  rm -f ${tmp_dir}/${tmp_file}_ameta
+
+  echo "$input uploaded to ${bucket_name}"
+  echo "Publick link: https://a3s.fi/${bucket_name}/$tmp_file"
+ 
+  tmp_file=("not_defined")
+
+done
+
+#Clean old files from flip bucket
+for object_name in $(rclone lsl ${storage_server}:${bucket_name} | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
+do 
+  #  echo "removing: ${object_name}."
+  rclone deletefile ${storage_server}:${bucket_name}/${object_name}
+done
+
+#Publish and rebuild index file
+
+echo '<html>' >  ${tmp_dir}/index.html
+for i in $(swift list $bucket_name | grep -v '_ameta$' )
+do 
+echo '<li><a href="'$i'">'$i'</a></li>' >> ${tmp_dir}/index.html
+done
+echo '</html>' >>  ${tmp_dir}/index.html
+rclone copy  ${tmp_dir}/index.html ${storage_server}:${bucket_name}/
+
+rm -f   ${tmp_dir}/index.html
+
+#set access control
+swift post ${bucket_name} --read-acl ".r:*,.rlistings"
+
+rmdir  ${tmp_dir}
+echo ""
+echo "Upload ready."
+echo "The public link will be valid for at least one day."
+exit 0
