@@ -146,7 +146,8 @@ fi
 if [[ $bucket_name == "" ]]; then
   swift list $options
 else
-  swift list $options $bucket_name | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+  #
+  swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
 fi 
 exit 0
 

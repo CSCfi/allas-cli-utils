@@ -82,7 +82,7 @@ including data that has been previously uploaded to the bucket.
 
 The public URL to a data object is:
 
-https://object.pouta.csc.fi/username-projectNumber-pub/object_name
+https://a3s.fi/username-projectNumber-pub/object_name
 
 An object uploaded with a_publish can be removed from Allas with command a_delete.
 EOF
@@ -201,7 +201,7 @@ do
 
 
   #Check if stored file already exitst 
-  if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) > 2 ]]
+  if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
   then
     echo ""
     echo "A file/directory with the same name has already been uploaded into"
@@ -305,9 +305,9 @@ do
 
   echo "$input uploaded to ${bucket_name}"
   if [[ $partial_path == "" ]]; then 
-     echo "Publick link: https://object.pouta.csc.fi/${bucket_name}/$tmp_file"
+     echo "Publick link: https://a3s.fi/${bucket_name}/$tmp_file"
   else 
-     echo "Publick link: https://object.pouta.csc.fi/${buket_name}/${partial_path}/$tmp_file"
+     echo "Publick link: https://a3s.fi/${buket_name}/${partial_path}/$tmp_file"
   fi
   tmp_file=("not_defined")
 

@@ -335,3 +335,12 @@ unset OS_REGION_NAME
 unset OS_INTERFACE
 unset OS_IDENTITY_API_VERSION
 
+#check if rclone and restic are available
+if [[ $(which rclone 2>/dev/null | wc -c) -eq 0 ]]
+then 
+   echo "NOTE: rclone command was not found."
+fi
+if [[ $(which restic 2>/dev/null | wc -c) -eq 0 ]]
+then 
+   echo "NOTE: restic command was not found."
+fi

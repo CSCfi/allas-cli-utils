@@ -235,7 +235,7 @@ fi
 # check all buckerts if a specific bucket is not defined
 if [[ "$bucket_name" == "not_defined" ]]
 then
-  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
+  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-WRKDIR ${project_label}-SCRATCH ${project_label}-PROJAPPL")
   #echo $buckets
 else
   buckets=$bucket_name 
