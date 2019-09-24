@@ -20,6 +20,7 @@ tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 object_with_bucket=(0)
+to_orig_dir=(0)
 target_directory=(".")
 
 
@@ -59,6 +60,13 @@ do
                   shift
                   shift
                 ;;
+             '--original_location' |  '-l' )
+                  to_orig_dir=(1) 
+                  shift
+                ;;
+
+
+
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -329,6 +337,13 @@ else
    fi
 fi
   
+#If selected, extract to the same place were data was from.
+if [[ to_orig_dir -eq 1 ]]; then
+   orig_dir=$(dirname$(rclone cat  ${storage_server}:/$object_name | awk '{ if ( $1 == "original_location:" ) print $2}'))
+   exe_dir=$(pwd)
+   mkdir -p $orig_dir
+   cd $orig_dir
+fi
 
 echo "Starting to copy data from $storage_server..."
 

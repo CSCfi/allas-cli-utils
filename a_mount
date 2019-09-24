@@ -1,0 +1,230 @@
+#!/bin/bash 
+
+#default user
+user=($USER)
+
+#read static variables
+inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
+
+# local variables
+bucket_name=("")              #object to retrieve
+mount_point=("")              #where to store the results
+print_help=(0)
+os_project_name=("none")     
+mode=("swift")
+query=("")
+object_with_bucket=(0)
+target_directory=(".")
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--bucket' | '-b')
+             # query file
+                  bucket_name=($2)
+                  shift
+                  shift
+                ;;
+             '--project' | '-p' )
+                  os_project_name=($2)
+                  shift
+                  shift
+                ;;
+             '--readonly' | '-r' )
+                  os_project_name=($2)
+                  shift
+                  shift
+             ;;
+             '--mountpoint' | '-m' )
+                  mount_point=$(basename $2)
+                  if [[ $(dirname $2) != "." ]]; then
+                     target_dir=$(dirname $2)
+                     mount_point=(1)
+                  fi
+                  new_target_file=(1)
+                  shift
+                  shift
+                ;;
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+                ;;
+             *)
+                   if [[ $bucket_name != "" ]]; then
+                      echo "unknown option: $1"
+                      echo "Object name is: $object"
+                      exit 1
+                   fi
+                   bucket_name=("$1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+if [[ $mount_point == "" ]]; then
+   mount_point=$bucket_name
+fi
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+This tool mount a bucket in Allas to be used as a read-only disk areas.
+Syntax of the command is:
+
+  a_mount <bucket_name>
+
+By default the beucket is mounted to a directory named after the bucket.
+You can use optional mount points with option -m (--mountpoint)
+   
+   a_mount <bucket_name> -m <dir_name>
+
+
+EOF
+
+exit 0
+
+fi 
+
+if [[ $bucket_name == "" ]]
+then
+  echo "Please give the bucket to mount:"
+  a_list
+  read bucket_name 
+fi
+
+
+#Configure rclone
+if [ ! -e $HOME/.config/rclone ]
+then 
+  mkdir -p  $HOME/.config/rclone
+fi
+if [ -e $HOME/.config/rclone/rclone.conf ]
+then 
+   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
+   if [ $rc_check -lt 1 ]
+   then
+      echo '['"$storage_service"']'  >>  $HOME/.config/rclone/rclone.conf
+      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
+   fi
+else
+   echo '['"$storage_service"']' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
+fi
+
+#Assign project to be used if not defined 
+if [ $os_project_name == "none" ]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+
+     #echo      $os_project_name    $OS_PROJECT_NAME
+     if [[ $os_project_name != $OS_PROJECT_NAME ]]
+     then 
+        echo "Switching allas configuration to use project $os_project_name"
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
+        export OS_PROJECT_NAME=$os_project_name
+     fi 
+  else
+     echo "Default project is not defined"
+     source $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+  else
+     echo "Switching allas configuration to use project $os_project_name"
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
+     export OS_PROJECT_NAME=$os_project_name
+fi
+
+#source $HOME/.allas_default
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+  #here we check that rclone is available
+  if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+  fi
+  #connection test
+  test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then 
+    echo "No connection to Allas!"
+    echo "Please try setting the the connection again."
+    echo "by running command:"
+    echo ""
+    echo "   source $allas_conf_path"
+    exit 1
+  fi 
+fi
+
+#source /appl/opt/allas_conf
+#input=("$1")
+
+#check that bucket exists
+
+
+check_bucket=$(rclone lsd ${storage_server}:$bucket_name 2>&1 | wc -l)
+if [ $check_bucket -ne 0 ]; then
+  echo "Bucket name: $bucket_name not found in $storage_server."
+  echo ""
+  echo "Exucute command:  a_list "
+  echo "to see the available buckets"
+fi
+
+#Test if the target file already axists
+#echo "Target: ${target_dir}/${target_name}"
+if [[ -e ${mount_point} ]]; then
+    if [[ $( find $mount_point | wc -l ) -gt 1 ]];then
+       echo "Mount point: $mount_point is not an empty directory"
+       exit 1
+    fi
+else
+    mkdir $mount_point  
+fi
+  
+#mount
+rclone mount ${storage_server}:$bucket_name $mount_point --read-only --daemon --daemon-timeout 10800
+
+echo "Allas bucket: $bucket_name is mounted to $mount_point"
+
+
+
+
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

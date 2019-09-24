@@ -375,7 +375,7 @@ do
              exit 0
           fi
         fi
-        partial_path=$(dirname $file_path | sed -e s/"\/scartch\/$puhti_project"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
 
   fi 
