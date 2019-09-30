@@ -173,7 +173,7 @@ fi
 
 
 #define standatrd buckests 
-std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-puhti-SCRATCH ${user}-${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
+std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
 
 #check all buckerts if a specific bucket is not defined
 if [[ "$bucket_name" == "not_defined" ]]
