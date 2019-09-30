@@ -307,7 +307,7 @@ do
      #Taito wrk
      if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
      then
-        bucket_name=("${user}-${project_label}-${local_host}-$WRKDIR")
+        bucket_name=("${user}-${project_label}-${local_host}-WRKDIR")
         partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
      fi
  
