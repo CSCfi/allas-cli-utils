@@ -22,6 +22,7 @@ query=("")
 object_with_bucket=(0)
 to_orig_dir=(0)
 target_directory=(".")
+exe_dir=$(pwd)
 
 
 #Process command line
@@ -61,12 +62,9 @@ do
                   shift
                 ;;
              '--original_location' |  '-l' )
-                  to_orig_dir=(1) 
+                  to_orig_dir=(1)                  
                   shift
                 ;;
-
-
-
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -117,27 +115,6 @@ if [[ $object_name == "" ]]
 then
   echo "Please give the object to retrieve:"
   read object_name 
-fi
-
-
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '['"$storage_service"']'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '['"$storage_service"']' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
 fi
 
 #Assign project to be used if not defined 
@@ -247,7 +224,8 @@ fi
 # check all buckets if the bucket is not deifned
 if [[ $object_with_bucket -eq 0 ]]
 then
-  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
+  #define standatrd buckests 
+  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
   num_buckets=(0)
 
   # go through the buckets
@@ -307,7 +285,6 @@ if [[ ${object_name:(-4):4} == ".zst" ]]; then
    fi 
 fi
 
-
 is_tar_file=(0)
 if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
   is_tar_file=(1) 
@@ -320,6 +297,15 @@ if [[ $target_name == "" ]];then
       target_name=$(basename $object_name .zst)
    fi 
 fi
+
+
+if [[ $to_orig_dir -eq 1 ]]; then
+  #read original locatio
+
+  #move to orig
+  #cd 
+fi
+
 
 #Test if the target file already axists
 #echo "Target: ${target_dir}/${target_name}"
