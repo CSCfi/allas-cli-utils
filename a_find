@@ -126,26 +126,6 @@ exit
 
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
-fi
-
 #Assign project to be used if not defined 
 if [ $os_project_name == "none" ]
 then
@@ -192,6 +172,20 @@ then
 fi
 
 
+#define standatrd buckests 
+std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-puhti-SCRATCH ${user}-${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
+
+#check all buckerts if a specific bucket is not defined
+if [[ "$bucket_name" == "not_defined" ]]
+then
+  buckets=$std_buckets
+  #echo $buckets
+else
+  buckets=$bucket_name 
+fi
+
+
+
 #list all objects if query is not defined
 if [[ $query == "" ]]
 then
@@ -200,14 +194,6 @@ then
   echo "Listing all objects but not files within them:"
   echo " "
 
-  #check all buckerts if a specific bucket is not defines
-  if [[ "$bucket_name" == "not_defined" ]]
-  then
-     buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
-     #echo $buckets
-  else
-     buckets=$bucket_name 
-  fi
   for bn in $buckets
   do 
     for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ameta$")
@@ -231,15 +217,6 @@ fi
 
 #source /appl/opt/allas_conf
 #input=("$1")
-
-# check all buckerts if a specific bucket is not defined
-if [[ "$bucket_name" == "not_defined" ]]
-then
-  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-WRKDIR ${project_label}-SCRATCH ${project_label}-PROJAPPL")
-  #echo $buckets
-else
-  buckets=$bucket_name 
-fi
 
 total_hits=(0)
 total_objects=(0)
