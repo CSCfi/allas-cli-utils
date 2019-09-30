@@ -1,26 +1,20 @@
 #!/bin/bash 
 
-# To use an OpenStack cloud you need to authenticate against the Identity
-# service named keystone, which returns a **Token** and **Service Catalog**.
-# The catalog contains the endpoints for all services the user/tenant has
-# access to - such as Compute, Image Service, Identity, Object Storage, Block
-# Storage, and Networking (code-named nova, glance, keystone, swift,
-# cinder, and neutron).
-#
-# *NOTE*: Using the 3 *Identity API* does not necessarily mean any other
-# OpenStack API is version 3. For example, your cloud provider may implement
-# Image API v1.1, Block Storage API v2, and Compute API v2.0. OS_AUTH_URL is
-# only for the Identity API served through keystone.
+# This is a help tool to set up connections to the Allas storage service
+# https://a3s.fi
 
+
+## 1. Print help if asked.
+##
 if [[ $1 == "-h" ||  $1 == "-help" ||  $1 == "--help" ]]
 then
-  echo "This script sets up the swift and/or s3cmd environment so that you can access your Pouta Object Storage service "
-  echo "The name of the cPouta project to be used can be defined as a command line argument."
+  echo "This script sets up the swift and/or s3cmd environment so that you can access Allas storage service. "
+  echo "The name of the Allas project to be used can be defined as a command line argument."
   echo ""
   echo "   source allas_conf <proj_name>"
   echo ""
   echo "If the project name is not defined, the available project names are listed and"
-  echo "you are asked to define the project name"
+  echo "you are asked to define the project name based on the list."
   echo ""
   echo "The program asks your CSC password before starting the configuration process."
   echo ""
@@ -57,9 +51,10 @@ then
   return
 fi
 
-
+## 2. Define variables
+##
 #interenal variables
-storage_service=("pouta")
+storage_service=("allas")
 show_keys=(0)
 use_swift=(1)
 use_s3cmd=(0)
@@ -77,7 +72,8 @@ export OS_REGION_NAME="regionOne"
 export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
 
-
+## 3. Go through the command line arguments
+##
 while [[ $# -ge 1 ]]
 do
   case "$1" in
@@ -117,6 +113,10 @@ do
     esac
 done
 
+## 3. Check  that swift and/or s3cmd are available
+##
+
+
 if [[ $use_s3cmd -eq 1 ]]
 then
    if [[ $(which s3cmd 2>/dev/null | wc -c) -eq 0 ]]
@@ -137,6 +137,8 @@ then
    fi
 fi
 
+## 4. Ask for CSC password
+##
 # With Keystone you pass the keystone password.
 if [ -z "$OS_PASSWORD" ]; then 
    echo "Please enter CSC password for account ${OS_USERNAME}: "
@@ -144,7 +146,10 @@ if [ -z "$OS_PASSWORD" ]; then
    export OS_PASSWORD=$OS_PASSWORD_INPUT
 fi
 
-#Check that we see something
+
+## 5. Check if OpenStack is available and connection to OS_AUTH_URL accessible 
+##    Assign the project to be used.
+##
 if [ -z "$OS_PROJECT_NAME" ]; then
    
    echo "Checking projects available for your account."
@@ -154,11 +159,18 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    then 
         echo "openstack command not found!"
         echo ""
-        echo "In Taito, try executing setup command:"
+        echo "Try executing setup command:"
         echo ""
-        echo "  module load bioconda/3 "
+        echo "  module load allas "
         echo ""
         echo "To make openstack available"
+        echo ""
+        echo "openstack is not needed for Swift based connections,"
+        echo "if you define the project name as an argument for allas_conf "
+        echo ""
+        echo "   source allas_conf allas_project_name"
+        echo ""
+        echo "You can use https://my.csc.fi to check the project names"
         return
    fi
 
@@ -206,10 +218,16 @@ if [ -z "$OS_PROJECT_NAME" ]; then
      export OS_PROJECT_NAME=$(echo $OS_PROJECT_NAME | awk '{print $1}')
    fi  
 fi
+
+## 6.Define authentication
+##
+
 ##############################################
 # swift authentication is the default option
 ##############################################
 
+## 6.1 Authenticate with swift
+##
 if [ $use_swift -eq 1 ]; then
     # authenticate and save token to environment variable
     source <(swift auth)    
@@ -222,13 +240,13 @@ if [ $use_swift -eq 1 ]; then
        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
        if [ $silent_mode -ne 1 ]; then
            echo ""
-           echo "$storage_service service added to the rclone configuration file"
+           echo "$storage_service service added to the rclone configuration file."
        fi
     else 
        if [ $silent_mode -ne 1 ]; then
           echo ""
           echo "$storage_service definition already found in the rclone configuration file."
-          echo "Configuration was not changed"
+          echo "Configuration was not changed."
        fi
     fi
        
@@ -241,15 +259,18 @@ if [ $use_swift -eq 1 ]; then
        return 
     else 
         if [ $silent_mode -ne 1 ]; then
-          echo "swift connection configured"
+          echo "Swift connection configured successfully."
           echo " "
-          echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-          echo "OS_STORAGE_URL = $OS_STORAGE_URL"
+          #echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+          #echo "OS_STORAGE_URL = $OS_STORAGE_URL"
         fi
 
     fi
 fi
 
+
+## 6.2 Authenticate with s3cmd
+##
 
 #########################
 # s3cmd configuration
@@ -262,7 +283,7 @@ if [ $use_s3cmd -eq 1 ]; then
         echo ""
         echo "Try executing setup command:"
         echo ""
-        echo "  module load bioconda/3 "
+        echo "  module load allas "
         echo ""
         echo "To make openstack available"
         return
@@ -315,10 +336,17 @@ if [ $use_s3cmd -eq 1 ]; then
    echo ""
    echo "---------------------------------------------------------------"
 
-   s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
-   --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
-   --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
+ s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
+ --host=a3s.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
+ --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg 
+
+
+ #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
+ #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
+ #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
 fi
+
+## 7. Create allas_default and unset some variables
 
 #reset allas_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
