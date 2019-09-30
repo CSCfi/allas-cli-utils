@@ -225,8 +225,14 @@ fi
 
 if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
 then
-  quota_s=($(lfs quota -q -u $USER $SCRATCH | tail -1 ))
-  free_space=$(expr ${quota_s[0]} - ${quota_s[1]})
+  if [[ $local_host == "taito" ]];then
+     quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
+     free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
+  fi
+  if [[ $local_host == "puhti" ]];then
+     quota_s=($(lfs quota -q -u $USER $SCRATCH | tail -1 ))
+     free_space=$(expr ${quota_s[0]} - ${quota_s[1]})
+  fi
 else
   free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
 fi
@@ -295,16 +301,15 @@ do
      bucket_name=("${user}-${project_label}-MISC")
      if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
      then
-        bucket_name=("${user}-${project_label}-HOME")
+        bucket_name=("${user}-${project_label}-${local_host}-HOME")
         partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
      fi
      #Taito wrk
      if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
      then
-        bucket_name=("${user}-${project_label}-WRKDIR")
+        bucket_name=("${user}-${project_label}-${local_host}-$WRKDIR")
         partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
      fi
-     echo $file_path  | cut -c1-8
  
      ## Puhti
      # In Puhti we check if puhti-project and Allas project match
@@ -326,7 +331,7 @@ do
              exit 0
           fi
         fi
-        partial_path=$(dirname $file_path | sed -e s/"\/scartch\/$puhti_project"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/scratch\/$puhti_project"/""/g)
      fi
      #Puhti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
