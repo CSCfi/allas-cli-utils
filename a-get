@@ -1,0 +1,411 @@
+#!/bin/bash 
+
+#default user
+user=($USER)
+
+#read static variables
+inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
+
+# local variables
+object_name=("")              #object to retrieve
+file_name=("")                #file to retrieve
+target_name=("")              #where to store the results
+new_target=(0)                #do we create a new directory
+new_target_file=(0)
+print_help=(0)
+os_project_name=("none")     
+mode=("swift")
+tmp_dir=("${tmp_root}/a_get_$$_tmp")
+show_filelist=(0)
+query=("")
+object_with_bucket=(0)
+to_orig_dir=(0)
+orig_dir=("")
+target_directory=(".")
+exe_dir=$(pwd)
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--object' | '-o')
+             # query file
+                  object_name=($2)
+                  shift
+                  shift
+                ;;
+             '--project' | '-p' )
+                  os_project_name=($2)
+                  shift
+                  shift
+                ;;
+             '--target_file' | '-t' )
+                  target_name=$(basename $2)
+                  if [[ $(dirname $2) != "." ]]; then
+                     target_dir=$(dirname $2)
+                     new_target=(1)
+                  fi
+                  new_target_file=(1)
+                  shift
+                  shift
+                ;;
+             '--target_dir' | '-d' )
+                  target_dir=($2)
+                  new_target=(1)
+                  shift
+                  shift
+                ;;
+             '--file' |  '-f' )
+                  file_name=($2)
+                  shift
+                  shift
+                ;;
+             '--original_location' |  '-l' )
+                  to_orig_dir=(1)                  
+                  shift
+                ;;
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+                ;;
+             *)
+                   if [[ $object_name != "" ]]; then
+                      echo "unknown option: $1"
+                      echo "Object name is: $object"
+                      exit 1
+                   fi
+                   object_name=("$1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+This tool is used to download data that has been uploaded to Allas service using the a-put command.
+The basic syntax of the comand is:
+
+   a-get object_name
+
+By default the object is retrieved and uncompressed 
+
+Options:
+
+-p, --project <project_ID>  Search matches form the buckets of the defined project in stead of the currently configured project. 
+
+
+-f, --file <file_name>      Retrieve just a specific file or directory from the stored dataset. Note that you need to define
+                            the full path of the file or directory within the sotered object
+
+-t, --target <dir_name>     If this option is defined, a new target directory is created and the data is retrieved there.
+
+
+Related commands: a-put, a-find, a-info, a-delete
+
+EOF
+
+exit 0
+
+fi 
+
+if [[ $object_name == "" ]]
+then
+  echo "Please give the object to retrieve:"
+  read object_name 
+fi
+
+#Assign project to be used if not defined 
+if [ $os_project_name == "none" ]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+
+     #echo      $os_project_name    $OS_PROJECT_NAME
+     if [[ $os_project_name != $OS_PROJECT_NAME ]]
+     then 
+        echo "Switching allas configuration to use project $os_project_name"
+        source $allas_conf_path -user $user $os_project_name -keeppasswd
+        export OS_PROJECT_NAME=$os_project_name
+     fi 
+  else
+     echo "Default project is not defined"
+     source $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+  else
+     echo "Switching allas configuration to use project $os_project_name"
+     source $allas_conf_path -user $user $os_project_name -keeppasswd
+     export OS_PROJECT_NAME=$os_project_name
+fi
+
+#source $HOME/.allas_default
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+  #here we check that rclone is available
+  if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+  fi
+  #connection test
+  test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then 
+    echo "No connection to Allas!"
+    echo "Please try setting the the connection again."
+    echo "by running command:"
+    echo ""
+    echo "   source $allas_conf_path"
+    exit 1
+  fi 
+fi
+
+#source /appl/opt/allas_conf
+#input=("$1")
+
+#check that object exists
+
+check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
+if [ $check_os -ne 1 ]; then
+  echo "Object name: $object_name not found in $storage_server."
+  echo ""
+  objects=($(a_find | grep "$object_name"))
+  if [ ${#objects[@]} -eq 1 ]; then
+    echo "Did you mean this object:"
+    echo "  $objects"
+  fi
+  if  [ ${#objects[@]} -gt 1 ]; then   
+    echo "Did you mean some of these objects:"
+    for on in ${objects[@]}
+    do 
+        echo "  $on"
+    done
+  fi
+  if [ ${#objects[@]} -eq 0 ]; then
+    echo "Try running command:"
+    echo "   a_find $object_name"
+  fi
+  exit 1
+else
+  #echo object_with_bucket
+  object_with_bucket=(1)
+fi
+
+
+## check if object name congains bucket
+
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-MISC")
+#fi
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-HOME")
+#fi
+#if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
+#then 
+#  object_with_bucket=(1) 
+#  bucket=("${user}-${project_label}-HOME")
+#fi
+
+
+# check all buckets if the bucket is not deifned
+if [[ $object_with_bucket -eq 0 ]]
+then
+  #define standatrd buckests 
+  buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
+  num_buckets=(0)
+
+  # go through the buckets
+  for bn in $buckets
+  do 
+    bucket_found=$(rclone ls ${storage_server}:$bn/$object_name 2> /dev/null | wc -l)
+    if [ $bucket_found -eq 1 ]; then
+       echo "Bucket: $bn contains object:$object_name"
+      (( num_buckets = num_buckets + 1 ))
+      bucket=("$bn")
+    fi
+  done
+  if [[ $num_buckets -eq 0 ]]; then
+     echo ""
+     echo "Could not find object: $object_name "
+     exit 1
+  fi
+  if [[ $num_buckets -gt 1 ]]; then
+     echo ""
+     echo "Object $object_name was found in several buckets!"
+     echo "Please ionclude bucket name in the object name"
+     exit 1
+  fi
+  
+  #add bucket to the object name
+  object_name=("$bucket/$object_name")
+else
+  #check if object exists
+  bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
+  if [ $bucket_found -ne 1 ]; then
+     a_find 
+
+     echo ""
+     echo "Object $object_name was not found"
+     echo ""
+     echo "You can list all the available objects with command:"
+     echo "   a_find"
+  fi
+fi 
+   
+
+
+
+#assign name for output file if not defined 
+is_compressed=(0)
+if [[ ${object_name:(-4):4} == ".zst" ]]; then
+  is_compressed=(1)
+  #check if zstdmt is available
+   if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""      
+      echo "The data object you are trying to retrteve is compressed"
+      echo "with program: zstdmt that is not found in this server!"
+      echo ""
+      echo "Please install and add zstdmt to your command path."
+      echo ""
+      exit 1
+   fi 
+fi
+
+is_tar_file=(0)
+if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
+  is_tar_file=(1) 
+fi 
+
+if [[ $target_name == "" ]];then 
+   if [[ $is_tar_file -eq 1 ]]; then
+      target_name=$(basename $object_name .tar.zst) 
+   else
+      target_name=$(basename $object_name .zst)
+   fi 
+fi
+
+
+#If selected, extract to the same place were data was from.
+if [[ to_orig_dir -eq 1 ]]; then
+   orig_dir=$(dirname$(rclone cat  ${storage_server}:/$object_name | awk '{ if ( $1 == "original_location:" ) print $2}'))
+   mkdir -p $orig_dir
+   cd $orig_dir
+fi
+
+
+
+#Test if the target file already axists
+#echo "Target: ${target_dir}/${target_name}"
+if [[ ${target_dir} == "" ]]; then
+  if [[ -e ${target_name} ]]; then
+    echo "File name: ${target_name} already exists!"
+    echo "Please remove $target_name or define a different target directory name with option: --target_dir " 
+    exit 1
+  fi
+else
+   if [[ -e ${target_dir}/${target_name} ]]; then
+      echo "File name:  ${target_dir}/${target_name} already exists!"
+      echo "Please remove ${target_dir}/$target_name or define a different target directory name with option: --target_dir " 
+   exit 1
+   fi
+fi
+  
+
+echo "Starting to copy data from $storage_server..."
+
+
+if [[ $is_tar_file -eq 1 ]]; then
+     #Processing of a tar/directory
+     if [[ $new_target -eq 1 ]];then
+       if [[ -e $target_dir ]]; then
+          check_dir=$(file -b $target_dir)
+       else
+          mkdir -p $target_dir
+       fi
+       if [[ $(file -b $target_dir) != "directory" ]]; then
+            echo "Unable to create directory: $target_dir"
+            exit 1
+       fi
+       cd $target_dir
+     fi
+     rclone cat ${storage_server}:/$object_name | zstdmt -d | tar -x -o $file_name  
+     if [[ $new_target -eq 1 ]];then
+       cd -   
+     fi
+else
+    #processing of a file
+    if [[ $new_target -eq 1 ]];then
+       if [[ -e $target_dir ]]; then
+          check_dir=$(file -b $target_dir)
+       else
+          mkdir -p $target_dir
+       fi
+       if [[ $(file -b $target_dir) != "directory" ]]; then
+            echo "Unable to create diretory: $target_dir"
+            exit 1
+       fi
+       cd $target_dir
+    fi
+    # uncompress if needed
+    if [[ $is_compressed -eq 1 ]]; then 
+       rclone cat ${storage_server}:/$object_name | zstdmt -d >  $target_name
+    else 
+       rclone copy ${storage_server}:/$object_name  $target_name
+    fi
+    if [[ $new_target -eq 1 ]];then
+       cd -   
+    fi
+fi 
+echo ""
+echo "Object:"
+echo "  $object_name "
+echo "copied and uncompressed from $storage_server into:"
+if [[ $target_dir == "" ]]; then
+   echo "  ${orig_dir}${target_name}"
+else
+   echo "  ${orig_dir}${target_dir}/${target_name}"
+fi
+cd $exe_dir
+
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
