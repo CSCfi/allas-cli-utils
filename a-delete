@@ -280,25 +280,29 @@ else
      echo "Object $object_name was not found"
      echo ""
      echo "You can list all the available objects with command:"
-     echo "   a_find"
+     echo "   a-find"
   fi
 fi 
    
+ameta_found=$(rclone ls ${storage_server}:/${object_name}_ameta 2> /dev/null | wc -l)
+if [ $ameta_found -eq 1 ]; then
+   object_owner=$(rclone cat ${storage_server}:/${object_name}_ameta |grep "^user:" | awk '{print $2}')
 
-object_owner=$(rclone cat ${storage_server}:/${object_name}_ameta |grep "^user:" | awk '{print $2}')
-
-if [[ $user != $object_owner ]]; then
-  echo ""
-  echo "Your username ($user) is not matching to the username assigned to the object ($object_owner)"
-  echo "You can use option -user to enforce the deteltion tool to use aspecific user name" 
-  echo "${object_name} was not deleted"
-  exit 1
-fi  
+   if [[ $user != $object_owner ]]; then
+     echo ""
+     echo "Your username ($user) is not matching to the username assigned to the object ($object_owner)"
+     echo "You can use option -user to enforce the deteltion tool to use aspecific user name" 
+     echo "${object_name} was not deleted"
+     exit 1
+   fi  
+fi
 
 #remove object
 if [[ $force -eq 1 ]]; then
    rclone deletefile ${storage_server}:/${object_name}
-   rclone deletefile ${storage_server}:/${object_name}_ameta
+   if [ $ameta_found -eq 1 ]; then
+      rclone deletefile ${storage_server}:/${object_name}_ameta
+   fi
 else
   echo ""
   echo "Are you sure want to remove object:"
@@ -307,7 +311,9 @@ else
   read ansver
   if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
      rclone deletefile ${storage_server}:/${object_name}
-     rclone deletefile ${storage_server}:/${object_name}_ameta
+     if [ $ameta_found -eq 1 ]; then
+       rclone deletefile ${storage_server}:/${object_name}_ameta
+     fi
      echo "${object_name} was deleted."
   else
      echo "${object_name} was not deleted."
