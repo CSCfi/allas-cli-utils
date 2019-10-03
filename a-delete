@@ -68,11 +68,10 @@ do
     esac
 done
 
-#if [[ $object_name == "" ]]
-#then
-#  echo "Please give the name of the object to be deleted:"
-#  read object_name 
-#fi
+if [[ $object_name == "" ]]
+then
+  print_help=1
+fi
 
 
 if [ $print_help -eq 1 ]; then
@@ -91,7 +90,10 @@ Options:
 
 -u, --user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
 
--f, --force                  Don't as confirmation when deleting a file
+-f, --force                  Don't ask confirmation when deleting a file
+ 
+--rmb                        Remove empty bucket
+
 
 Related commands: a-put, a-get, a-find, a-info
 EOF
