@@ -97,7 +97,7 @@ Options:
 
 Related commands: a-put, a-get, a-find, a-info
 EOF
-
+exit
 fi 
 
 #Configure rclone
