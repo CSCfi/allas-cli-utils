@@ -149,7 +149,7 @@ fi
 #echo "swift list $options $bucket_name | grep -v '_ameta$'"
 if [[ $dir_like -eq 1 ]]; then
   #echo rclone lsf ${storage_server}:${full_name}
-  rclone lsf ${storage_server}:${full_name}
+  rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
   exit 0
 fi
 
