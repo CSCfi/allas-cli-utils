@@ -232,7 +232,7 @@ then
      free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
   fi
   if [[ $local_host == "puhti" ]];then
-     quota_s=($(lfs quota -q -u $USER $SCRATCH | tail -1 ))
+     quota_s=($(lfs quota -q -u $USER $tmp_root | tail -1 ))
      free_space=$(expr ${quota_s[0]} - ${quota_s[1]})
   fi
 else
