@@ -145,7 +145,13 @@ then
 fi
 
 if [[ $object_name == "" ]] ; then 
-  a-find
+  for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
+  do
+    echo "-------------------------------"
+    echo "Bucket: $buc"
+    rclone size ${storage_server}:$buc
+    echo ""
+  done
   echo ""
   echo "Total summary of data in ${storage_server}"
   rclone about ${storage_server}:

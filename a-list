@@ -11,6 +11,7 @@ bucket_name=("")
 print_help=(0)
 os_project_name=("none")
 options=("")
+dir_like=(0)
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -25,11 +26,11 @@ do
                   options=("$options --lh ")
                   shift
                 ;;
-             '-p' | '--prefix' )
-                  options=("$options -p $2 ")
-                  shift
-                  shift
-                ;;
+             '--dir' | '-d' )
+                dir_like=(1)
+                shift
+             ;;
+
              '--help' | '-h' )
                   print_help=(1)
                   shift
@@ -40,7 +41,8 @@ do
                       echo "Bucket name is: $bucket_name"
                       exit 1
                    fi
-                   bucket_name=("$1")
+                   
+                   full_name=("$1")
                    bucket_name=$(echo $1 | awk -F / '{print $1}')
                    #split bucket and onject if needed
                    if [[ $bucket_name != "$1" ]]; then
@@ -71,6 +73,8 @@ This tool is used to list buckets and objects in Allas. If bucket name is not de
 
 
 Options:
+
+-d  --dir               List content so that  / -characters on object names are used to define a directory structure.
 
 -l, --lh <project_ID>   Print out detaled listing of the bukects or objects in a bucket.
 
@@ -143,6 +147,12 @@ then
 fi
 
 #echo "swift list $options $bucket_name | grep -v '_ameta$'"
+if [[ $dir_like -eq 1 ]]; then
+  #echo rclone lsf ${storage_server}:${full_name}
+  rclone lsf ${storage_server}:${full_name}
+  exit 0
+fi
+
 if [[ $bucket_name == "" ]]; then
   swift list $options
 else
