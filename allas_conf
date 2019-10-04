@@ -28,7 +28,7 @@ then
   echo ""
   echo "Definition:"
   echo ""
-  echo "-mode both" 
+  echo "--mode both" 
   echo ""
   echo "will initiate both swift and s3cmd configuration."
   echo ""
@@ -39,14 +39,14 @@ then
   echo "YOU SHOULD ANSVER: y"
   echo " "
   echo "Other options:"
-  echo "  -user <username>    Define usename to be used for authentication to the storage server."
+  echo "  --user <username>    Define usename to be used for authentication to the storage server."
   echo "                      If this option is not defined, current username will be used."
   echo ""
-  echo "  -keeppasswd         Don't reset the OS_PASSWORD environment variable once the configuration"
+  echo "  --keeppasswd         Don't reset the OS_PASSWORD environment variable once the configuration"
   echo "                      is done. This can be useful if you use this tool in scripts that need to"
   echo "                      switch between projects."
   echo ""
-  echo "  -silent             Less output"
+  echo "  --silent             Less output"
               
   return
 fi
@@ -180,7 +180,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    if [[ $num_projects -lt 1 ]]
    then
       echo ""
-      echo "No cPouta projects found!"
+      echo "No Allas projects found!"
       echo "Please check that you typed your password correctly"
       unset OS_PASSWORD
       return
@@ -195,7 +195,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 
    if [[ $OS_PROJECT_NAME == "" ]]
    then 
-     echo "You have access to following cPouta projects:"
+     echo "You have access to following Allas projects:"
      echo ""
      echo -e  "Project ID        Description"
      echo "--------------------------------------------"

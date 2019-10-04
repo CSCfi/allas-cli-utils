@@ -207,7 +207,7 @@ if [[ $compression -eq 1 ]]; then
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
       echo "Compression command: zstdmt is not available"
       echo "Please install zstdmt or use option --nc:"
-      echo "  a_put --nc "
+      echo "  a-put --nc "
       echo "to skip zstdmt compression during upload."
       exit 1
    fi
@@ -267,7 +267,7 @@ do
     echo "Found a file/directoryname which ends with _ameta"
     echo "  $input"
     echo ""
-    echo "Please rename this file as it will mix up a the metadata management of a_put"
+    echo "Please rename this file as it will mix up a the metadata management of a-put"
     exit 1
   fi
 
@@ -409,19 +409,19 @@ do
     echo ""
     echo "Refusing to process the data."
     echo " "
-    echo "$input containts $num_check directories or files."
+    echo "$input contains $num_check directories or files."
     echo "Collecting information about all these items would take too long time"
     echo ""
     echo "Try uploading subdirectories of $input:"
     echo ""
     echo "  cd $input"
-    echo "  a_put * "
+    echo "  a-put * "
     exit 1
   fi
 
 
   if [[ $num_check -gt 10000 ]]; then
-    echo "$input containts $num_check directories or files."
+    echo "$input contains $num_check directories or files."
     echo "Collecting information about all these items will take a long time."
     echo "Please wait"
   fi
@@ -509,7 +509,7 @@ do
        else
            echo ""
            echo "Error:"
-           echo "a_put can not upload directories without zstdmt compression."
+           echo "a-put can not upload directories without zstdmt compression."
            echo "If you wish to skip compression, you can upload only individual files."
            exit 1
        fi

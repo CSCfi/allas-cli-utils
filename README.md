@@ -5,7 +5,7 @@ In many cases, effective usage of Allas requires that the user knows the feature
 both Object Storage systems and the software or protocol that is used to manage data in Allas.
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, 
-CSC provides a set of commands (a_ tools ) for moving data between CSC computing environment and Allas.
+CSC provides a set of commands (a- tools ) for moving data between CSC computing environment and Allas.
 
 ## Opening connection with allas_conf
 
@@ -23,19 +23,20 @@ or _s3cmd_ to manage data in allas.
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and Allas. The available tools are:
   
-|a_command | Function |
+|a-command | Function |
 | :--- | :--- |
-| a_put | Upload a file or directory to Allas as one object |
-| a_list | List buckets and objects in Allas |
-| a_publish | Upload a file to Allas into a bucket that allows public access over the internet |
-| a_get | Download a stored dataset (object) from Allas |
-| a_find | Search and locate data that has been uploaded with a_put |
-| a_delete | Delete an object from Allas |
-| a_info | Display information about an object in Allas |
+| a-put | Upload a file or directory to Allas as one object |
+| a-list | List buckets and objects in Allas |
+| a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
+| a-get | Download a stored dataset (object) from Allas |
+| a-find | Search and locate data that has been uploaded with a-put |
+| a-delete | Delete an object from Allas |
+| a-info | Display information about an object in Allas |
+| a-mount| mount tool under construction |
    
 In addition to the above command, there is saparate tool to create incremental backups:
 
-*    `a_backup` : create a backup copy of a local dataset into a backup repository in Allas
+*    `allas-backup` : create a backup copy of a local dataset into a backup repository in Allas
 
 
 ## Installing allas-cli-utils

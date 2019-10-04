@@ -6,50 +6,50 @@ echo "aaa" > test_$$/a.txt
 echo "bbb" > test_$$/b.txt
 echo "ccc" > test_$$/c.txt
 
-#a_put
+#a-put
 echo "Testing A commands"
-object=$(a_put -b allastest_$$ test_$$ -s)
+object=$(a-put -b allastest_$$ test_$$ -s)
 if [[ $object == "allastest_$$/test_$$.tar.zst" ]]; then
-  echo "a_put OK"
+  echo "a-put OK"
 else
-  echo "a_put FAILED"
+  echo "a-put FAILED"
   exit 1
 fi
 
-#a_list
-t1=$(a_list allastest_$$)
+#a-list
+t1=$(a-list allastest_$$)
 if [[ $t1 == "test_$$.tar.zst" ]]; then
-  echo "a_list OK"
+  echo "a-list OK"
 else
-  echo "a_list FAILED" 
+  echo "a-list FAILED" 
 fi
 
-#a_info
+#a-info
 
-if [[ $(a_info $object | grep -c "test_") -eq 5 ]]; then
-  echo "a_info OK"
+if [[ $(a-info $object | grep -c "test_") -eq 5 ]]; then
+  echo "a-info OK"
 else
-  echo "a_info FAILED"
+  echo "a-info FAILED"
 fi
 
 rm -rf test_$$
 
-#a_get
-a_get $object > /dev/null
+#a-get
+a-get $object > /dev/null
 if [[ $(ls  test_$$ | grep -c .txt) -eq 3 ]]; then
-  echo "a_get OK"
+  echo "a-get OK"
 else
-  echo "a_get FAILED"
+  echo "a-get FAILED"
 fi
 
-a_delete -f  $object > /dev/null
-a_delete --rmb  allastest_$$ -f > /dev/null
+a-delete -f  $object > /dev/null
+a-delete --rmb  allastest_$$ -f > /dev/null
 
 rm -rf test_$$
 
-a=$(a_list allastest_$$ 2>&1 | tr -d "'")
+a=$(a-list allastest_$$ 2>&1 | tr -d "'")
 if [[ $a == "Container allastest_$$ not found" ]]; then
-   echo "a_delete OK"
+   echo "a-delete OK"
 else
-   echo "a_delete FAILED"
+   echo "a-delete FAILED"
 fi

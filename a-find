@@ -87,7 +87,7 @@ The basic syntax of the comand is:
 
 The query term is compared to the names and original paths of the files that have been uploaded to
 Allas and the matching obects are reported (but not downloaded). Note that data, that has been uploded 
-to Allas using other tools than a_put is not included in this serach process.
+to Allas using other tools than a-put is not included in this serach process.
 
 The query term is procecced as a reqular repression where some characters, for example dot (.), have a special meaning.
 The same regular expression syntax is used with e.g. grep, awk and sed commands.
@@ -109,10 +109,10 @@ Options:
 
 -p, --project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project. 
 
--b, --bucket <bucket_name>   By default all the standard buckets, used by a_put, are searched. Option --bucket allows you to specify a 
+-b, --bucket <bucket_name>   By default all the standard buckets, used by a-put, are searched. Option --bucket allows you to specify a 
                         single bucket that will be used for the search.
 
--a, --all                    By default all the standard buckets, used by a_put, are searched. Option --all defines that all the bukets of
+-a, --all                    By default all the standard buckets, used by a-put, are searched. Option --all defines that all the bukets of
                              of the project will be included in the search.
 
 -s, --silent                 Ouput just the object names and number of hits. If -file in cluded print object name and 

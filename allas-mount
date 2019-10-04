@@ -90,7 +90,7 @@ fi
 if [[ $bucket_name == "" ]]
 then
   echo "Please give the bucket to mount:"
-  a_list
+  a-list
   read bucket_name 
 fi
 
@@ -178,7 +178,7 @@ check_bucket=$(rclone lsd ${storage_server}:$bucket_name 2>&1 | wc -l)
 if [ $check_bucket -ne 0 ]; then
   echo "Bucket name: $bucket_name not found in $storage_server."
   echo ""
-  echo "Exucute command:  a_list "
+  echo "Exucute command:  a-list "
   echo "to see the available buckets"
 fi
 

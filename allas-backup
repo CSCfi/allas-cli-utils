@@ -112,7 +112,7 @@ cat <<EOF
 allas-backup
 
 allas-backup tool provides easy to use command line interface to the restic back up tool.
-(https://restic.readthedocs.io/). a_backup automatically creates a project specific back up 
+(https://restic.readthedocs.io/). allas-backup automatically creates a project specific back up 
 repository to the Allas storage service at CSC and uses that for making cumulative back ups.
 
 In order to use this tool, you must first open connection to Allas storage service with
@@ -196,7 +196,7 @@ if [[ $task == "files" ]]
 then
   if [[ $input == "" ]]; then
      echo ""
-     echo "No snapshot name defined for command: a_backup files."
+     echo "No snapshot name defined for command: allas-backup files."
      echo "Please give the snapshot name as a command line argumnet."
      echo ""
      exit 1
@@ -209,7 +209,7 @@ if [[ $task == "find" ]]
 then
   echo "-------------------------------------------------------"
   if [[ $input == "" ]]; then
-     echo "No query term defined for command: a_backup find"
+     echo "No query term defined for command: allas-backup find"
      echo " Please give the query term as a command line argumnet."
      echo ""
      exit 1

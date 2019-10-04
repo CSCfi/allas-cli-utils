@@ -145,7 +145,7 @@ then
 fi
 
 if [[ $object_name == "" ]] ; then 
-  a_find
+  a-find
   echo ""
   echo "Total summary of data in ${storage_server}"
   rclone about ${storage_server}:
@@ -222,7 +222,7 @@ else
      echo "Object $object_name was not found"
      echo ""
      echo "You can list all the available objects with command:"
-     echo "   a_find"
+     echo "   a-find"
   fi
 fi 
   

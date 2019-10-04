@@ -162,7 +162,7 @@ do
     echo "Found a file/directoryname which ends with _ameta"
     echo "  $input"
     echo ""
-    echo "Please rename this file as it will mix up a the metadata management of a_put"
+    echo "Please rename this file as it will mix up a the metadata management of a-put"
     exit 1
   fi
 
