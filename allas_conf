@@ -113,6 +113,14 @@ do
     esac
 done
 
+if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+   echo "allas_conf should not be executed directly"
+   echo "Use sourcing in stead: "
+   echo "   source allas_conf -u CSC-usrname allas_project"
+   exit 1
+fi
+
+
 ## 3. Check  that swift and/or s3cmd are available
 ##
 
@@ -242,12 +250,12 @@ if [ $use_swift -eq 1 ]; then
            echo ""
            echo "$storage_service service added to the rclone configuration file."
        fi
-    else 
-       if [ $silent_mode -ne 1 ]; then
-          echo ""
-          echo "$storage_service definition already found in the rclone configuration file."
-          echo "Configuration was not changed."
-       fi
+   # else 
+   #    if [ $silent_mode -ne 1 ]; then
+   #       echo ""
+   #       echo "$storage_service definition already found in the rclone configuration file."
+   #       echo "Configuration was not changed."
+   #    fi
     fi
        
     os_test=("${OS_AUTH_TOKEN}x")
@@ -259,7 +267,7 @@ if [ $use_swift -eq 1 ]; then
        return 
     else 
         if [ $silent_mode -ne 1 ]; then
-          echo "Swift connection configured successfully."
+          echo "$storage_service connection configured successfully."
           echo " "
           #echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
           #echo "OS_STORAGE_URL = $OS_STORAGE_URL"
