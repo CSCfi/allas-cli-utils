@@ -2,7 +2,7 @@
  
 # Usage: this_script [-h] [token_to_ask [token_to_authenticate]]
  
-# Script to get the issued_at and expires_at times of a token from pouta object storage
+# Script to get the issued_at and expires_at times of a token from Allas
 # This script requires curl
  
 # constants
