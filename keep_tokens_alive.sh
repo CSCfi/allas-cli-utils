@@ -20,9 +20,9 @@ master_process=$3
 
 
 #constants
-limit=(1000000)
-interval=(20)
-#interval=(7200)
+limit=(1700000)
+#interval=(20)
+interval=(7200)
 sofar=(0)
 #location=(/tmp)
 OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
