@@ -7,7 +7,7 @@ then
   exit 1
 fi
 
-
+start_time=$(date +%s)
 
 #default user
 user=($USER)
@@ -234,8 +234,8 @@ then
   if [[ $local_host == "puhti" ]];then
      projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
      (( lproj = 600000000 + projnum ))
-     echo "lfs quota -p $lproj $tmp_root"
-      lfs quota -p $lproj $tmp_root
+     #  echo "lfs quota -p $lproj $tmp_root"
+     lfs quota -p $lproj $tmp_root
      quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
      free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
   fi
@@ -638,4 +638,8 @@ if [[ $silent -eq 0 ]] ; then
   echo ""
   echo "Upload ready"
 fi
+end_time=$(date +%s)
+(( kesto = end_time - start_time ))
+echo $(date) $user $bucket_name  $kesto >> $allas_log
+
 exit 0
