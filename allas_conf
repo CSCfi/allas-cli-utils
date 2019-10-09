@@ -264,6 +264,7 @@ if [ $use_swift -eq 1 ]; then
        echo "Swift authentication failed!"
        echo "Are you sure that the password and project ID are valid?"
        echo "Please try again."
+       unset OS_PASSWORD
        return 
     else 
         if [ $silent_mode -ne 1 ]; then

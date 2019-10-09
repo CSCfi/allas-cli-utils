@@ -232,8 +232,12 @@ then
      free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
   fi
   if [[ $local_host == "puhti" ]];then
-     quota_s=($(lfs quota -q -u $USER $tmp_root | tail -1 ))
-     free_space=$(expr ${quota_s[0]} - ${quota_s[1]})
+     projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
+     (( lproj = 600000000 + projnum ))
+     echo "lfs quota -p $lproj $tmp_root"
+      lfs quota -p $lproj $tmp_root
+     quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
+     free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
   fi
 else
   free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
