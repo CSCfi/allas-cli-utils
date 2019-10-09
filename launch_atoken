@@ -1,11 +1,13 @@
 #!/bin/bash
 
+master_process=$1
 
-if [[ ! ${SLURM_JOB_ACCOUNT+x} ]]; then
-   echo ""
-   echo "This command can only be used inside a batch job"
-   exit 1
-fi
+
+##if [[ ! ${SLURM_JOB_ID+x} ]]; then
+##   echo ""
+##   echo "This command can only be used inside a batch job"
+##   exit 1
+##fi
 
 test=$(swift stat 2> /dev/null | grep -c "Account:")
 if [[ $test -lt 1 ]]
@@ -16,17 +18,21 @@ then
   echo ""
   echo "   source /appl/opt/allas_conf"
   echo ""
-  echo "Ending the batch job."
-  scancel $SLURM_JOB_ID
+  if [ -n "$SLURM_JOB_ID" ]; then
+     echo "Ending the batch job."
+     scancel $SLURM_JOB_ID
+  fi
   exit 1 
 fi
 
 
-if [[ ! -e "/scratch/${SLURM_JOB_ACCOUNT}/.active_tokens" ]]; then
-  mkdir /scratch/${SLURM_JOB_ACCOUNT}/.active_tokens
+if [[ ! -e "${HOME}/.active_tokens" ]]; then
+  mkdir ${HOME}/.active_tokens
 fi
 
 password=$(openssl rand -base64 32| tr ":" "p" )
-tokenfile=("/scratch/${SLURM_JOB_ACCOUNT}/.active_tokens/token_${SLURM_JOBID}")
-keep_tokens_alive.sh $password  $tokenfile  > /dev/null 2>&1  &
+tokenfile=("${HOME}/.active_tokens/token_${master_process}")
+#echo "keep_tokens_alive.sh $password  $tokenfile $master_process "
+#keep_tokens_alive.sh $password  $tokenfile $master_process
+keep_tokens_alive.sh $password  $tokenfile $master_process > /dev/null 2>&1  &
 echo ${password}:${tokenfile}

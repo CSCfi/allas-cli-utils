@@ -258,6 +258,11 @@ do
     echo "File or directory $input does not exist!"
     exit 1
   fi
+   
+  # if active token is in use update the token
+  if [ -n "$ACTIVE_TOKEN" ]; then 
+       export OS_AUTH_TOKEN=$(check_atoken)
+  fi
 
   #Remove the trailing / if it exist
   if [ $(echo -n $input | tail -c 1) == "/" ]

@@ -3,9 +3,9 @@
 if [[ ${ACTIVE_TOKEN+x}  ]]; then
    password=$(echo $ACTIVE_TOKEN | awk -F : '{print $1}') 
    tokenfile=$(echo $ACTIVE_TOKEN | awk -F : '{print $2}') 
-   echo "cat $tokenfile | openssl enc -d -aes-256-cbc -k $password"
+   #echo "cat $tokenfile | openssl enc -d -aes-256-cbc -k $password"
    cat $tokenfile | openssl enc -d -aes-256-cbc -k $password
 else
-  echo "A_TOKEN not defined"
+  echo "ACTIVE_TOKEN not defined"
   exit 1
 fi
