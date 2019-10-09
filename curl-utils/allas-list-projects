@@ -2,7 +2,7 @@
  
 # Usage: this_script [username]
  
-# Script to get list of project names from pouta object storage
+# Script to get list of project names from Allas
 
 # This script requires curl
  
@@ -27,7 +27,7 @@ else
         fi
  
         # get password
-        echo "Please enter your CSC password to authenticate to pouta object storage as user $OS_USERNAME: "
+        echo "Please enter your CSC password to authenticate to Allas as user $OS_USERNAME: "
         read -sr OS_PASSWORD_INPUT
         OS_PASSWORD="$OS_PASSWORD_INPUT"
  
