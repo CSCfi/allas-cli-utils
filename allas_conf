@@ -113,7 +113,7 @@ do
     esac
 done
 
-if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" ]; then
    echo "allas_conf should not be executed directly"
    echo "Use sourcing in stead: "
    echo "   source allas_conf -u CSC-usrname allas_project"
