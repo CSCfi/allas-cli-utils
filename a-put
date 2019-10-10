@@ -15,7 +15,7 @@ compression=(1)
 
 #read static variables
 inst_root=$(dirname $(readlink -f $0))
-inst_root=("/appl/opt/allas-cli-utils/")
+
 
 source $inst_root/a_env_conf
 
@@ -254,14 +254,16 @@ do
   if [[ $silent -eq 0 ]] ; then
      echo "Processing: $input"
   fi
-  if [ ! -e $input ] ; then
+  if [[ ! -e $input ]] ; then
     echo "File or directory $input does not exist!"
     exit 1
   fi
    
   # if active token is in use update the token
-  if [ -n "$ACTIVE_TOKEN" ]; then 
+  if [ -n "$ACTIVE_TOKEN" ]; then
+       unset OS_AUTH_TOKEN
        export OS_AUTH_TOKEN=$(check_atoken)
+       #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
   fi
 
   #Remove the trailing / if it exist
@@ -371,6 +373,7 @@ do
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
   if [ $mode == "swift" ]
   then
+    echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
     if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
     then
       echo ""
@@ -408,7 +411,7 @@ do
   echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
   echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
   echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
+  echo "original_location: $file_path " >>  ${tmp_dir}/${tmp_file}_ameta
  
   num_files=0
   
@@ -510,11 +513,16 @@ do
         fi
      fi
   else
+  # ei pakkaamista
      #this is not a good approach.
      #test if a symbolic link would do
        if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
        then
-           cp $input ${tmp_dir}/$tmp_file
+          #echo "ln -s ${file_path} ${tmp_dir}/$tmp_file"
+
+          ln -s ${file_path} ${tmp_dir}/$tmp_file
+        
+          #cp $input ${tmp_dir}/$tmp_file
        else
            echo ""
            echo "Error:"
@@ -524,13 +532,17 @@ do
        fi
   fi
   
-  if [[ $silent -eq 0 ]] ; then
+  if [[ $compression -eq 1 ]] ; then
     #tmp file size in KB
     tmp_size=$(du ${tmp_dir}/$tmp_file | awk '{print $1}')
-        comp_rate=$(echo "scale=2; ${tot_size}/${tmp_size}" | bc )
-    echo ""
-    echo "Compression ready. Compression rate was: $comp_rate"
-    echo ""
+    if [[  $silent -eq 0 ]]; then
+       comp_rate=$(echo "scale=2; ${tot_size}/${tmp_size}" | bc )
+       echo ""
+       echo "Compression ready. Compression rate was: $comp_rate"
+       echo ""
+    fi
+  else
+    tmp_size=$tot_size
   fi
 
   #upload
@@ -544,11 +556,23 @@ do
     fi
     # echo "rclone copy --progress ./$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
     if [[ $silent -eq 0 ]] ; then
-        rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
-        exitcode=$?
+        if [[ $compression -eq 1 ]] ; then
+          #echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}" 
+          rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        else  
+          #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
+          rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi
     else
-        rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
-        exitcode=$?
+        if [[ $compression -eq 1 ]] ; then
+          rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+          exitcode=$?
+        else
+          rclone copy ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi    
     fi
    
     if [ $exitcode -ne 0 ]; then

@@ -22,7 +22,7 @@ then
   echo " "
   echo "Definition:"
   echo ""
-  echo "-mode s3cmd" 
+  echo "--mode s3cmd" 
   echo ""
   echo "will initiate s3cmd configuration in stead of swift configuration."
   echo ""
@@ -60,6 +60,7 @@ use_swift=(1)
 use_s3cmd=(0)
 keep_password=(0)
 silent_mode=(0)
+active_mode=(0)
 #default evironmnet variables
 export OS_PROJECT_NAME="" 
 export OS_PROJECT_ID=""
@@ -104,6 +105,10 @@ do
              ;;
              '-s'| '--silent')
              silent_mode=(1)
+             shift
+             ;;
+             '-a'| '--active-token')
+             active_mode=(1)
              shift
              ;;
              *)
@@ -261,14 +266,18 @@ if [ $use_swift -eq 1 ]; then
        unset OS_PASSWORD
        return 
     else 
-       export ACTIVE_TOKEN=$(launch_atoken $$)
        if [ $silent_mode -ne 1 ]; then
           echo "$storage_service connection configured successfully."
           echo " "
           #echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
           #echo "OS_STORAGE_URL = $OS_STORAGE_URL"
        fi
-
+       if [ $active_mode -eq 1 ];then
+          export ACTIVE_TOKEN=$(launch_atoken $$)
+          if [ $silent_mode -ne 1 ]; then
+             echo "ACTIVE_TOKEN launched"
+          fi
+      fi
     fi
 fi
 
