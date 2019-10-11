@@ -78,8 +78,12 @@ do
                   shift
                   shift
                 ;;
-
-
+             '--tmpdir' | '-t' )
+                  tmp_root=("$2")
+                  tmp_dir=("${tmp_root}/a_put_$$_tmp")  
+                  shift
+                  shift
+                ;;
              *)
                    input_def=("$input_def $1")
                    shift                       # No more switches
@@ -161,6 +165,13 @@ Options
 
 -h, --help                  Print this help.
 
+-t, --tmpdir                Define a direcrory that will be used to store 
+                            temporary files of the upload process.
+
+-s, --silent                Less output
+
+-u, --user                  Define username liked to the data to be uploaded
+
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
@@ -190,17 +201,6 @@ then
 fi
 source $HOME/.allas_default
 
-#Check if connection works
-if [[ $mode == "swift" ]]
-then
-  test=$(swift stat 2> /dev/null | grep -c "Account:")
-  if [[ $test -lt 1 ]]
-  then 
-    echo "No connection to Allas!"
-    echo "Please try setting the the connection again."
-    exit 1
-  fi 
-fi
 
 #Check if zstdmt is needed and available
 if [[ $compression -eq 1 ]]; then
@@ -259,12 +259,27 @@ do
     exit 1
   fi
    
-  # if active token is in use update the token
-  if [ -n "$ACTIVE_TOKEN" ]; then
-       unset OS_AUTH_TOKEN
-       export OS_AUTH_TOKEN=$(check_atoken)
-       #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+  #Check if connection works
+  if [[ $mode == "swift" ]]
+  then
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
+    if [[ $test -lt 1 ]]
+    then 
+      if [ -n "$ACTIVE_TOKEN" ]; then
+         unset OS_AUTH_TOKEN
+         export OS_AUTH_TOKEN=$(check_atoken)
+         #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      fi
+      test=$(swift stat 2> /dev/null | grep -c "Account:")
+      if [[ $test -lt 1 ]]
+      then 
+        echo "No connection to Allas!"
+        echo "Please try setting the the connection again."
+        exit 1
+      fi
+    fi 
   fi
+
 
   #Remove the trailing / if it exist
   if [ $(echo -n $input | tail -c 1) == "/" ]
@@ -669,6 +684,6 @@ if [[ $silent -eq 0 ]] ; then
 fi
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
-echo $(date) $user $bucket_name  $kesto >> $allas_log
+echo "$(date) $user $bucket_name  $kesto" >> $allas_log
 
 exit 0
