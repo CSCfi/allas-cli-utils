@@ -44,7 +44,7 @@ else
   echo "connection OK"
 fi
 
-
+old_token=$OS_AUTH_TOKEN
 
 # refresh current tokens
 while [[ $sofar -lt $limit ]];
@@ -61,11 +61,13 @@ do
     fi
   fi 
 
-  new_token=$(allas-token2token)
-  unset OS_AUTH_TOKEN
-  export OS_AUTH_TOKEN=$new_token
+  new_token=$(allas-token2token $old_token)
+  old_token=$new_token
+  #unset OS_AUTH_TOKEN
+  #export OS_AUTH_TOKEN=$new_token
 
-  echo $OS_AUTH_TOKEN | openssl enc -aes-256-cbc -k $enc_key -out ${fname}
+  #echo $OS_AUTH_TOKEN | openssl enc -aes-256-cbc -k $enc_key -out ${fname}
+  echo $new_token | openssl enc -aes-256-cbc -k $enc_key -out ${fname}
   echo $$ > ${fname}_proc
   # echo "OS_AUTH_TOKEN  updated in ${fname}"
 
