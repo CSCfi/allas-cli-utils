@@ -61,6 +61,7 @@ use_s3cmd=(0)
 keep_password=(0)
 silent_mode=(0)
 active_mode=(0)
+force=(0)
 #default evironmnet variables
 export OS_PROJECT_NAME="" 
 export OS_PROJECT_ID=""
@@ -111,6 +112,10 @@ do
              active_mode=(1)
              shift
              ;;
+             '-f'| '--force')
+             force=(1)
+             shift
+             ;;
              *)
              export OS_PROJECT_NAME=$1 
              shift                       # No more switches
@@ -118,7 +123,8 @@ do
     esac
 done
 
-if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" ]; then
+if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" -a "$force" -eq 0 ]; then
+   echo $0
    echo "allas_conf should not be executed directly"
    echo "Use sourcing in stead: "
    echo "   source allas_conf -u CSC-usrname allas_project"
@@ -157,6 +163,8 @@ if [ -z "$OS_PASSWORD" ]; then
    echo "Please enter CSC password for account ${OS_USERNAME}: "
    read -sr OS_PASSWORD_INPUT
    export OS_PASSWORD=$OS_PASSWORD_INPUT
+else 
+   export OS_PASSWORD_INPUT=${OS_PASSWORD}
 fi
 
 
@@ -243,8 +251,8 @@ fi
 ##
 if [ $use_swift -eq 1 ]; then
     # authenticate and save token to environment variable
-    source <(swift auth)    
-    
+    source <(swift auth) 
+ 
     if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]
     then
        mkdir -p  $HOME/.config/rclone/
@@ -367,11 +375,13 @@ echo "user=$OS_USERNAME" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
 unset OS_AUTH_URL
-unset OS_PASSWORD_INPUT
 unset OS_USER_DOMAIN_NAME
-if [ $keep_password -eq 0 ];then
-  unset OS_PASSWORD
+unset OS_PASSWORD
+if [ $keep_password -eq 1 ];then    
+  export OS_PASSWORD="$OS_PASSWORD_INPUT"
 fi
+
+unset OS_PASSWORD_INPUT
 unset OS_REGION_NAME
 unset OS_INTERFACE
 unset OS_IDENTITY_API_VERSION

@@ -30,7 +30,6 @@ silent=(0)
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
 
 
-
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -51,6 +50,7 @@ do
              '--object' | '-o' )
                   tmp_file=($2)
                   shift
+
                   shift
                 ;;
             '--s3cmd' )
@@ -263,12 +263,18 @@ do
   if [[ $mode == "swift" ]]
   then
     test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
     if [[ $test -lt 1 ]]
     then 
-      if [ -n "$ACTIVE_TOKEN" ]; then
-         unset OS_AUTH_TOKEN
-         export OS_AUTH_TOKEN=$(check_atoken)
-         #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      #if [ -n "$ACTIVE_TOKEN" ]; then
+      #   unset OS_AUTH_TOKEN
+      #   export OS_AUTH_TOKEN=$(check_atoken)
+      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      #fi
+      
+      if [[ -n "$OS_PASSWORD" ]]; then      
+         echo "Updateting token"
+         source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
       fi
       test=$(swift stat 2> /dev/null | grep -c "Account:")
       if [[ $test -lt 1 ]]
@@ -388,7 +394,7 @@ do
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
   if [ $mode == "swift" ]
   then
-    echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
+    # echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
     if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
     then
       echo ""
@@ -563,9 +569,6 @@ do
   #upload
   if [ $mode == "swift" ]
   then
-    # For less than 5GB files rclone is used for uploading
-    
-
     if [[ $silent -eq 0 ]] ; then
       echo "Uploading data to allas."
     fi
@@ -655,7 +658,7 @@ do
       if [[ $silent -eq 0 ]] ; then
           rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
       else
-           rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+          rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
       fi 
   fi
   if [ $mode == "s3cmd" ]; then
