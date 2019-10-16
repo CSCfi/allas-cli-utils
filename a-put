@@ -415,14 +415,12 @@ do
   if [ $mode == "s3cmd" ]
   then
     echo "cheking s3cmd"
-     
-    if [[ $(s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
+    if [[ $(s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
     then
       echo ""
       echo "A file/directory with the same name has already been uploaded to $storage_server"
       echo ""
-      #echo " s3cmd ls s3://:${bucket_name}/${partial_path}/$tmp_file"
-      s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file
+      s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
       echo ""
       echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
       exit 1
@@ -488,7 +486,8 @@ do
     exit 1
   fi 
 
-  if [[ $tot_size -gt $free_space ]]
+
+  if [[ $tot_size -gt $free_space ]] && [[ $compression -eq 1 ]]
   then 
     echo "There is not enough space for the temporary files."
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
@@ -656,12 +655,18 @@ fi
   
 
 if [ $mode == "s3cmd" ]
-then
+then 
+   s3cmd mb s3://${bucket_name} 2>&1 > /dev/null
    for tmp_file in $(ls ${tmp_dir})
    do
-     s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
-     exitcode=$?
-     if [ $exitcode -ne 0 ]; then
+     if [[ $compression -eq 1 ]]; then
+       s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}${partial_path}/$tmp_file
+       exitcode=$?
+     else
+       s3cmd put -F ${tmp_dir}/$tmp_file s3://${bucket_name}${partial_path}/$tmp_file
+       exitcode=$?
+     fi
+     if [[ $exitcode -ne 0 ]]; then
         echo ""
         echo "File upload for $infile failed"
         s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
@@ -670,7 +675,6 @@ then
         rmdir ${tmp_dir}
         exit 1
      fi
-     s3cmd put ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
    done
 fi
 
@@ -689,7 +693,7 @@ if [[ $silent -eq 0 ]] ; then
   echo ""
   echo "Upload ready"
   echo ""
-  echo "$num_files objects were uploded to ${bucket_name}/${partial_path}"
+  echo "$num_files objects were uploded to ${bucket_name}${partial_path}"
 fi
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
