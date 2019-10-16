@@ -1,0 +1,698 @@
+#!/bin/bash 
+
+if [[ $# -lt 1 ]]
+then
+  echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
+  echo ""
+  exit 1
+fi
+
+start_time=$(date +%s)
+
+#default user
+user=($USER)
+compression=(1)
+
+#read static variables
+inst_root=$(dirname $(readlink -f $0))
+
+
+source $inst_root/a_env_conf
+
+#local variables
+bucket_name=("not_defined")
+tmp_file=("not_defined")
+print_help=(0)
+os_project_name=("none")
+input_def=("")
+mode=("swift")
+silent=(0)
+tmp_dir=("${tmp_root}/a_put_$$_tmp")
+vastaus=("x")
+
+
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--bucket' | '-b' )
+             # query file
+                  bucket_name=($2)
+                  shift
+                  shift
+                ;;
+             '--project' | '-p' )
+                  os_project_name=($2)
+                  shift
+                  shift
+                ;;
+             '--object' | '-o' )
+                  tmp_file=($2)
+                  shift
+
+                  shift
+                ;;
+            '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
+             '--compress' | '-c')
+                  compression=(1)
+                  shift
+                ;;              
+             '--nc' | '-n' )
+                  compression=(0)
+                  shift
+                ;;
+             '-s' | '--silent' )
+                  silent=(1)
+                  shift
+                ;;
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+                ;;
+             '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;
+             '--tmpdir' | '-t' )
+                  tmp_root=("$2")
+                  tmp_dir=("${tmp_root}/a_put_$$_tmp")  
+                  shift
+                  shift
+                ;;
+             *)
+                   input_def=("$input_def $1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+This tools is used to upload data from the disk environment of Taito and Puhti to 
+allas storage environmnet. The basic syntax of the command is:
+
+   a-put directory_or_file
+
+By default this tool performs following operations:
+
+1. Ensures that you have working connection to Allas storage service and 
+defines the project that will be used to store the data.
+
+2. In case of directory, the content of the directory is collected into a single file
+(using tar command).
+
+3. By default option --compress (-c), is used. This means that the data is compressed using zstdmt command.
+   This is the recommended way if you will be using the data only in CSC computing servers. 
+   If you plan to use the uploaded dataset in other that Linux servers, where zstdmt compression may not be available,
+   you can disable compression with option --nc (-n).
+
+4. The data is uploaded to Allas using rclone command and swift protocol.
+
+The location were data is stored in allas can be defined with options
+--bucket (-b) and --object (-o).
+
+The default option is that data that locates in 
+  a) $SCRATCH in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
+
+  b) $PROJAPPL in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
+
+  c) $WRKDIR in Taito is uploaded to bucket:  username-project_number-taito-WRKDIR 
+
+  c) in other cases the data uploaded to: username-poject_number-MISC
+
+For example for user kkaytaj belonging in project_12345, data locatioing in home directory
+will be uploaded to bucket:  kkayttaj-12345-MISC.
+
+The compressed dataset will be stored as one object. The object name depends on the
+file name and location.  The logic used is that the possible subdirectory path in Taito or Puhti is included 
+in the object name. E.g. a file called test_1.txt in $WRKDIR can be stored with commands:
+
+   cd $WRKDIR
+   a-put test_1.txt
+
+In this case the file is stored to bucket: kkayttaj-12345-taito-WRKDIR
+as object: test_1.txt.zst
+
+If you have another file called test_1.txt that locates in directory $WRKDIR/project2/sample3
+you can store it with commands:
+   
+  cd $WRKDIR/project2/sample3
+  a-put test_1.txt
+  
+Or commmands
+  cd $WRKDIR
+  a-put project2/sample3/test_1.txt
+
+In this case the file is stored to bucket: kkayttaj-12345-taito-WRKDIR
+as object:  project2/sample3/test_1.txt.zst
+
+Options
+
+-b, --bucket <bucket_name>  Define a name of the bucket into which the data is uploaded.
+
+-p, --project <project_ID>  Upload data into buckets of the defined project in stead of the currently configured project.
+
+-o, --object <object_name> Define a name for the new object top be created.
+
+--s3cmd                     Use s3cmd protocol for upoload in stead of swift protocol.
+
+-n, --nc                    Do not compress the data that will be uploaded.
+
+-h, --help                  Print this help.
+
+-t, --tmpdir                Define a direcrory that will be used to store 
+                            temporary files of the upload process.
+
+-s, --silent                Less output
+
+-u, --user                  Define username liked to the data to be uploaded
+
+
+Related commands: a-find, a-get, a-delete, a-info
+EOF
+
+exit 
+
+fi 
+
+#Assign project to be used if not defined 
+if [ $os_project_name == "none" ]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+     if [[ $os_project_name != $OS_PROJECT_NAME ]]
+     then 
+        echo "Switching allas configuration to use project $os_project_name"
+        source $allas_conf_path -user $user $os_project_name
+     fi 
+  else
+     echo "Default project is not defined"
+     source $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+fi
+source $HOME/.allas_default
+
+
+#Check if zstdmt is needed and available
+if [[ $compression -eq 1 ]]; then
+   if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo "Compression command: zstdmt is not available"
+      echo "Please install zstdmt or use option --nc:"
+      echo "  a-put --nc "
+      echo "to skip zstdmt compression during upload."
+      exit 1
+   fi
+fi
+
+#Check if rclone is needed and available
+if [[ $mode == "swift" ]]; then
+   if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+   fi
+fi
+
+#check free space in $WRKDIR
+
+if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
+then
+  if [[ $local_host == "taito" ]];then
+     quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
+     free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
+  fi
+  if [[ $local_host == "puhti" ]];then
+     projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
+     (( lproj = 600000000 + projnum ))
+     #  echo "lfs quota -p $lproj $tmp_root"
+     lfs quota -p $lproj $tmp_root
+     quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
+     free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+  fi
+else
+  free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
+fi
+
+if [[ $silent -eq 0 ]] ; then
+ echo "Files or directories to be uploaded: $input_def"
+fi
+
+mkdir $tmp_dir
+
+for input in $input_def
+do
+  if [[ $silent -eq 0 ]] ; then
+     echo "Processing: $input"
+  fi
+  if [[ ! -e $input ]] ; then
+    echo "File or directory $input does not exist!"
+    exit 1
+  fi
+   
+  #Check if connection works
+  if [[ $mode == "swift" ]]
+  then
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
+    if [[ $test -lt 1 ]]
+    then 
+      #if [ -n "$ACTIVE_TOKEN" ]; then
+      #   unset OS_AUTH_TOKEN
+      #   export OS_AUTH_TOKEN=$(check_atoken)
+      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      #fi
+      
+      if [[ -n "$OS_PASSWORD" ]]; then      
+         echo "Updateting token"
+         source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
+      fi
+      test=$(swift stat 2> /dev/null | grep -c "Account:")
+      if [[ $test -lt 1 ]]
+      then 
+        echo "No connection to Allas!"
+        echo "Please try setting the the connection again."
+        exit 1
+      fi
+    fi 
+  fi
+
+
+  #Remove the trailing / if it exist
+  if [ $(echo -n $input | tail -c 1) == "/" ]
+  then
+    sl=$(expr ${#input} - 1)
+    input=$(echo $input | cut -c 1-$sl)
+  fi
+ 
+  #check that file name does not end with _ameta
+  if [[ ${input:(-6):6} == "_ameta" ]]; then
+    echo "Found a file/directoryname which ends with _ameta"
+    echo "  $input"
+    echo ""
+    echo "Please rename this file as it will mix up a the metadata management of a-put"
+    exit 1
+  fi
+
+  file_path=$(abspath $input)
+  if [[ $silent -eq 0 ]] ; then
+     echo "Checking total size of $input. Please wait."
+  fi
+  tot_size=$(du -s $input | cut -f1)
+  #echo $tot_size
+
+  #tmp file name. Depends on compression and if file is a directory
+  if [  $tmp_file == "not_defined" ]
+  then
+    if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+    then
+       if [[ $compression -eq 1 ]]; then
+          tmp_file=($(basename $input | tr " " "_" )".zst")
+       else 
+          tmp_file=($(basename $input | tr " " "_" ))
+       fi
+    else
+       tmp_file=($(basename $input | tr " " "_" )".tar.zst")
+    fi
+  fi
+
+  #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
+  #sen perusteella
+  project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+  if [ $bucket_name == "not_defined" ]
+  then
+     ## Taito
+     #Taito home
+     bucket_name=("${user}-${project_label}-MISC")
+     if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
+     then
+        bucket_name=("${user}-${project_label}-${local_host}-HOME")
+        partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
+     fi
+     #Taito wrk
+     if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
+     then
+        bucket_name=("${user}-${project_label}-${local_host}-WRKDIR")
+        partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
+     fi
+ 
+     ## Puhti
+     # In Puhti we check if puhti-project and Allas project match
+     #Puhti scratch
+     if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/scratch\/$puhti_project"/""/g)
+     fi
+     #Puhti projappl
+     if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+     fi
+
+  fi 
+
+
+  #Check if stored file already exitst
+  #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
+  if [ $mode == "swift" ]
+  then
+    # echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
+    if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
+    then
+      echo ""
+      echo "A file/directory with the same name has already been uploaded into"
+      echo "bucket $bucket_name in $storage_server"
+      echo ""
+      echo "   ${bucket_name}${partial_path}/$tmp_file  "
+      #rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file 
+      echo ""
+      echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
+      echo "Optionally you can define different bucket name using option --bucket ."
+      echo "or define different object name with option --object"
+      exit 1
+    fi
+  fi
+
+  if [ $mode == "s3cmd" ]
+  then
+    echo "cheking s3cmd"
+     
+    if [[ $(s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
+    then
+      echo ""
+      echo "A file/directory with the same name has already been uploaded to $storage_server"
+      echo ""
+      #echo " s3cmd ls s3://:${bucket_name}/${partial_path}/$tmp_file"
+      s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file
+      echo ""
+      echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
+      exit 1
+    fi
+  fi
+
+  #collect and count metadata
+  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
+  echo "original_location: $file_path " >>  ${tmp_dir}/${tmp_file}_ameta
+ 
+  num_files=0
+  
+  #initial check of file or directory count
+  num_check=$(find $input | wc -l )
+  if [[ $num_check -gt 100000 ]]; then
+    echo ""
+    echo "Refusing to process the data."
+    echo " "
+    echo "$input contains $num_check directories or files."
+    echo "Collecting information about all these items would take too long time"
+    echo ""
+    echo "Try uploading subdirectories of $input:"
+    echo ""
+    echo "  cd $input"
+    echo "  a-put * "
+    exit 1
+  fi
+
+
+  if [[ $num_check -gt 10000 ]]; then
+    echo "$input contains $num_check directories or files."
+    echo "Collecting information about all these items will take a long time."
+    echo "Please wait"
+  fi
+
+
+  for f in $(find $input |  file -f - | awk '{if  ( $2 != "directory") print $1}' | sed -e s/":$"/""/g )
+  do      
+    ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
+    (( num_files = num_files + 1 ))
+  done
+
+
+  if [ $num_files -eq 0 ]
+  then
+    echo ""
+    echo "$input contains no files!"
+    echo "This is probably an old directory that has been emptied by the automatic \$WRKDIR cleaning process."
+    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rmdir ${tmp_dir} 
+    exit 1
+  fi
+
+  if [[ $tot_size -gt $max_size ]]
+  then 
+    echo "This file or directory is too big for this tool"
+    echo "Total size: ${tot_size}K"
+    echo "Please use swift or rclone command to upload the data to allas"
+    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rmdir ${tmp_dir} 
+    exit 1
+  fi 
+
+  if [[ $tot_size -gt $free_space ]]
+  then 
+    echo "There is not enough space for the temporary files."
+    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
+    echo "Available free space is ${free_space}K"
+    echo ""
+    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rmdir ${tmp_dir}
+    exit 1
+  fi
+
+
+  #check number of files
+  if [[ $num_files -gt $max_files ]]
+  then 
+     echo "This directory contains too many files for this tool"
+     echo "Number of files: $num_files is larger the $max_files"
+     echo "Please use swift or rclone command to upload the data to allas"
+     rm -f ${tmp_dir}/${tmp_file}_ameta
+     rmdir ${tmp_dir} 
+     exit 1
+  fi 
+  
+  if [[ $silent -eq 0 ]];then
+    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space" 
+  fi
+
+  #Pakkaaminen
+  if [[ $compression -eq 1 ]]; then
+     if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+     then
+        if [[ $silent -eq 0 ]] ; then
+          echo "Compressing $input"
+          zstdmt -T2 $input -o ${tmp_dir}/$tmp_file 
+        else
+          zstdmt -T2 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
+        fi
+     else
+        #compress data
+        if [[ $silent -eq 0 ]] ; then
+           echo "Collecting data from directory $input to archive file: $tmp_file"
+           tar -cvf - "$input" | zstdmt -T2 > ${tmp_dir}/$tmp_file
+        else
+           tar -cf - "$input"  | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
+        fi
+     fi
+  else
+  # ei pakkaamista
+     #this is not a good approach.
+     #test if a symbolic link would do
+       if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+       then
+          #echo "ln -s ${file_path} ${tmp_dir}/$tmp_file"
+
+          ln -s ${file_path} ${tmp_dir}/$tmp_file
+        
+          #cp $input ${tmp_dir}/$tmp_file
+       else
+           echo ""
+           echo "Error:"
+           echo "a-put can not upload directories without zstdmt compression."
+           echo "If you wish to skip compression, you can upload only individual files."
+           exit 1
+       fi
+  fi
+  
+  if [[ $compression -eq 1 ]] ; then
+    #tmp file size in KB
+    tmp_size=$(du ${tmp_dir}/$tmp_file | awk '{print $1}')
+    if [[  $silent -eq 0 ]]; then
+       comp_rate=$(echo "scale=2; ${tot_size}/${tmp_size}" | bc )
+       echo ""
+       echo "Compression ready. Compression rate was: $comp_rate"
+       echo ""
+    fi
+  else
+    tmp_size=$tot_size
+  fi
+done
+
+exit
+
+
+
+  #upload
+  if [ $mode == "swift" ]
+  then
+    if [[ $silent -eq 0 ]] ; then
+      echo "Uploading data to allas."
+    fi
+    # echo "rclone copy --progress ./$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+    if [[ $silent -eq 0 ]] ; then
+        if [[ $compression -eq 1 ]] ; then
+          #echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}" 
+          rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        else  
+          #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
+          rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi
+    else
+        if [[ $compression -eq 1 ]] ; then
+          rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+          exitcode=$?
+        else
+          rclone copy ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi    
+    fi
+   
+    if [ $exitcode -ne 0 ]; then
+       echo ""
+       echo "File upload for $infile failed"
+       rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+       rm -f ${tmp_dir}/$tmp_file 
+       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rmdir ${tmp_dir}
+       exit 1
+    fi
+
+    # rclone md5sums can be calculated only for files that are smaller than 5GB
+    if [[ $tmp_size -lt 5000000 ]]
+    then
+       if [[ $silent -eq 0 ]] ; then
+          echo "Confirming upload..."
+       fi
+       #checksums for local and allas files 
+       sum1=($(md5sum ${tmp_dir}/$tmp_file))
+       sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
+ 
+       #check is cheksums match 
+       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+       then 
+         echo "Upload of $input was not successfull!"
+         echo "Cleaning the failed upload"
+         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+         rm -f ${tmp_dir}/$tmp_file 
+         rm -f ${tmp_dir}/${tmp_file}_ameta
+         rmdir ${tmp_dir}
+         exit 1
+       fi
+       if [[ $silent -eq 0 ]] ; then
+         echo "$input OK"
+       fi
+    fi
+  fi
+  if [ $mode == "s3cmd" ]
+  then
+     s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
+     exitcode=$?
+     if [ $exitcode -ne 0 ]; then
+        echo ""
+        echo "File upload for $infile failed"
+        s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
+        rm -f ${tmp_dir}/$tmp_file 
+        rm -f ${tmp_dir}/${tmp_file}_ameta
+        rmdir ${tmp_dir}
+        exit 1
+     fi
+  fi
+
+
+  #echo "Remopving temporary file"
+  rm -f  ${tmp_dir}/$tmp_file
+
+  #update metadata
+  if [[ $silent -eq 0 ]] ; then
+    echo ""
+    echo "Adding metadata for uploaded $input"
+  fi
+  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
+  if [ $mode == "swift" ]; then
+      if [[ $silent -eq 0 ]] ; then
+          rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+      else
+          rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+      fi 
+  fi
+  if [ $mode == "s3cmd" ]; then
+      s3cmd put ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
+  fi
+  rm -f ${tmp_dir}/${tmp_file}_ameta
+
+  if [[ $silent -eq 0 ]] ; then
+    echo ""
+    echo "-------------------------------------------------------------------------------"
+    if [[ $compression -eq 1 ]]; then
+      echo "$num_files files from $input uploaded to bucket $bucket_name in Allas as one compressed file: "
+    else
+      echo "$input uploaded to bucket $bucket_name in Allas"
+    fi
+  fi
+  echo "${bucket_name}${partial_path}/$tmp_file"
+  tmp_file=("not_defined")
+
+done
+
+rmdir  ${tmp_dir}
+if [[ $silent -eq 0 ]] ; then
+  echo ""
+  echo "Upload ready"
+fi
+end_time=$(date +%s)
+(( kesto = end_time - start_time ))
+echo "$(date) $user $bucket_name  $kesto" >> $allas_log
+
+exit 0
