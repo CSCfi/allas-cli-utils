@@ -75,7 +75,7 @@ local echop=echo
 local chunk_size=5000
 local rconf=$HOME/.config/rclone/rclone.conf
 local mode=swift
-local force=falce
+local force=false
 
 # Process command line arguments
 
@@ -95,7 +95,7 @@ while [[ $# -ge 1 ]]; do
 done
 
 # check if this is executed as sourced command
-if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" -a ! $force ]; then
+if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" -a "$force" == "false" ]; then
     echo "Error: allas_conf should not be executed directly. $usage" >&2
     exit 1
 fi
@@ -206,7 +206,7 @@ if $use_swift; then
     # authenticates and save token to environment variable
     eval "$(swift auth)"
 
-    if grep -q "[${storage_service}]" $rconf 2> /dev/null; then
+    if [[ $(grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
         mkdir -p  ${rconf%/*}
         printf "%s\n" >> $rconf \
             "[${storage_service}]" \
