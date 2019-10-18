@@ -1,0 +1,316 @@
+#!/bin/bash
+
+export OS_PROJECT_NAME=""
+export OS_PROJECT_ID=""
+export OS_STORAGE_URL=""
+export OS_AUTH_TOKEN=""
+export OS_USERNAME=$(whoami)
+export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
+export OS_USER_DOMAIN_NAME="Default"
+export OS_REGION_NAME="regionOne"
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+
+allas_conf_scope () {
+
+local usage="
+
+Usage: source allas_conf [OPTIONS] [PROJECT]
+
+    This script sets up the environment variables and the configuration
+    files for accessing Allas storage service https://a3s.fi using swift
+    (default) and/or s3cmd APIs.
+
+    The program asks your CSC password before starting the configuration
+    process.
+
+    If the project name is not given as PROJECT argument, the available
+    project names are listed and you are asked to choose one.
+
+    By default, this tool sets up access tokens that are used by swift and
+    rclone connections.
+
+
+    OPTIONS
+    -------
+
+        --mode s3cmd         Configure s3cmd API (default: swift)
+
+        --mode both          Configure both swift and s3cmd APIs
+
+        --user USER          Storage server username (default: $USER)
+
+        --keeppasswd         Keep OS_PASSWORD environment variable once the
+                             configuration is done. This can be useful if you
+                             use this tool in scripts that need to
+                             switch between projects.
+
+        --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
+                             SIZE, in MB, are automatically uploaded
+                             multithread-multipart  (default: 5000)
+
+        --silent             Less output
+
+
+    DEPENDENCIES
+    ------------
+
+    This script uses openstack and swift/s3cmd utilities, which in
+    puhti.csc.fi are available using
+
+        module load allas
+
+    On other machines these need to be installed separately, see README.md
+    for example.
+"
+
+
+if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" ]; then
+    echo "Error: allas_conf should not be executed directly. $usage" >&2
+    exit 1
+fi
+
+local storage_service=("allas")
+local show_keys=false
+local use_swift=true
+local use_s3cmd=false
+local keep_password=false
+local silent_mode=false
+local active_mode=false
+local echop=echo
+local chunk_size=5000
+
+# Process command line arguments
+
+while [[ $# -ge 1 ]]; do
+    case "$1" in
+        '-h'|'-help'|'--help')
+            echo "$usage"
+            return 0
+            ;;
+        '-m'|'--mode')
+            case "$2" in
+                's3cmd')
+                    use_swift=false
+                    use_s3cmd=true
+                    shift 2
+                    ;;
+                'both')
+                    use_swift=true
+                    use_s3cmd=false
+                    shift 2
+                    ;;
+                *)
+                    echo "Error: Wrong argument to '--mode' option $usage" >&2
+                    return 1
+                    ;;
+            esac
+            ;;
+        '-w'|'--show_keys')
+            show_keys=true
+            shift
+            ;;
+        '-u'|'--user')
+            export OS_USERNAME=$2
+            shift 2
+            ;;
+        '-k'|'--keeppasswd')
+            keep_password=true
+            shift
+            ;;
+        '-s'|'--silent')
+            echop=:
+            shift
+            ;;
+        '-c'|'--chunksize')
+            if [[ "$2" -lt 5 || "$2" -gt 5000 || ! "$2" =~ ^[0-9]+$ ]]; then
+                echo "\nError: Invalid chuck size. $usage" >&2
+                return 1
+            else
+                chunk_size="$2"
+                shift 2
+            fi
+            ;;
+        '-a'|'--active-token')
+            active_mode=true
+            shift
+            ;;
+        *)
+            export OS_PROJECT_NAME=$1
+            shift
+            ;;
+    esac
+done
+
+if ! $keep_password; then
+     trap 'echo hula-hula' RETURN EXIT SIGINT
+#    trap 'unset OS_PASSWORD' RETURN EXIT SIGINT
+else
+    trap 'echo Password preserved'  RETURN EXIT SIGINT
+fi
+
+
+# Check that openstack and swift/s3cmd are available
+
+if [ -z "$OS_PROJECT_NAME" ] && ! command -v openstack >/dev/null 2>&1; then
+    echo -e "\nError: openstack command not found!" >&2
+    return 1
+fi
+
+if $use_s3cmd && ! command -v s3cmd >/dev/null 2>&1; then
+        echo -e "\nError: s3cmd command not found!" >&2
+        return 1
+fi
+
+if $use_swift && ! command -v swift >/dev/null 2>&1; then
+    echo -e "\nError: swift command not found!" >&2
+    return 1
+fi
+
+
+## 4. Ask for CSC password
+##
+# With Keystone you pass the keystone password.
+if [ -z "$OS_PASSWORD" ]; then
+   echo "Please enter CSC password for account ${OS_USERNAME}: "
+   read -sr OS_PASSWORD_INPUT
+   export OS_PASSWORD=$OS_PASSWORD_INPUT
+fi
+
+
+## 5. Check if OpenStack is available and connection to OS_AUTH_URL accessible
+##    Assign the project to be used.
+##
+if [ -z "$OS_PROJECT_NAME" ]; then
+   echo "Checking projects available for your account."
+   echo "Please wait."
+
+   local all_projects=( $(openstack project list --my-projects -c Name -f value --os-username $OS_USERNAME) )
+
+   case ${#all_projects[@]} in
+       0)
+           echo -e "\nError: No Allas projects found!" >&2
+           echo "Please check that you typed your password correctly" >&2
+           return 1
+           ;;
+       1)
+           export OS_PROJECT_NAME=${all_projects[0]}
+           echo "Configuration will be done for project: $OS_PROJECT_NAME"
+           ;;
+       *)
+           PS3="Please choose a project: "
+           local project
+           select project in "${all_projects[@]}"; do
+               [[ -n "$project" ]] && break
+           done
+           export OS_PROJECT_NAME=$project
+           ;;
+   esac
+fi
+
+
+## 6.Define authentication
+##
+
+##############################################
+# swift authentication is the default option
+##############################################
+
+## 6.1 Authenticate with swift
+##
+if $use_swift; then
+
+    # authenticates and save token to environment variable
+    eval "$(swift auth)"
+
+    local rconf=$HOME/.config/rclone/rclone.conf
+    if [[ $(grep -c "\[$storage_service\]" $rconf 2> /dev/null ) -lt 1 ]]; then
+        mkdir -p  ${rconf%/*}
+        echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf
+        echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf
+        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
+        $echop -e "\n$storage_service service added to the rclone"
+        $echop "configuration file '$rconf'."
+    fi
+
+    if [ -z "${OS_AUTH_TOKEN}" ] ; then
+        echo -e "\nError: Swift authentication failed!" >&2
+        echo "Are you sure that the password and project ID are valid?" >&2
+        echo "Please try again."  >&2
+        return 1
+    else
+        $echop -e "$storage_service connection configured successfully.\n"
+          #echo "OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+          #echo "OS_STORAGE_URL = $OS_STORAGE_URL"
+        if $active_mode; then
+            export ACTIVE_TOKEN=$(launch_atoken $$)
+            $echop "ACTIVE_TOKEN launched"
+        fi
+    fi
+fi
+
+
+## 6.2 Authenticate with s3cmd
+##
+
+#########################
+# s3cmd configuration
+#########################
+if $use_s3cmd; then
+
+   export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+   openstack project show $OS_PROJECT_NAME
+
+   local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+   if [[ $ACCESS_KEY == "" ]]
+   then
+     openstack ec2 credentials create
+     local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+   fi
+
+   local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
+
+   echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
+       s3cmd --configure \
+             --access_key=$ACCESS_KEY \
+             --secret_key=$SECRET_KEY \
+             --host=a3s.fi \
+             --signature-v2 \
+             --multipart-chunk-size-mb=$chunk_size \
+             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
+
+
+ #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
+ #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
+ #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
+fi
+
+## 7. Create allas_default and unset some variables
+
+#reset allas_default
+echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+echo "user=$OS_USERNAME" >>  $HOME/.allas_default
+
+# unset variables unnecessary for token access or user/project info for the user
+unset OS_AUTH_URL
+unset OS_PASSWORD_INPUT
+unset OS_USER_DOMAIN_NAME
+if ! $keep_password;then
+  unset OS_PASSWORD
+fi
+unset OS_REGION_NAME
+unset OS_INTERFACE
+unset OS_IDENTITY_API_VERSION
+
+#check if rclone and restic are available
+if ! command -v rclone >/dev/null 2>&1; then
+   echo "NOTE: rclone command was not found."
+fi
+if ! command -v restic >/dev/null 2>&1; then
+   echo "NOTE: restic command was not found."
+fi
+
+}
+
+allas_conf_scope "$@"
+unset -f allas_conf_scope

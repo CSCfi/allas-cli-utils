@@ -4,7 +4,8 @@
 user=($USER)
 
 #read static variables
-inst_root=$(dirname $(readlink -f $0))
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
 
 # local variables

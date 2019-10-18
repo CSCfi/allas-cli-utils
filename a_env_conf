@@ -1,6 +1,7 @@
 #Common settngs for a_ -tools
 storage_server=("allas")
 local_host=("puhti")
+allas_log=(/dev/null)
 
 allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 max_size=500000000
