@@ -203,6 +203,12 @@ fi
 
 if $use_swift; then
 
+    #
+    if command -v openstack >/dev/null 2>&1; then
+       export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)      
+    fi
+
+
     # authenticates and save token to environment variable
     eval "$(swift auth)"
 
@@ -234,8 +240,7 @@ fi
 
 if $use_s3cmd; then
 
-    export OS_PROJECT_ID=$(
-        openstack project show -f value -c id $OS_PROJECT_NAME)
+    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
     openstack project show $OS_PROJECT_NAME
 
     local ACCESS_KEY=$(
