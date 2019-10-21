@@ -564,6 +564,30 @@ do
   #upload
   if [ $mode == "swift" ]
   then
+    #Check if connection works
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
+    if [[ $test -lt 1 ]]
+    then 
+        #if [ -n "$ACTIVE_TOKEN" ]; then
+        #   unset OS_AUTH_TOKEN
+        #   export OS_AUTH_TOKEN=$(check_atoken)
+        #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+        #fi
+      
+      if [[ -n "$OS_PASSWORD" ]]; then      
+         echo "Updateting token"
+         source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
+      fi
+      test=$(swift stat 2> /dev/null | grep -c "Account:")
+      if [[ $test -lt 1 ]]
+      then 
+        echo "No connection to Allas!"
+        echo "Please try setting the the connection again."
+        exit 1
+      fi
+    fi 
+
     if [[ $silent -eq 0 ]] ; then
       echo "Uploading data to allas."
     fi
