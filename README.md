@@ -75,7 +75,7 @@ cd  allas-cli-utils/
 export PATH=${PATH}:$(pwd)
 ```
 
-Example: Installing allas-cli-utils to Ubuntu 18.04 so that conda ins used in te installation of dependemnsies.
+Example: Installing allas-cli-utils to Ubuntu 18.04 so that conda is used in the installation of dependencies.
 
 
 ```text
