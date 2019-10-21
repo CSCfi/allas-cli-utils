@@ -100,9 +100,13 @@ Options:
 
 
 -f, --file <file_name>      Retrieve just a specific file or directory from the stored dataset. Note that you need to define
-                            the full path of the file or directory within the sotered object
+                            the full path of the file or directory within the stored object.
 
--t, --target <dir_name>     If this option is defined, a new target directory is created and the data is retrieved there.
+-d, --target_dir <dir_name> If this option is defined, a new target directory is created and the data is retrieved there.
+
+-t, --target_file <file_name> Define a file name for the object for the object to be downloaded.
+
+-l, --original_locatio      Retrieve the data to the original location in the directory structure.
 
 
 Related commands: a-put, a-find, a-info, a-delete
