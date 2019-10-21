@@ -560,114 +560,75 @@ do
   else
     tmp_size=$tot_size
   fi
-  if [[ $silent -eq 0 ]] ; then
-    echo ""
-    echo "-------------------------------------------------------------------------------"
-    if [[ $compression -eq 1 ]]; then
-      echo "$num_files files from $input will be uploaded to bucket $bucket_name in Allas as one compressed file: "
+
+  #upload
+  if [ $mode == "swift" ]
+  then
+    if [[ $silent -eq 0 ]] ; then
+      echo "Uploading data to allas."
+    fi
+    # echo "rclone copy --progress ./$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+    if [[ $silent -eq 0 ]] ; then
+        if [[ $compression -eq 1 ]] ; then
+          #echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}" 
+          rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        else  
+          #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
+          rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi
     else
-      echo "$input will be uploaded to bucket $bucket_name in Allas"
+        if [[ $compression -eq 1 ]] ; then
+          rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+          exitcode=$?
+        else
+          rclone copy ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          exitcode=$?
+        fi    
     fi
-  fi
-  echo "${bucket_name}${partial_path}/$tmp_file"
-
-  tmp_file=("not_defined")
-done
-
-#Data collection ready.
-#Now upload data
-
-
-echo "Preprocessing ready"
-
-#upload
-if [ $mode == "swift" ]
-then
-  if [[ $silent -eq 0 ]] ; then
-    echo "Uploading data to allas."
-  fi
-  if [[ $silent -eq 0 ]] ; then
-    if [[ $compression -eq 1 ]] ; then
-        #copressed case
-        rclone copyto --progress ${tmp_dir} ${storage_server}:${bucket_name}/${partial_path}
-        exitcode=$?
-    else  
-        #Uncompressed data -> links -> -L
-        rclone copyto -L  --progress ${tmp_dir} ${storage_server}:${bucket_name}/${partial_path}
-        exitcode=$?
-    fi
-  else
-      if [[ $compression -eq 1 ]] ; then
-        rclone copyto ${tmp_dir} ${storage_server}:${bucket_name}/${partial_path} > /dev/null
-        exitcode=$?
-      else
-        rclone copyto -L ${tmp_dir} ${storage_server}:${bucket_name}/${partial_path}
-        exitcode=$?
-      fi    
-  fi
    
-  if [ $exitcode -ne 0 ]; then
-     echo ""
-     echo "File upload failed"
-     echo "Trying to clean"
-     for tmp_file in $(ls ${tmp_dir})
-     do 
-         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2>&1 > /dev/null
-         rm -f ${tmp_dir}/${tmp_file}
+    if [ $exitcode -ne 0 ]; then
+       echo ""
+       echo "File upload for $infile failed"
+       rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+       rm -f ${tmp_dir}/$tmp_file 
+       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rmdir ${tmp_dir}
+       exit 1
+    fi
+
+    # rclone md5sums can be calculated only for files that are smaller than 5GB
+    if [[ $tmp_size -lt 5000000 ]]
+    then
+       if [[ $silent -eq 0 ]] ; then
+          echo "Confirming upload..."
+       fi
+       #checksums for local and allas files 
+       sum1=($(md5sum ${tmp_dir}/$tmp_file))
+       sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
+ 
+       #check is cheksums match 
+       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+       then 
+         echo "Upload of $input was not successfull!"
+         echo "Cleaning the failed upload"
+         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+         rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
          rmdir ${tmp_dir}
-     done
-     exit 1
+         exit 1
+       fi
+       if [[ $silent -eq 0 ]] ; then
+         echo "$input OK"
+       fi
+    fi
   fi
-
-  if [[ $compression -eq 1 ]] ; then
-
-    for tmp_file in $(ls ${tmp_dir})
-    do
-      tmp_size=$(du ${tmp_dir}/$tmp_file | awk '{print $1}')
-      # rclone md5sums can be calculated only for files that are smaller than 5GB
-      if [[ $tmp_size -lt 5000000 ]]
-      then
-         if [[ $silent -eq 0 ]] ; then
-            echo "Confirming upload..."
-         fi
-         #checksums for local and allas files 
-         sum1=($(md5sum ${tmp_dir}/$tmp_file))
-         sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
- 
-         #check is cheksums match 
-         if [[ ${sum1[0]} !=  ${sum2[0]} ]]
-         then 
-           echo "Upload of $input was not successfull!"
-           echo "Cleaning the failed upload"
-           rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
-           rm -f ${tmp_dir}/$tmp_file 
-           rm -f ${tmp_dir}/${tmp_file}_ameta
-           rmdir ${tmp_dir}
-           exit 1
-         fi
-         if [[ $silent -eq 0 ]] ; then
-           echo "$input OK"
-         fi
-      fi
-    done
-  fi
-fi
-  
-
-if [ $mode == "s3cmd" ]
-then 
-   s3cmd mb s3://${bucket_name} 2>&1 > /dev/null
-   for tmp_file in $(ls ${tmp_dir})
-   do
-     if [[ $compression -eq 1 ]]; then
-       s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}${partial_path}/$tmp_file
-       exitcode=$?
-     else
-       s3cmd put -F ${tmp_dir}/$tmp_file s3://${bucket_name}${partial_path}/$tmp_file
-       exitcode=$?
-     fi
-     if [[ $exitcode -ne 0 ]]; then
+  if [ $mode == "s3cmd" ]
+  then
+     s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
+     exitcode=$?
+     if [ $exitcode -ne 0 ]; then
         echo ""
         echo "File upload for $infile failed"
         s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
@@ -676,17 +637,46 @@ then
         rmdir ${tmp_dir}
         exit 1
      fi
-   done
-fi
+  fi
 
 
-#echo "Remopving temporary file"
-num_files=$(ls  ${tmp_dir}/*_ameta | wc -l )
-for tmp_file in $(ls ${tmp_dir})
-do
+  #echo "Remopving temporary file"
   rm -f  ${tmp_dir}/$tmp_file
-  rm -f  ${tmp_dir}/${tmp_file}_ameta
+
+  #update metadata
+  if [[ $silent -eq 0 ]] ; then
+    echo ""
+    echo "Adding metadata for uploaded $input"
+  fi
+  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
+  if [ $mode == "swift" ]; then
+      if [[ $silent -eq 0 ]] ; then
+          rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+      else
+          rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+      fi 
+  fi
+  if [ $mode == "s3cmd" ]; then
+      s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
+  fi
+  rm -f ${tmp_dir}/${tmp_file}_ameta
+
+  if [[ $silent -eq 0 ]] ; then
+    echo ""
+    echo "-------------------------------------------------------------------------------"
+    if [[ $compression -eq 1 ]]; then
+      echo "$num_files files from $input uploaded to bucket $bucket_name in Allas as one compressed file: "
+    else
+      echo "$input uploaded to bucket $bucket_name in Allas"
+    fi
+  fi
+  echo "${bucket_name}${partial_path}/$tmp_file"
+  tmp_file=("not_defined")
+  bucket_name=("not_defined")
+
 done
+
+
 rmdir  ${tmp_dir}
 
 
