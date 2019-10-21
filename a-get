@@ -366,7 +366,10 @@ else
     if [[ $is_compressed -eq 1 ]]; then 
        rclone cat ${storage_server}:/$object_name | zstdmt -d >  $target_name
     else 
-       rclone copy ${storage_server}:/$object_name  $target_name
+       if [[ $target_dir == "" ]]; then 
+            target_dir="."
+       fi
+       rclone copy ${storage_server}:/$object_name  $target_dir
     fi
     if [[ $new_target -eq 1 ]];then
        cd -   

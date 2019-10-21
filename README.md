@@ -74,4 +74,24 @@ git clone https://github.com/CSCfi/allas-cli-utils
 cd  allas-cli-utils/
 export PATH=${PATH}:$(pwd)
 ```
+
+Example: Installing allas-cli-utils to Ubuntu 18.04 so that conda ins used in te installation of dependemnsies.
+
+
+```text
+sudo apt-get update
+sudo apt-get install gcc
+sudo apt-get install restic
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh 
+bash
+git clone https://github.com/CSCfi/allas-cli-utils
+cd allas-cli-utils/
+export PATH=${PATH}:$(pwd)
+conda env create -n allas --file allas-dependencies.yaml 
+conda activate allas
+source allas_conf -u csc-useraccount
+a-list 
+```
+
  
