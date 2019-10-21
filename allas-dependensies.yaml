@@ -1,0 +1,13 @@
+name: storage
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - zstd
+  - python
+  - pip
+  - s3cmd
+  - pip:
+    - python-openstackclient
+    - python-swiftclient
+    - python-rclone
