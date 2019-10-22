@@ -231,6 +231,10 @@ if $use_swift; then
         if $active_mode; then
             export ACTIVE_TOKEN=$(launch_atoken $$)
             $echop "ACTIVE_TOKEN launched"
+        else
+            echo "Connection stays active for eight hours"
+            #echo "Connection stays active until:"
+            #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi
     fi
 fi
