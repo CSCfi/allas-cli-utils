@@ -22,6 +22,7 @@ source $inst_root/a_env_conf
 
 #local variables
 bucket_name=("not_defined")
+fixed_bucket=0
 tmp_file=("not_defined")
 print_help=(0)
 os_project_name=("none")
@@ -41,6 +42,7 @@ do
              '--bucket' | '-b' )
              # query file
                   bucket_name=($2)
+                  fixed_bucket=1
                   shift
                   shift
                 ;;
@@ -720,7 +722,10 @@ do
   fi
   echo "${bucket_name}${partial_path}/$tmp_file"
   tmp_file=("not_defined")
-  bucket_name=("not_defined")
+
+  if [[ $fixed_bucket -eq 0 ]]; then 
+     bucket_name=("not_defined")
+  fi
 
 done
 
