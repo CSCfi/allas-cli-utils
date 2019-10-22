@@ -521,9 +521,9 @@ do
      then
         if [[ $silent -eq 0 ]] ; then
           echo "Compressing $input"
-          zstdmt -T2 $input -o ${tmp_dir}/$tmp_file 
+          zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 
         else
-          zstdmt -T2 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
+          zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
         fi
      else
         #compress data
@@ -597,6 +597,7 @@ do
           #echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}" 
           rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
           exitcode=$?
+          echo 
         else  
           #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
           rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
@@ -612,14 +613,21 @@ do
         fi    
     fi
    
+    
     if [ $exitcode -ne 0 ]; then
+       echo $(date +"%d.%m.%y %H:%m:%S") $input $tot_size  $exitcode >> ${tmp_dir}/upload.log
        echo ""
-       echo "File upload for $infile failed"
+       echo "File upload for $infile failed!"
+       echo "Upload summary:"
+       cat ${tmp_dir}/upload.log
        rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file 
        rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f ${tmp_dir}/upload.log
        rmdir ${tmp_dir}
        exit 1
+    else
+        printf "%18s\t%30s\t%8s\t%30s\n" "$(date +"%d.%m.%y %H:%m:%S")" $input $tot_size ${bucket_name} >> ${tmp_dir}/upload.log
     fi
 
     # rclone md5sums can be calculated only for files that are smaller than 5GB
@@ -637,9 +645,12 @@ do
        then 
          echo "Upload of $input was not successfull!"
          echo "Cleaning the failed upload"
+         echo "Upload summary:"
+         cat ${tmp_dir}/upload.log
          rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
          rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
+         rm -f ${tmp_dir}/upload.log
          rmdir ${tmp_dir}
          exit 1
        fi
@@ -652,18 +663,22 @@ do
   then
      s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
      exitcode=$?
+     echo $(date +"%d.%m.%y %H:%m:%S") $input $exitcode >> ${tmp_dir}/upload.log
      if [ $exitcode -ne 0 ]; then
         echo ""
         echo "File upload for $infile failed"
+        echo "Upload summary:"
+        cat ${tmp_dir}/upload.log
         s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
         rm -f ${tmp_dir}/$tmp_file 
         rm -f ${tmp_dir}/${tmp_file}_ameta
+        rm -f ${tmp_dir}/upload.log
         rmdir ${tmp_dir}
         exit 1
      fi
   fi
 
-
+ ]
   #echo "Remopving temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
@@ -700,18 +715,22 @@ do
 
 done
 
-
-rmdir  ${tmp_dir}
-
-
 if [[ $silent -eq 0 ]] ; then
+  echo "-----------------------------------------------------------------"
   echo ""
-  echo "Upload ready"
-  echo ""
-  echo "$num_files objects were uploded to ${bucket_name}${partial_path}"
+  echo "Upload summary:"
+  cat ${tmp_dir}/upload.log
+  echo "-----------------------------------------------------------------"
+  echo OK
 fi
+
+rm -f ${tmp_dir}/upload.log 
+rmdir  ${tmp_dir}
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
 echo "$(date) $user $bucket_name  $kesto" >> $allas_log
+if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
+   chmod a+rwx  $allas_log
+fi
 
 exit 0
