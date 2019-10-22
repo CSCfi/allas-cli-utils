@@ -318,15 +318,15 @@ do
   #tmp file name. Depends on compression and if file is a directory
   if [  $tmp_file == "not_defined" ]
   then
-    if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+    if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
     then
        if [[ $compression -eq 1 ]]; then
-          tmp_file=($(basename $input | tr " " "_" )".zst")
+          tmp_file=($(basename "$input" | tr " " "_" )".zst")
        else 
-          tmp_file=($(basename $input | tr " " "_" ))
+          tmp_file=($(basename "$input" | tr " " "_" ))
        fi
     else
-       tmp_file=($(basename $input | tr " " "_" )".tar.zst")
+       tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
     fi
   fi
 
@@ -349,6 +349,14 @@ do
         bucket_name=("${user}-${project_label}-${local_host}-WRKDIR")
         partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
      fi
+
+     #Taito proj
+     if [ $(echo $file_path  | cut -c1-6) == "/proj/" ]
+     then
+        bucket_name=("${user}-${project_label}-${local_host}-PROJ")
+        partial_path=$(dirname $file_path | sed -e s/"\/proj"/""/g)
+     fi
+
  
      ## Puhti
      # In Puhti we check if puhti-project and Allas project match
@@ -467,13 +475,14 @@ do
   fi
 
   d=0
-  for f in $(find $input |  file -f - | awk '{if  ( $2 != "directory") print $1}' | sed -e s/":$"/""/g )
+  for f in $(find "$input" |  file -f - | awk '{if  ( $2 != "directory") print $1}' | sed -e s/":$"/""/g )
   do      
     ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
     (( num_files = num_files + 1 ))
     (( d++ ))
     if [[ $d -gt $interval ]]; then
       printf "%s" "."
+      d=0
     fi 
   done
  
@@ -689,7 +698,7 @@ do
      fi
   fi
 
- ]
+ 
   #echo "Remopving temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
