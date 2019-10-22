@@ -476,7 +476,7 @@ do
 
   d=0
   for f in $(find "$input" |  file -f - | awk '{if  ( $2 != "directory") print $1}' | sed -e s/":$"/""/g )
-  do      
+  do        
     ls -l $f >>  ${tmp_dir}/${tmp_file}_ameta
     (( num_files = num_files + 1 ))
     (( d++ ))
@@ -620,7 +620,7 @@ do
           echo 
         else  
           #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
-          rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          rclone copy -L --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
           exitcode=$?
         fi
     else
@@ -628,7 +628,7 @@ do
           rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
           exitcode=$?
         else
-          rclone copy ${file_path} ${storage_server}:${bucket_name}/${partial_path}
+          rclone copy -L ${file_path} ${storage_server}:${bucket_name}/${partial_path}
           exitcode=$?
         fi    
     fi
