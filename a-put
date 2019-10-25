@@ -475,6 +475,10 @@ do
   fi
 
   d=0
+
+  #For field separator changed to allow spaces in file names
+  SAVEIFS=$IFS
+  IFS=$(echo -en "\n\b") 
   for f in $(find "$input" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}' )
   do        
     ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
@@ -485,7 +489,7 @@ do
       d=0
     fi 
   done
- 
+  IFS=$SAVEIFS
 
   if [ $num_files -eq 0 ]
   then
