@@ -20,6 +20,7 @@ query=("")
 object_with_bucket=(0)
 remove_bucket=(0)
 force=(0)
+defined_user="x"
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -46,7 +47,8 @@ do
                   shift
                 ;;
              '--user' | '-u')
-                  user=($2)
+                  user="$2"
+                  defined_user="$2"
                   shift
                   shift
                 ;;
@@ -132,7 +134,7 @@ then
      if [[ $os_project_name != $OS_PROJECT_NAME ]]
      then 
         echo "Switching allas configuration to use project $os_project_name"
-        source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+        source /appl/opt/allas_conf -user $user $os_project_name --keeppasswd
         export OS_PROJECT_NAME=$os_project_name
      fi 
   else
@@ -144,9 +146,16 @@ then
   fi
   else
      echo "Switching allas configuration to use project $os_project_name"
-     source /appl/opt/allas_conf -user $user $os_project_name -keeppasswd
+     source /appl/opt/allas_conf -user $user $os_project_name --keeppasswd
      export OS_PROJECT_NAME=$os_project_name
 fi
+
+#
+if [[ $defined_user != "x" ]]; then
+   user=$defined_user
+fi
+
+
 
 #source $HOME/.allas_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
