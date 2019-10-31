@@ -93,5 +93,26 @@ conda activate allas
 source allas_conf -u csc-useraccount
 a-list 
 ```
+Example: Installing allas-cli-utils to Centos 7 based virtual machine in cPouta
+
+```text
+sudo yum update                          # update everything first
+sudo yum install rclone                  # install rclone  
+sudo yum install yum-plugin-copr         # three commands to install restic
+sudo yum copr enable copart/restic
+sudo yum install restic
+# install miniconda
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+bash                                      #new sesion to enable miniconda
+git clone https://github.com/CSCfi/allas-cli-utils       #download allas tools
+cd allas-cli-utils/
+export PATH=${PATH}:$(pwd)
+conda env create -n allas --file allas-dependencies.yaml #use conda to installa remaining dependencies
+conda activate allas                                     #activate the environmnet       
+source allas_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
+a-list
+
+```
 
  
