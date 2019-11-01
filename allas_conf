@@ -185,7 +185,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            echo "Configuration will be done for project: $OS_PROJECT_NAME"
            ;;
        *)
-           PS3="Please choose a project: "
+           PS3="Please choose a project by giving an item number form the list above: "
            local project
            select project in "${all_projects[@]}" "abort allas_conf"; do
                [[ -n "$project" ]] && break
@@ -232,7 +232,7 @@ if $use_swift; then
             export ACTIVE_TOKEN=$(launch_atoken $$)
             $echop "ACTIVE_TOKEN launched"
         else
-            echo "Connection stays active for eight hours"
+            echo "Connection stays active for eight hours."
             #echo "Connection stays active until:"
             #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi

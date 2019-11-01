@@ -13,15 +13,16 @@ if [[ $object == "allastest_$$/test_$$.tar.zst" ]]; then
   echo "a-put OK"
 else
   echo "a-put FAILED"
-  exit 1
+ # exit 1
 fi
-
+ 
 #a-list
 t1=$(a-list allastest_$$)
 if [[ $t1 == "test_$$.tar.zst" ]]; then
   echo "a-list OK"
 else
   echo "a-list FAILED" 
+  a-list  allastest_$$
 fi
 
 #a-info
