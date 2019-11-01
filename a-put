@@ -283,7 +283,7 @@ then
 fi
 
 mkdir $tmp_dir
-printf "%18s\t%20s\t%6s\t%8s\t%25s\n" "Date" "Name" "Files" "Size(kB)" "Location in allas" >> ${tmp_dir}/upload.log
+printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in allas" >> ${tmp_dir}/upload.log
 
 
 for input in $input_def
@@ -642,7 +642,7 @@ do
           #echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}" 
           rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
           exitcode=$?
-          echo 
+          #echo 
         else  
           #echo "rclone copy --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
           rclone copy -L --progress ${file_path} ${storage_server}:${bucket_name}/${partial_path}
@@ -672,7 +672,7 @@ do
        rmdir ${tmp_dir}
        exit 1
     else
-        printf  "%18s\t%20s\t%6s\t%8s\t%25s\n" "$(date +"%d.%m.%y %H:%m:%S")" $input $num_files $tot_size "${bucket_name}/${partial_path}" >> ${tmp_dir}/upload.log
+        printf  "%18s %25s %6s %8s %25s\n" "$(date +"%d.%m.%y %H:%m:%S")" $input $num_files $tot_size "${bucket_name}/${partial_path}" >> ${tmp_dir}/upload.log
     fi
 
     # rclone md5sums can be calculated only for files that are smaller than 5GB
@@ -682,21 +682,24 @@ do
           echo "Confirming upload..."
        fi
        #checksums for local and allas files 
-       sum1=($(md5sum ${tmp_dir}/$tmp_file))
+       sum1=$(md5sum ${tmp_dir}/$tmp_file | awk '{print $1}')
        if [[ $partial_path == "" ]] ; then
-          sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
+          allas_path="${storage_server}:${bucket_name}/$tmp_file"
        else
-          sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
+          allas_path="${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
        fi
- 
+       allas_path=$(echo "$allas_path" | sed -e s/"\/\/"/"\/"/g)
+      
+       sum2=$(rclone md5sum "$allas_path" | awk '{print $1}')
+       
        #check is cheksums match 
-       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+       if [[ "$sum1" != "$sum2" ]]
        then 
          echo "Upload of $input was not successfull!"
          echo "Cleaning the failed upload"
          echo "Upload summary:"
          cat ${tmp_dir}/upload.log
-         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+         rclone deletefile "$allas_path"
          rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
          rm -f ${tmp_dir}/upload.log
