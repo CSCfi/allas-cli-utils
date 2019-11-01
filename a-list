@@ -45,7 +45,7 @@ do
                    
                    full_name=("$1")
                    if [[ ${full_name:(-1)} == "/" ]]; then
-                        full_name=${full_name::-1}
+                        full_name=${full_name%/}
                    fi
                    bucket_name=$(echo $full_name | awk -F / '{print $1}')
                    #split bucket and object if needed
