@@ -160,6 +160,17 @@ fi
 #source $HOME/.allas_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
+
+if [[ -n "$OS_PASSWORD" ]]; then 
+   if  [[ $silent -eq 0 ]] ; then     
+          echo "Updating token"
+   fi
+   source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
+fi
+
+
+
+
 #Check if connection works
 if [[ $mode == "swift" ]]
 then

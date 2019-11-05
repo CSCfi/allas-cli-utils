@@ -285,7 +285,7 @@ do
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
-  echo "Publick link: https://a3s.fi/${bucket_name}/$tmp_file"
+  echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
  
   tmp_file=("not_defined")
 

@@ -36,23 +36,25 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     OPTIONS
     -------
 
-        --mode s3cmd         Configure s3cmd API (default: swift)
+     -m, --mode s3cmd         Configure s3cmd API (default: swift)
 
-        --mode both          Configure both swift and s3cmd APIs
+     -m, --mode both          Configure both swift and s3cmd APIs
 
-        --user USER          Storage server username (default: $USER)
+     -u, --user USER          Storage server username (default: $USER)
 
-        --keeppasswd         Keep OS_PASSWORD environment variable once the
-                             configuration is done. This can be useful if you
-                             use this tool in scripts that need to
-                             switch between projects.
+     -k, --keeppasswd         Keep OS_PASSWORD environment variable once the
+                              configuration is done. This can be useful if you
+                              use this tool in scripts that need to switch between 
+                              projects or re-open Allas connection
 
-        --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
-                             SIZE, in MB, are automatically uploaded
-                             multithread-multipart  (default: 5000)
+     -c, --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
+                              SIZE, in MB, are automatically uploaded
+                              multithread-multipart  (default: 5000)
 
-        --silent             Less output
+      -s, --silent            Less output
 
+      -f, --force             Skip check that tries to ensure that this command is
+                              sourced correctly. This option needs to ne used in batch jobs.
 
     DEPENDENCIES
     ------------

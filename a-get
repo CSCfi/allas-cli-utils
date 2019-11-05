@@ -77,7 +77,7 @@ do
                       echo "Object name is: $object"
                       exit 1
                    fi
-                   object_name=("$1")
+                   object_name="$1"
                    shift                       # No more switches
                 ;;
     esac
@@ -331,6 +331,15 @@ else
 fi
   
 
+if [[ -n "$OS_PASSWORD" ]]; then 
+   if  [[ $silent -eq 0 ]] ; then     
+          echo "Updating token"
+   fi
+   source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
+fi
+
+
+
 echo "Starting to copy data from $storage_server..."
 
 
@@ -348,7 +357,7 @@ if [[ $is_tar_file -eq 1 ]]; then
        fi
        cd $target_dir
      fi
-     rclone cat ${storage_server}:/$object_name | zstdmt -d | tar -x -o $file_name  
+     rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name  
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi
@@ -368,12 +377,12 @@ else
     fi
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
-       rclone cat ${storage_server}:/$object_name | zstdmt -d >  $target_name
+       rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
     else 
        if [[ $target_dir == "" ]]; then 
             target_dir="."
        fi
-       rclone copy ${storage_server}:/$object_name  $target_dir
+       rclone copy "${storage_server}:/$object_name"  $target_dir
     fi
     if [[ $new_target -eq 1 ]];then
        cd -   
