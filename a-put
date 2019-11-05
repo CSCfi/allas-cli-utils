@@ -10,8 +10,8 @@ fi
 start_time=$(date +%s)
 
 #default user
-user=($USER)
-compression=(1)
+user="$USER"
+compression=1
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -21,17 +21,17 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 
 #local variables
-bucket_name=("not_defined")
+bucket_name="not_defined"
 fixed_bucket=0
-tmp_file=("not_defined")
-print_help=(0)
-os_project_name=("none")
-input_def=("")
-mode=("swift")
-silent=(0)
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
-vastaus=("x")
-
+tmp_file="not_defined"
+print_help=0
+os_project_name="none"
+input_def=""
+mode="swift"
+silent=0
+tmp_dir="${tmp_root}/a_put_$$_tmp"
+vastaus="x"
+free_space_check=1
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -60,10 +60,10 @@ do
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
                      echo "Slash characters (/) are not allowed when object name is defiend with -o option" 
-                     echo "If you want to use slash charcters to define a pseudo folder, add that part of"
+                     echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
-                     echo "a-put -b bucket-name/pseudo-folder -o rest-of-object-name "
+                     echo "     a-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
                      exit 1
                   fi
 
@@ -99,6 +99,10 @@ do
                   tmp_root=("$2")
                   tmp_dir=("${tmp_root}/a_put_$$_tmp")  
                   shift
+                  shift
+                ;;
+              '-x')
+                  free_space_check=0
                   shift
                 ;;
              *)
@@ -241,23 +245,26 @@ if [[ $mode == "swift" ]]; then
 fi
 
 #check free space in $WRKDIR
-
-if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
-then
-  if [[ $local_host == "taito" ]];then
-     quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
-     free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
-  fi
-  if [[ $local_host == "puhti" ]];then
-     projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
-     (( lproj = 600000000 + projnum ))
-     #  echo "lfs quota -p $lproj $tmp_root"
-     #lfs quota -p $lproj $tmp_root
-     quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
-     free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+if [[ $free_space_check -eq 1 ]]; then
+  if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
+  then
+    if [[ $local_host == "taito" ]];then
+       quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
+       free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
+    fi
+    if [[ $local_host == "puhti" ]];then
+      projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
+      (( lproj = 600000000 + projnum ))
+      #  echo "lfs quota -p $lproj $tmp_root"
+      #lfs quota -p $lproj $tmp_root
+      quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
+      free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+    fi
+  else
+    free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
   fi
 else
-  free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
+    free_space=10000000000
 fi
 
 if [[ $silent -eq 0 ]] ; then
@@ -475,6 +482,7 @@ do
   echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
   echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
   echo "original_location: $file_path " >>  ${tmp_dir}/${tmp_file}_ameta
+  echo "protocol: $mode " >>  ${tmp_dir}/${tmp_file}_ameta
  
   num_files=0
 
