@@ -57,7 +57,7 @@ do
                 ;;
              '--object' | '-o' )
                   tmp_file="$2"
-                  slashcheck=$(echo $temp_file | grep -c "/")
+                  slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
                      echo "Slash characters (/) are not allowed when object name is defiend with -o option" 
                      echo "If you want to use slash charcters to define a pseudo folder, add that part of"
