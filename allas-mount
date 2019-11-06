@@ -64,9 +64,6 @@ do
     esac
 done
 
-if [[ $mount_point == "" ]]; then
-   mount_point=$bucket_name
-fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
@@ -89,10 +86,16 @@ fi
 
 if [[ $bucket_name == "" ]]
 then
-  echo "Please give the bucket to mount:"
+  echo "Available buckets:"
   a-list
+  echo "Please give the bucket to mount:"
   read bucket_name 
 fi
+
+if [[ $mount_point == "" ]]; then
+   mount_point=$bucket_name
+fi
+
 
 
 #Configure rclone
@@ -194,7 +197,7 @@ else
 fi
   
 #mount
-rclone mount ${storage_server}:$bucket_name $mount_point --read-only --daemon --daemon-timeout 10800
+rclone mount ${storage_server}:$bucket_name $mount_point --read-only --daemon --daemon-timeout 21600s
 
 echo "Allas bucket: $bucket_name is mounted to $mount_point"
 
