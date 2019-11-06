@@ -181,7 +181,7 @@ do
 
 
   #Check if stored file already exitst 
-  echo "rclone ls ${storage_server}:${bucket_name}/$tmp_file"
+  #echo "rclone ls ${storage_server}:${bucket_name}/$tmp_file"
 
   if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
   then
@@ -250,7 +250,7 @@ do
     fi
 
     # rclone md5sums can be calculated only for files that are smaller than 5GB
-    if [[ $tmp_size -lt 5000000 ]]
+    if [[ $tot_size -lt 5000000 ]]
     then
        echo "Confirming upload..."
        #checksums for local and allas files 
