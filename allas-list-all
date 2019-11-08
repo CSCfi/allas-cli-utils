@@ -1,0 +1,122 @@
+#!/bin/bash
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+
+#allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+
+export OS_USERNAME=$(whoami)
+export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
+export OS_USER_DOMAIN_NAME="Default"
+export OS_REGION_NAME="regionOne"
+export OS_INTERFACE=public
+export OS_IDENTITY_API_VERSION=3
+
+#store swift autentication if it is done
+if [ -n "$OS_AUTH_TOKEN" ]
+then
+   ORIG_OS_AUTH_TOKEN=("$OS_AUTH_TOKEN")
+fi 
+
+if [ -n "$OS_STORAGE_URL" ]
+then
+   ORIG_OS_STORAGE_UR=("$OS_STORAGE_URL")
+fi 
+
+buk=(1)
+
+usage="
+
+allas-list-all lists all buckets or objects that user has in 
+Allas.  By default only buckets are listed for the current username.
+
+OPTIONS 
+
+  -o, --objects    Show all objects in addition to just bucket names.
+
+  -u, --user       Define username for Allas.
+"
+
+
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '-o' | '--objects')
+             buk=(0)
+             shift
+             ;;
+             '-u' | '--user')
+             export OS_USERNAME=$2
+             shift
+             shift
+             ;;
+             '-k' | '--keeppasswd')
+             keep_password=(1)
+             shift
+             ;;
+             '-h' | '--help')
+             echo "$usage"
+             exit 0
+             shift
+             ;;
+             *)
+             export OS_PROJECT_NAME=$1 
+             shift                       # No more switches
+             ;;
+    esac
+done
+
+
+
+if [ -z "$OS_PASSWORD" ]; then 
+   echo "Please enter CSC password for account ${OS_USERNAME}: "
+   read -sr OS_PASSWORD_INPUT
+   export OS_PASSWORD=$OS_PASSWORD_INPUT
+fi
+
+echo "Collecting project list. Please wait."
+openstack project list --my-projects -c Name -f value
+
+all_projects=$(openstack project list --my-projects -c Name -f value)
+
+if [ $buk -eq 1 ]; then
+   echo ""
+   echo "Listing all buckects in all projects."
+   echo ""
+else
+   echo ""
+   echo "Listing all objects in all projects."
+   echo ""
+fi
+
+for pro in $all_projects
+do
+  echo "-----------------------------------------------"
+  projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
+  saldo -p $projnum 2> /dev/null | grep "^Project"
+  source $allas_conf_path -f --silent --keeppasswd $pro
+  for kont in $(swift list )
+  do 
+    if [ $buk -ne 1 ]; then
+      for obj in $(swift list $kont)
+      do
+         echo "${pro}:${kont}/$obj" 
+      done
+    else 
+        echo "${pro}:${kont}" 
+    fi        
+  done
+done
+
+
+#store swift autentication if it is done
+if [ -n "$ORIG_OS_AUTH_TOKEN" ]
+then
+   export OS_AUTH_TOKEN=("$ORIG_OS_AUTH_TOKEN")
+fi 
+
+if [ -n "$ORIG_OS_STORAGE_URL" ]
+then
+   export OS_STORAGE_URL=("$ORIG_OS_STORAGE_URL")
+fi 
