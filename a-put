@@ -793,7 +793,7 @@ if [[ $silent -eq 0 ]] ; then
   echo "-----------------------------------------------------------------"
   echo ""
   echo "Upload summary:"
-  cat ${tmp_dir}/upload.log
+  cat ${tmp_dir}/upload.log | sed -e s/"\/\/"/"\/"/g
   echo "-----------------------------------------------------------------"
   echo OK
 fi
