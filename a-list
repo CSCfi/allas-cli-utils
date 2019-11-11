@@ -49,7 +49,7 @@ do
                    fi
                    bucket_name=$(echo $full_name | awk -F / '{print $1}')
                    #split bucket and object if needed
-                   if [[ $bucket_name != "full_name" ]]; then
+                   if [[ $bucket_name != $full_name ]]; then
                       prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)                      
                       options=("$options -p $prefix_string ") 
                    fi
