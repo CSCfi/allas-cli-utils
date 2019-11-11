@@ -351,7 +351,7 @@ if [[ $is_tar_file -eq 1 ]]; then
        else
           mkdir -p $target_dir
        fi
-       if [[ $(file -b $target_dir | awk '{$NF}') != "directory" ]]; then
+       if [[ $(file -b $target_dir | awk '{print $NF}') != "directory" ]]; then
             echo "Unable to create directory: $target_dir"
             exit 1
        fi
