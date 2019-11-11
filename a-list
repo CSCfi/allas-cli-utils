@@ -43,13 +43,13 @@ do
                       exit 1
                    fi
                    
-                   full_name=("$1")
+                   full_name="$1"
                    if [[ ${full_name:(-1)} == "/" ]]; then
                         full_name=${full_name%/}
                    fi
                    bucket_name=$(echo $full_name | awk -F / '{print $1}')
                    #split bucket and object if needed
-                   if [[ $bucket_name != "$1" ]]; then
+                   if [[ $bucket_name != "full_name" ]]; then
                       prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)                      
                       options=("$options -p $prefix_string ") 
                    fi
