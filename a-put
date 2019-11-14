@@ -32,7 +32,7 @@ silent=0
 tmp_dir="${tmp_root}/a_put_$$_tmp"
 vastaus="x"
 free_space_check=1
-skip_filelist=0
+filelist_level=0
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -106,9 +106,12 @@ do
                   free_space_check=0
                   shift
                 ;;
-
+              '--simple-filelist')
+                 filelist_level=1
+                 shift
+                ;;
               '--skip-filelist')
-                 skip_filelist=1
+                 filelist_level=2
                  shift
                 ;;
                
@@ -318,6 +321,7 @@ printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in 
 
 for input in $input_def
 do
+  filelist_level_orig=$filelist_level
   if [[ $silent -eq 0 ]] ; then
      echo "Processing: $input"
   fi
@@ -499,7 +503,7 @@ do
   num_files=0
 
   #initial check of file or directory count
-  if [[ $skip_filelist -eq 0 ]] ; then 
+  if [[ $filelist_level -lt 2 ]] ; then 
     num_check=$(find $input | wc -l )
     if [[ $num_check -gt $max_files ]]; then
       echo ""
@@ -519,46 +523,53 @@ do
     fi
 
 
-    if [[ $num_check -gt 10000 ]]; then
+    if [[ $num_check -gt 5000 ]]; then
       echo "$input contains $num_check directories or files."
-      echo "Collecting information about all these items will take a long time."
-      echo "Please wait"
+      echo "For directories that contain over 5000 files, only simplified file name list will be collected to the metadatafile"
+      filelist_level=1
     fi
 
-    ((interval =  $num_check / 100 ))
-    if [[ $interval -lt 1000 ]];then
-       interval=1000
+    #Detailed data collection only if there is less than 10000 file
+    if [[ $filelist_level -eq 0 ]]; then
+ 
+      ((interval =  $num_check / 100 ))
+      if [[ $interval -lt 1000 ]];then
+         interval=1000
+      fi
+
+      d=0
+
+      #For field separator changed to allow spaces in file names
+      SAVEIFS=$IFS
+      IFS=$(echo -en "\n\b") 
+      for f in $(find "$input" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}' )
+      do        
+        ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
+        (( num_files = num_files + 1 ))
+        (( d++ ))
+        if [[ $d -gt $interval ]]; then
+          printf "%s" "."
+          d=0
+        fi 
+      done
+      IFS=$SAVEIFS
+
+      if [ $num_files -eq 0 ]
+      then
+        echo ""
+        echo "$input contains no files!"
+        echo "This is probably an old directory that has been emptied by the automatic \$WRKDIR cleaning process."
+        rm -f ${tmp_dir}/${tmp_file}_ameta
+        rmdir ${tmp_dir} 
+        exit 1
+      fi
+    else
+      echo "only file names will be collected to the metadata"
     fi
-
-    d=0
-
-    #For field separator changed to allow spaces in file names
-    SAVEIFS=$IFS
-    IFS=$(echo -en "\n\b") 
-    for f in $(find "$input" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}' )
-    do        
-      ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
-      (( num_files = num_files + 1 ))
-      (( d++ ))
-      if [[ $d -gt $interval ]]; then
-        printf "%s" "."
-        d=0
-      fi 
-    done
-    IFS=$SAVEIFS
-
-    if [ $num_files -eq 0 ]
-    then
-      echo ""
-      echo "$input contains no files!"
-      echo "This is probably an old directory that has been emptied by the automatic \$WRKDIR cleaning process."
-      rm -f ${tmp_dir}/${tmp_file}_ameta
-      rmdir ${tmp_dir} 
-      exit 1
-    fi
+    
   else
-    num_files="unknown_number"
-    echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ameta
+      num_files="unknown_number"
+      echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ameta
   fi
 
   #check if there is enough space for temporary data
@@ -599,14 +610,21 @@ do
         else
           zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
         fi
+        if [[ $filelist_level -eq 1 ]]; then      
+           ls $input >> ${tmp_dir}/${tmp_file}_ameta
+        fi 
      else
         #compress data
         if [[ $silent -eq 0 ]] ; then
            echo "Collecting data from directory $input to archive file: $tmp_file"
-           tar -cvf - "$input" | zstdmt -T2 > ${tmp_dir}/$tmp_file
+           tar -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
         else
-           tar -cf - "$input"  | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
+           tar -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
         fi
+        
+        if [[ $filelist_level -eq 1 ]]; then      
+           cat ${tmp_dir}/tar_list >> ${tmp_dir}/${tmp_file}_ameta
+        fi   
      fi
   else
   # ei pakkaamista
@@ -796,7 +814,7 @@ do
   if [[ $fixed_bucket -eq 0 ]]; then 
      bucket_name=("not_defined")
   fi
-
+  filelist_level=$filelist_level_orig
 done
 
 if [[ $silent -eq 0 ]] ; then
@@ -807,7 +825,7 @@ if [[ $silent -eq 0 ]] ; then
   echo "-----------------------------------------------------------------"
   echo OK
 fi
-
+rm -f ${tmp_dir}/tar_list
 rm -f ${tmp_dir}/upload.log 
 rmdir  ${tmp_dir}
 end_time=$(date +%s)
