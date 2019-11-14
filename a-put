@@ -203,6 +203,9 @@ Options
 
 -u, --user                  Define username liked to the data to be uploaded
 
+--simple-filelist           Only filenames, not owner, size and date, are collected to the metadatafile.
+                            This feature is automatically used for diredtories that contain more than 5000 items.
+
 --skip-filelist             Do not collect information about the files that the object contains to metadata file
                             Using this option speeds up the upload process significantly if the directory 
                             that will be uploaded contains large amount of files. However, a-find can't be used
@@ -623,7 +626,7 @@ do
         fi
         
         if [[ $filelist_level -eq 1 ]]; then      
-           cat ${tmp_dir}/tar_list >> ${tmp_dir}/${tmp_file}_ameta
+           grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
         fi   
      fi
   else
