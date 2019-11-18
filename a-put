@@ -307,7 +307,7 @@ then
       if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token"
       fi
-      source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
+      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
    fi
    test=$(swift stat 2> /dev/null | grep -c "Account:")
    if [[ $test -lt 1 ]]
