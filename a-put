@@ -34,6 +34,7 @@ vastaus="x"
 free_space_check=1
 filelist_level=0
 cumulative_size=0
+override_mode=0
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -115,7 +116,11 @@ do
                  filelist_level=2
                  shift
                 ;;
-               
+              '--override')
+                 override_mode=1
+                 shift
+                ;;
+
              *)
                    input_def=("$input_def $1")
                    shift                       # No more switches
@@ -211,6 +216,8 @@ Options
                             Using this option speeds up the upload process significantly if the directory 
                             that will be uploaded contains large amount of files. However, a-find can't be used
                             for objects uploaded this way.
+
+--override                  Allow overwriting existing objects.
                              
 
 Related commands: a-find, a-get, a-delete, a-info
@@ -448,7 +455,7 @@ do
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
-  if [ $mode == "swift" ]
+  if [[ $mode == "swift" && $override_mode -eq 0 ]]
   then
      if [[ $partial_path == "" ]]; then
       if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
@@ -457,7 +464,7 @@ do
         echo "A file/directory with the same name has already been uploaded into"
         echo "bucket $bucket_name in $storage_server"
         echo ""
-        echo "   ${bucket_name}/$tmp_file  " |
+        echo "   ${bucket_name}/${tmp_file}  " 
         #rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
@@ -472,7 +479,7 @@ do
         echo "A file/directory with the same name has already been uploaded into"
         echo "bucket $bucket_name in $storage_server"
         echo ""
-        echo "   ${bucket_name}/${partial_path}/$tmp_file  "
+        echo "   ${bucket_name}/${partial_path}/${tmp_file}  "
         #rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
@@ -483,7 +490,7 @@ do
     fi
   fi
 
-  if [ $mode == "s3cmd" ]
+  if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
   then
     echo "cheking s3cmd"
     if [[ $(s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
