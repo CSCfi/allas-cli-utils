@@ -33,6 +33,7 @@ tmp_dir="${tmp_root}/a_put_$$_tmp"
 vastaus="x"
 free_space_check=1
 filelist_level=0
+cumulative_size=0
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -355,6 +356,7 @@ do
      echo "Checking total size of $input. Please wait."
   fi
   tot_size=$(du -s $input | cut -f1)
+  (( cumulative_size = cumulative_size + tot_size ))
   #echo $tot_size
 
   #tmp file name. Depends on compression and if file is a directory
@@ -532,7 +534,7 @@ do
       filelist_level=1
     fi
 
-    #Detailed data collection only if there is less than 10000 file
+    #Detailed data collection only if there is less than 5000 files
     if [[ $filelist_level -eq 0 ]]; then
  
       ((interval =  $num_check / 100 ))
@@ -833,7 +835,9 @@ rm -f ${tmp_dir}/upload.log
 rmdir  ${tmp_dir}
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
-echo "$(date) $user $bucket_name  $kesto" >> $allas_log
+(( nopeus = cumulative_size / kesto ))
+(( nopeusmbs = nopeus / 1000 ))
+echo "$(date) $user $bucket_name  $kesto $culative_size ${nopeusmbs}Mb/s" >> $allas_log
 if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
    chmod a+rwx  $allas_log
 fi
