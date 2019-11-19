@@ -153,7 +153,18 @@ do
                  override_mode=1
                  shift
                 ;;
-
+               '--input-list')
+                  list_file=$2
+                  if [[ -e $list_file ]];then
+                    input_def=("$(cat $list_file)")                
+                  else  
+                    echo "Import file list $list_file not found"
+                    exit 1  
+                  fi 
+                  shift
+                  shift
+                ;;
+               
              *)
                    input_def=("$input_def $1")
                    shift                       # No more switches
@@ -251,7 +262,9 @@ Options
                             for objects uploaded this way.
 
 --override                  Allow overwriting existing objects.
-                             
+
+--input-list                Give a file that lists the files or directtories to be uploaded to Allas.
+                            Each item will be stored as one object.
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
