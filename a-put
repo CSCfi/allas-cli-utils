@@ -1,5 +1,38 @@
 #!/bin/bash 
 
+#function to check that swift works
+check_swift_connection () {
+  test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
+    if [[ $test -lt 1 ]]
+    then 
+      #if [ -n "$ACTIVE_TOKEN" ]; then
+      #   unset OS_AUTH_TOKEN
+      #   export OS_AUTH_TOKEN=$(check_atoken)
+      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      #fi
+      
+    if [[ -n "$OS_PASSWORD" ]]; then 
+      if  [[ $silent -eq 0 ]] ; then     
+          echo "Updating token"
+      fi
+      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
+    fi
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
+    if [[ $test -lt 1 ]]
+    then 
+       echo "No connection to Allas!"
+       echo "Please try setting the the connection again."
+       exit 1
+    else
+      echo "swift connection updated"
+    fi
+  else 
+     echo "swift connection OK" 
+  fi 
+}
+
+
 if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
@@ -300,30 +333,11 @@ fi
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
-  test=$(swift stat 2> /dev/null | grep -c "Account:")
-    
-  if [[ $test -lt 1 ]]
-  then 
-      #if [ -n "$ACTIVE_TOKEN" ]; then
-      #   unset OS_AUTH_TOKEN
-      #   export OS_AUTH_TOKEN=$(check_atoken)
-      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-      #fi
-      
-   if [[ -n "$OS_PASSWORD" ]]; then 
-      if  [[ $silent -eq 0 ]] ; then     
-          echo "Updating token"
-      fi
-      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
-   fi
-   test=$(swift stat 2> /dev/null | grep -c "Account:")
-   if [[ $test -lt 1 ]]
-   then 
-      echo "No connection to Allas!"
-      echo "Please try setting the the connection again."
-      exit 1
-   fi
-  fi 
+  if [[ $silent -eq 0 ]] ; then 
+      check_swift_connection 
+  else 
+      check_swift_connection > /dev/null
+  fi
 fi
 
 mkdir $tmp_dir
@@ -332,6 +346,16 @@ printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in 
 
 for input in $input_def
 do
+  #Check if connection works and update if needed and possible
+  if [[ $mode == "swift" ]]
+  then
+    if [[ $silent -eq 0 ]] ; then 
+      check_swift_connection 
+    else 
+      check_swift_connection > /dev/null
+    fi
+  fi
+
   filelist_level_orig=$filelist_level
   if [[ $silent -eq 0 ]] ; then
      echo "Processing: $input"
@@ -339,8 +363,7 @@ do
   if [[ ! -e $input ]] ; then
     echo "File or directory $input does not exist!"
     exit 1
-  fi
-   
+  fi 
 
   #Remove the trailing / if it exist
   if [ $(echo -n $input | tail -c 1) == "/" ]
