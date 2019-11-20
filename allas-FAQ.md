@@ -1,11 +1,14 @@
 # Frequently asked questions about using Allas and A-tools
 
-**Q:** Data transfer seems to continue forerver,
+**Q: Data transfer seems to continue forerver,
 and the output shows that well over 100% of the data has been trasported. Is this normal?**
-**A:" This is not normal. This kind of error has accurred several times, but sofr we don't know what is causing this
+
+**A:** This is not normal. This kind of error has accurred several times, but sofr we don't know what is causing this
 Please kill your data transfer process (Ctrl-c) and try running the same command again.
 
-**Q:**  How I can download the data with a-get without having to download each individual object using a separate a-get command?
+
+**Q: How I can download the data with a-get without having to download each individual object using a separate a-get command?**
+
 **A:** I am afraid that you have to run a-get commands one by one.
 
 What you can do is first create a list of objects
