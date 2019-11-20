@@ -247,6 +247,9 @@ do
   #this is not a good approach.
   #test if a symbolic link would do
   cp $input ${tmp_dir}/$tmp_file  
+  ln -s ${input} ${tmp_dir}/$tmp_file
+
+
 
 
   #upload
@@ -257,7 +260,7 @@ do
     
     echo "Uploading data to allas."
     # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-    rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+    rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
     exitcode=$?
     if [ $exitcode -ne 0 ]; then
        echo ""
