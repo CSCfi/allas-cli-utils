@@ -246,7 +246,7 @@ do
 
   #this is not a good approach.
   #test if a symbolic link would do
-  cp $input ${tmp_dir}/$tmp_file  
+  #cp $input ${tmp_dir}/$tmp_file  
   ln -s ${input} ${tmp_dir}/$tmp_file
 
 
