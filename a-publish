@@ -269,15 +269,15 @@ do
        exit 1
     fi
 
-    # rclone md5sums can be calculated only for files that are smaller than 5GB
-    if [[ $tmp_size -lt 5000000 ]]
-    then
+   # rclone md5sums can be calculated only for files that are smaller than 5GB
+   if [[ $tot_size -lt 5000000 ]]
+   then
        echo "Confirming upload..."
        #checksums for local and allas files 
        sum1=($(md5sum ${tmp_dir}/$tmp_file))
        sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
  
-       #check is cheksums match 
+       #check if cheksums match 
        if [[ ${sum1[0]} !=  ${sum2[0]} ]]
        then 
          echo "Upload of $input was not successfull!"
