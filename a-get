@@ -362,8 +362,20 @@ if [[ $is_tar_file -eq 1 ]]; then
      #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
      echo "Dowloading compressed object from Allas"
      rclone copyto -P "${storage_server}:/$object_name" a-get_download_$$_tmp.zsd
+     exitcode=$?
+     if [[ $exitcode -ne 0 ]]; then
+        echo "Donload failed!"
+        rm -f  a-get_download_$$_tmp.zsd
+        exit 1
+     fi
      echo "Uncompressing downloaded object"
-     cat  a-get_download_$$_tmp.zsd | zstdmt -d | tar -x -o $file_name
+     cat  a-get_download_$$_tmp.zsd | zstdmt -d | tar -xv -o $file_name
+     exitcode=$?
+     if [[ $exitcode -ne 0 ]]; then
+        echo "Uncompression failed!"
+        rm -f  a-get_download_$$_tmp.zsd
+        exit 1
+     fi
      rm -f  a-get_download_$$_tmp.zsd
      if [[ $new_target -eq 1 ]];then
        cd -   
