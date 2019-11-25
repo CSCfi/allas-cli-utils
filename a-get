@@ -106,7 +106,7 @@ Options:
 
 -t, --target_file <file_name> Define a file name for the object for the object to be downloaded.
 
--l, --original_locatio      Retrieve the data to the original location in the directory structure.
+-l, --original_location      Retrieve the data to the original location in the directory structure.
 
 
 Related commands: a-put, a-find, a-info, a-delete
@@ -345,6 +345,7 @@ echo "Starting to copy data from $storage_server..."
 
 if [[ $is_tar_file -eq 1 ]]; then
      #Processing of a tar/directory
+     
      if [[ $new_target -eq 1 ]];then
        if [[ -e $target_dir ]]; then
           check_dir=$(file -b $target_dir)
@@ -355,9 +356,15 @@ if [[ $is_tar_file -eq 1 ]]; then
             echo "Unable to create directory: $target_dir"
             exit 1
        fi
+
        cd $target_dir
      fi
-     rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name  
+     #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
+     echo "Dowloading compressed object from Allas"
+     rclone copyto -P "${storage_server}:/$object_name" a-get_download_$$_tmp.zsd
+     echo "Uncompressing downloaded object"
+     cat  a-get_download_$$_tmp.zsd | zstdmt -d | tar -x -o $file_name
+     rm -f  a-get_download_$$_tmp.zsd
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi
