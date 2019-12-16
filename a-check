@@ -509,7 +509,7 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${partial_path}/${tmp_file}"
-        ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+        ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
     fi
   fi
   
