@@ -359,7 +359,7 @@ fi
 mkdir $tmp_dir
 
 #Table header"
-printf "%25s %60s %25s %s\n" "Local file or directory" "Matching object in Allas" "Object size and date"
+printf "%45s %80s %25s %s\n" "Local file or directory" "Matching object in Allas" "Object size and date"
 echo "-----------------------------------------------------------------------------------------------------"
 
 for input in $input_def
@@ -523,10 +523,10 @@ do
   
   #Print results
   if [[ $is_uploaded -eq 1 ]]; then
-    printf "%25s %60s %25s %s\n" "$input" "$allas_object" "$ainfo" "GMT"
+    printf "%45s %80s %25s %s\n" "$input" "$allas_object" "$ainfo" "GMT"
    else
     echo " "
-    printf  "%25s %40s\n" "$input" "No matching object in Allas!"
+    printf  "%45s %80s\n" "$input" "No matching object in Allas!"
     echo " "
     echo "$input" >>  ${tmp_dir}/missing_files.txt
   fi
