@@ -502,6 +502,10 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${tmp_file}"
+        if [[  ${tmp_file:0:1} == "/" ]]; then
+           tlen={#tmp_file}
+           tmp_file=${tmp_file:1:tlen}
+        fi
         ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
     fi
   else
@@ -509,6 +513,10 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${partial_path}/${tmp_file}"
+        if [[  ${partial_path:0:1} == "/" ]]; then
+           tlen={#partial_path}
+           partial_path=${partial_path:1:tlen}
+        fi
         ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
     fi
   fi
