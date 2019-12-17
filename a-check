@@ -32,6 +32,20 @@ check_swift_connection () {
   fi 
 }
 
+#Function to remove the trailing / if it exist
+remove_slash_from_ends(){
+path_string=$1
+if [[ ${path_string:(-1)} == "/" ]]; then
+    path_string =${path_string%/}
+fi
+
+if [[  ${path_string:0:1} == "/" ]]; then
+    tlen=${#path_string}
+    path_string=${path_string:1:tlen}
+fi
+
+echo $path_string
+}
 
 if [[ $# -lt 1 ]]
 then
@@ -78,10 +92,7 @@ do
              '--bucket' | '-b' )
              # query file
                   bucket_name="$2"
-                  #Remove the trailing / if it exist
-                  if [[ ${bucket_name:(-1)} == "/" ]]; then
-                        bucket_name=${bucket_name%/}
-                  fi
+                  bucket_name=$(remove_slash_from_ends $bucket_name)
                   fixed_bucket=1
                   shift
                   shift
@@ -360,7 +371,7 @@ mkdir $tmp_dir
 
 #Table header"
 printf "%45s %80s %25s %s\n" "Local file or directory" "Matching object in Allas" "Object size and date"
-echo "-----------------------------------------------------------------------------------------------------"
+echo "---------------------------------------------------------------------------------------------------------------------------------------------------------"
 
 for input in $input_def
 do
@@ -420,6 +431,7 @@ do
     else
        tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
     fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
   fi
 
   #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
@@ -491,7 +503,7 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
-
+     partial_path=$(remove_slash_from_ends $partial_path)
   fi 
 
   #Check if stored file already exitst
@@ -502,10 +514,6 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${tmp_file}"
-        if [[  ${tmp_file:0:1} == "/" ]]; then
-           tlen=${#tmp_file}
-           tmp_file=${tmp_file:1:tlen}
-        fi
         ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
     fi
   else
@@ -513,10 +521,6 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${partial_path}/${tmp_file}"
-        if [[  ${partial_path:0:1} == "/" ]]; then
-           tlen=${#partial_path}
-           partial_path=${partial_path:1:tlen}
-        fi
         ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
     fi
   fi

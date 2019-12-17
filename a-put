@@ -32,6 +32,22 @@ check_swift_connection () {
   fi 
 }
 
+#Function to remove the trailing / if it exist
+remove_slash_from_ends(){
+path_string=$1
+if [[ ${path_string:(-1)} == "/" ]]; then
+    path_string =${path_string%/}
+fi
+
+if [[  ${path_string:0:1} == "/" ]]; then
+    tlen=${#path_string}
+    path_string=${path_string:1:tlen}
+fi
+
+echo $path_string
+}
+
+
 
 if [[ $# -lt 1 ]]
 then
@@ -79,9 +95,7 @@ do
              # query file
                   bucket_name="$2"
                   #Remove the trailing / if it exist
-                  if [[ ${bucket_name:(-1)} == "/" ]]; then
-                        bucket_name=${bucket_name%/}
-                  fi
+                  bucket_name=$(remove_slash_from_ends $bucket_name)
                   fixed_bucket=1
                   shift
                   shift
@@ -415,6 +429,7 @@ do
     else
        tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
     fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
   fi
 
   #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
@@ -486,7 +501,7 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
-
+     partial_path=$(remove_slash_from_ends $partial_path)
   fi 
 
   #Check if stored file already exitst
@@ -501,7 +516,6 @@ do
         echo "bucket $bucket_name in $storage_server"
         echo ""
         echo "   ${bucket_name}/${tmp_file}  " 
-        #rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
         echo "Optionally you can define different bucket name using option --bucket ."
@@ -516,7 +530,6 @@ do
         echo "bucket $bucket_name in $storage_server"
         echo ""
         echo "   ${bucket_name}/${partial_path}/${tmp_file}  "
-        #rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
         echo "Optionally you can define different bucket name using option --bucket ."
@@ -534,7 +547,7 @@ do
       echo ""
       echo "A file/directory with the same name has already been uploaded to $storage_server"
       echo ""
-      s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
+      s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
       echo ""
       echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
       exit 1
@@ -579,7 +592,10 @@ do
     if [[ $num_check -gt 5000 ]]; then
       echo "$input contains $num_check directories or files."
       echo "For directories that contain over 5000 files, only simplified file name list will be collected to the metadatafile"
+      # This definition is problematic as num_check contains nu,ber of both files and directories.
+      num_files=$num_check
       filelist_level=1
+
     fi
 
     #Detailed data collection only if there is less than 5000 files
@@ -861,7 +877,13 @@ do
       echo "$input uploaded to bucket $bucket_name in Allas"
     fi
   fi
-  echo "${bucket_name}${partial_path}/$tmp_file"
+
+  if [[ $partial_path == "" ]]; then
+     echo "${bucket_name}/$tmp_file"
+  else
+     echo "${bucket_name}/${partial_path}/$tmp_file"
+  fi
+
   tmp_file=("not_defined")
 
   if [[ $fixed_bucket -eq 0 ]]; then 
