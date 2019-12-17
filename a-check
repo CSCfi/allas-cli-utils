@@ -532,10 +532,11 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${partial_path}/${tmp_file}"
-    if [[ $quick_check -eq 0 ]]; then
-        ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
-    else
-        ainfo="quick mode: Object details not checked"
+        if [[ $quick_check -eq 0 ]]; then
+            ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+        else
+            ainfo="quick mode: Object details not checked"
+        fi
     fi
   fi
   
