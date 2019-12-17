@@ -82,7 +82,7 @@ free_space_check=1
 filelist_level=0
 cumulative_size=0
 override_mode=0
-
+quick_check=0
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -138,6 +138,13 @@ do
                   shift
                   shift
                 ;;
+             '--quick' | '-q' )
+                  quick_check=1
+                  shift
+                  shift
+              ;;
+
+
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
                   tmp_dir=("${tmp_root}/a_put_$$_tmp")  
@@ -268,13 +275,13 @@ Options
 
 -o, --object <object_name>  Define a name for the new object to be created.
 
-
 -n, --nc                    Do not compress the data that will be uploaded.
 
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a direcrory that will be used to store 
-                            temporary files of the upload process.
+-q, --quick                 Check just the names of objects. Not sizes or dates.
+                            This makes checking process much faster, but you will
+                            not get more information than just the names about the objects.
 
 -u, --user                  Define username liked to the data to be uploaded
 
@@ -514,14 +521,21 @@ do
     then
         is_uploaded=1
         allas_object="${bucket_name}/${tmp_file}"
-        ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+        if [[ $quick_check -eq 0 ]]; then
+          ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+        else
+          ainfo="quick mode: Object details not checked"
+        fi
     fi
   else
     if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
     then
         is_uploaded=1
         allas_object="${bucket_name}/${partial_path}/${tmp_file}"
+    if [[ $quick_check -eq 0 ]]; then
         ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+    else
+        ainfo="quick mode: Object details not checked"
     fi
   fi
   
@@ -544,6 +558,10 @@ if [[ -e "${tmp_dir}/missing_files.txt" ]];then
   echo ""
   echo "Following local files or directories do not have a matching object in Allas:"
   cat ${tmp_dir}/missing_files.txt
+  cp  ${tmp_dir}/missing_files.txt ./missing_${bucket_name}_$$
+  echo ""
+  echo "The names of missing files or directories, listed above, are stored to file:"
+  echo "     /missing_${bucket_name}_$$"
   echo "-----------------------------------------------------------------"
 else
   echo "-----------------------------------------------------------------"
