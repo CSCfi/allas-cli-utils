@@ -36,7 +36,7 @@ check_swift_connection () {
 remove_slash_from_ends(){
 path_string=$1
 if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string =${path_string%/}
+    path_string=${path_string%/}
 fi
 
 if [[  ${path_string:0:1} == "/" ]]; then
