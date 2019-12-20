@@ -8,26 +8,28 @@ echo "ccc" > test_$$/c.txt
 
 #a-put
 echo "Testing A commands"
-object=$(a-put -b allastest_$$ test_$$ -s)
+object=$(a-put -b allastest_$$ test_$$ -s | tr -d "\n")
 if [[ $object == "allastest_$$/test_$$.tar.zst" ]]; then
   echo "a-put OK"
 else
   echo "a-put FAILED"
+  echo $object
  # exit 1
 fi
  
 #a-list
-t1=$(a-list allastest_$$)
-if [[ $t1 == "test_$$.tar.zst" ]]; then
+t1=$(a-list allastest_$$ | tr -d "\n" )
+if [[ $t1 == "allastest_$$/test_$$.tar.zst" ]]; then
   echo "a-list OK"
 else
-  echo "a-list FAILED" 
+  echo "a-list FAILED"
+  echo "a-list  allastest_$$"
   a-list  allastest_$$
 fi
 
 #a-info
 
-if [[ $(a-info $object | grep -c "test_") -eq 5 ]]; then
+if [[ $(a-info $object | grep -c "test_") -eq 6 ]]; then
   echo "a-info OK"
 else
   echo "a-info FAILED"
