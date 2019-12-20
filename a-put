@@ -74,7 +74,7 @@ bucket_name="not_defined"
 fixed_bucket=0
 tmp_file="not_defined"
 print_help=0
-os_project_name="none"
+os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
 silent=0
@@ -288,16 +288,14 @@ exit
 fi 
 
 #Assign project to be used if not defined 
-if [ $os_project_name == "none" ]
+
+
+
+if [[ $os_project_name == "" ]]
 then
   if [ -e $HOME/.allas_default ]
   then
      source $HOME/.allas_default
-     if [[ $os_project_name != $OS_PROJECT_NAME ]]
-     then 
-        echo "Switching allas configuration to use project $os_project_name"
-        source $allas_conf_path -f  -user $user $os_project_name
-     fi 
   else
      echo "Default project is not defined"
      source $allas_conf_path -user $user
@@ -305,8 +303,8 @@ then
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
   fi
+  source $HOME/.allas_default
 fi
-source $HOME/.allas_default
 
 
 #Check if zstdmt is needed and available
@@ -401,7 +399,7 @@ do
  
   #check that file name does not end with _ameta
   if [[ ${input:(-6):6} == "_ameta" ]]; then
-    echo "Found a file/directoryname which ends with _ameta"
+    echo "Found a file/directory name which ends with _ameta"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of a-put"

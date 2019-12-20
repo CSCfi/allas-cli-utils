@@ -10,7 +10,7 @@ source $inst_root/a_env_conf
 user=($USER)
 bucket_name=("")
 print_help=(0)
-os_project_name=("none")
+os_project_name=("$OS_PROJECT_NAME")
 options=("")
 dir_like=(0)
 
@@ -111,29 +111,19 @@ else
 fi
 
 #Assign project to be used if not defined 
-if [ $os_project_name == "none" ]
+if [ $os_project_name == "" ]
 then
   if [ -e $HOME/.allas_default ]
   then
      source $HOME/.allas_default
-     #echo      $os_project_name    $OS_PROJECT_NAME
-     if [[ $os_project_name != $OS_PROJECT_NAME ]]
-     then 
-        echo "Switching allas configuration to use project $os_project_name"
-        source $allas_conf_path -user $user $os_project_name -keeppasswd
-        export OS_PROJECT_NAME=$os_project_name
-     fi 
-  else
+   else
      echo "Default project is not defined"
      source  $allas_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
+     source $HOME/.allas_default 
   fi
-  else
-     echo "Switching allas configuration to use project $os_project_name"
-     source $allas_conf_path -user $user $os_project_name -keeppasswd
-     export OS_PROJECT_NAME=$os_project_name
 fi
 
 # run list command

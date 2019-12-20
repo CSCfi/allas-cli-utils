@@ -21,7 +21,7 @@ fi
 tmp_file=("not_defined")
 bucket_name=("not_defined")
 print_help=(0)
-os_project_name=("none")
+os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
 mode=("swift")
 tmp_dir=("${tmp_root}/a_put_$$_tmp")
@@ -97,16 +97,11 @@ else
 fi
 
 #Assign project to be used if not defined 
-if [ $os_project_name == "none" ]
+if [ $os_project_name == "" ]
 then
   if [ -e $HOME/.allas_default ]
   then
      source $HOME/.allas_default
-     if [[ $os_project_name != $OS_PROJECT_NAME ]]
-     then 
-        echo "Switching allas configuration to use project $os_project_name"
-        source $allas_conf_path -user $user $os_project_name
-     fi 
   else
      echo "Default project is not defined"
      source $allas_conf_path -user $user
@@ -114,8 +109,9 @@ then
      echo "Default allas project is stored to  \$HOME/.allas_default"
      echo ""
   fi
+  source $HOME/.allas_default
 fi
-source $HOME/.allas_default
+
 
 #Check if connection works
 if [[ $mode == "swift" ]]
@@ -227,7 +223,7 @@ do
 
   #this is not a good approach.
   #test if a symbolic link would do
-  cp $input ${tmp_dir}/$tmp_file  
+  ln -s ${file_path} ${tmp_dir}/$tmp_file
 
   #upload
 
@@ -237,7 +233,7 @@ do
     
     echo "Uploading data to allas."
     # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-    rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+    rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
     exitcode=$?
     if [ $exitcode -ne 0 ]; then
        echo ""
