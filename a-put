@@ -130,6 +130,7 @@ do
                 ;;              
              '--nc' | '-n' )
                   compression=(0)
+                  free_space_check=0
                   shift
                 ;;
              '-s' | '--silent' )
@@ -516,21 +517,26 @@ do
         echo "   ${bucket_name}/${tmp_file}  " 
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-        echo "Optionally you can define different bucket name using option --bucket ."
+        echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
+        echo "Aternatrively, you can define different bucket name using option --bucket "
         echo "or define different object name with option --object"
+
+
         exit 1
       fi
     else
       if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
       then
+
 	echo ""
         echo "A file/directory with the same name has already been uploaded into"
         echo "bucket $bucket_name in $storage_server"
         echo ""
-        echo "   ${bucket_name}/${partial_path}/${tmp_file}  "
+        echo "   ${bucket_name}/${tmp_file}  " 
         echo ""
         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-        echo "Optionally you can define different bucket name using option --bucket ."
+        echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
+        echo "Aternatrively, you can define different bucket name using option --bucket "
         echo "or define different object name with option --object"
         exit 1
       fi
@@ -653,10 +659,17 @@ do
 
   if [[ $tot_size -gt $free_space ]] && [[ $compression -eq 1 ]]
   then 
-    echo "There is not enough space for the temporary files."
+    echo "It looks like that there is not enough space for the temporary files."
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
     echo "Available free space is ${free_space}K"
     echo ""
+    echo "a-put often fails when it tries to check the available free space in WRKDIR or scratch directories."
+    echo "If you are sure that you have enough space in  WRKDIR or scratch, you can skip this check by adding"
+    echo "option -x to your a-put command"
+    echo ""
+    echo "If you don't have enough free space, upload some data from WRKDIR/scratc with using option --nc."
+    echo "With --nc option, data is not compressed and thus temporary storage space is not needed." 
+
     rm -f ${tmp_dir}/${tmp_file}_ameta
     rmdir ${tmp_dir}
     exit 1
