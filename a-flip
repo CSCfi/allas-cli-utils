@@ -288,10 +288,13 @@ do
 done
 
 #Clean old files from flip bucket
-for object_name in $(rclone lsl ${storage_server}:${bucket_name} | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
+for ameta_name in $(rclone lsl ${storage_server}:${bucket_name} | grep "_ameta$" | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
 do 
   #  echo "removing: ${object_name}."
-  rclone deletefile ${storage_server}:${bucket_name}/${object_name}
+  #remove ameta file
+  rclone deletefile ${storage_server}:${bucket_name}/${ameta_name}
+  #remove corresponding object or file
+  rclone deletefile ${storage_server}:${bucket_name}/${ameta_name%_ameta}
 done
 
 #Publish and rebuild index file
