@@ -172,6 +172,10 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    echo "Checking projects available for your account."
    echo "Please wait."
 
+   #unset pythonpaath temporarily
+   activePythonPath=$PYTHONPATH
+   unset PYTHONPATH
+
    local all_projects=(
        $(openstack project list \
                    --my-projects -c Name -f value --os-username $OS_USERNAME))
@@ -198,6 +202,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            export OS_PROJECT_NAME=$project
            ;;
    esac
+   export PYTHONPATH=$activePythonPath
 fi
 
 
@@ -207,7 +212,10 @@ if $use_swift; then
 
     #
     if command -v openstack >/dev/null 2>&1; then
-       export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)      
+       activePythonPath=$PYTHONPATH
+       unset PYTHONPATH
+       export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+       export PYTHONPATH=$activePythonPath     
     fi
 
 
@@ -246,6 +254,9 @@ fi
 
 if $use_s3cmd; then
 
+    activePythonPath=$PYTHONPATH
+    unset PYTHONPATH
+
     export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
     openstack project show $OS_PROJECT_NAME
 
@@ -268,7 +279,8 @@ if $use_s3cmd; then
              --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
    echo ""
    echo "s3mcd configuration ready."
-
+   
+    export PYTHONPATH=$activePythonPath
 
  #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
  #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
@@ -276,7 +288,6 @@ if $use_s3cmd; then
 fi
 
 ## 7. Create allas_default and unset some variables
-
 #reset allas_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
 echo "user=$OS_USERNAME" >>  $HOME/.allas_default
