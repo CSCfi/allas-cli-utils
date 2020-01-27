@@ -429,6 +429,20 @@ do
        tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
     fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
+  else
+   if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
+     then
+       if [[ $compression -eq 1 ]]; then
+          if [[ ${tmp_file: -4} != ".zst" ]]; then
+               tmp_file="${tmp_file}.zst"
+          fi 
+       fi
+    else
+      if [[ ${tmp_file: -8} != ".tar.zst" ]]; then     
+          tmp_file="${tmp_file}.tar.zst"
+      fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
+   fi
   fi
 
   #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
