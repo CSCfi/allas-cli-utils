@@ -185,12 +185,15 @@ do
     echo "A file/directory with the same name has already been uploaded into"
     echo "bucket $bucket_name in $storage_server"
     echo ""
-    echo "rclone ls ${storage_server}:${bucket_name}${partial_path}/$tmp_file  "
-    rclone ls ${storage_server}:${bucket_name}/$tmp_file  
+    rclone lsl ${storage_server}:${bucket_name}/$tmp_file  
     echo ""
-    echo "Remove the old file if you wish to upload a new version of $input to $storage_server."
-    echo "Optionally you can define different bucket name using option -bucket ."
-    exit 1
+    echo "Do you wish to overwrite the existing old object? [y/n]"
+    read overwrite_old
+    if [[ $overwrite_old == "y" ]] || [[ $overwrite_old == "yes" ]]; then
+      echo "Overwriting ${bucket_name}/$tmp_file"
+    else
+      exit 1
+    fi
   fi
 
   #collect and count metadata
