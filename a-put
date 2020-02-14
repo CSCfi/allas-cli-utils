@@ -426,12 +426,16 @@ do
           tmp_file=($(basename "$input" | tr " " "_" ))
        fi
     else
-       tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+       if [[ $compression -eq 1 ]]; then
+          tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+       else
+          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+       fi
     fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
   else
    if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
-     then
+   then
        if [[ $compression -eq 1 ]]; then
           if [[ ${tmp_file: -4} != ".zst" ]]; then
                tmp_file="${tmp_file}.zst"
@@ -723,14 +727,22 @@ do
   else
   # ei pakkaamista
        if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
+       # Tiedosto hoituu linkillä
        then
           ln -s ${file_path} ${tmp_dir}/$tmp_file
        else
-           echo ""
-           echo "Error:"
-           echo "a-put can not upload directories without zstdmt compression."
-           echo "If you wish to skip compression, you can upload only individual files."
-           exit 1
+         #Hakeisto tar-pakettina      
+         if [[ $silent -eq 0 ]] ; then
+             echo "Collecting data from directory $input to archive file: $tmp_file"
+             tar -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
+         else
+             tar -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
+         fi
+
+	 if [[ $filelist_level -eq 1 ]]; then      
+             grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
+	 fi   
+
        fi
   fi
   

@@ -281,13 +281,25 @@ if [[ ${object_name:(-4):4} == ".zst" ]]; then
 fi
 
 is_tar_file=(0)
+
 if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
-  is_tar_file=(1) 
+  is_tar_file=(1)
+  is_compressed=(1)
 fi 
+
+if [[ ${object_name:(-4):4} == ".tar" ]]; then
+  is_tar_file=(1)
+  is_compressed=(0)
+fi 
+
 
 if [[ $target_name == "" ]];then 
    if [[ $is_tar_file -eq 1 ]]; then
-      target_name=$(basename $object_name .tar.zst) 
+      if [[ $is_compressed -eq 1 ]]; then
+          target_name=$(basename $object_name .tar.zst) 
+      else
+          target_name=$(basename $object_name .tar)
+      fi
    else
       target_name=$(basename $object_name .zst)
    fi 
@@ -358,8 +370,14 @@ if [[ $is_tar_file -eq 1 ]]; then
         exit 1
      fi
      echo "Uncompressing downloaded object"
-     cat  a-get_download_$$_tmp.zst | zstdmt -d | tar -xv -o $file_name
-     exitcode=$?
+     if [[ $is_compressed -eq 1 ]]; then
+         cat  a-get_download_$$_tmp.zst | zstdmt -d | tar -xv -o $file_name
+         exitcode=$?
+     else
+         cat  a-get_download_$$_tmp.zst | tar -xv -o $file_name
+         exitcode=$?
+     fi
+
      if [[ $exitcode -ne 0 ]]; then
         echo "Uncompression failed!"
         rm -f  a-get_download_$$_tmp.zst
@@ -390,7 +408,7 @@ else
        if [[ $target_dir == "" ]]; then 
             target_dir="."
        fi
-       rclone copy "${storage_server}:/$object_name"  $target_dir
+       rclone -P copy "${storage_server}:/$object_name"  $target_dir
     fi
     if [[ $new_target -eq 1 ]];then
        cd -   
