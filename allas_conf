@@ -278,9 +278,16 @@ if $use_s3cmd; then
              --multipart-chunk-size-mb=$chunk_size \
              --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
    echo ""
-   echo "s3mcd configuration ready."
-   
-    export PYTHONPATH=$activePythonPath
+   echo "s3cmd configuration ready."
+
+   #aws.s3 conf   
+   mkdir -p $HOME/.aws
+   echo '[default]' > $HOME/.aws/credentials
+   echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >>  $HOME/.aws/credentials 
+   echo	AWS_SECRET_ACCESS_KEY_ID="$SECRET_KEY"	>>  $HOME/.aws/credentials
+   chmod go-rwx $HOME/.aws/credentials
+
+   export PYTHONPATH=$activePythonPath
 
  #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
  #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
