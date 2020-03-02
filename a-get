@@ -24,6 +24,7 @@ object_with_bucket=(0)
 to_orig_dir=(0)
 orig_dir=("")
 target_directory=(".")
+asis_mode=0
 exe_dir=$(pwd)
 
 
@@ -67,6 +68,10 @@ do
                   to_orig_dir=(1)                  
                   shift
                 ;;
+             '--asis' )
+                asis_mode=1
+                  shift
+                ;;       
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -107,6 +112,8 @@ Options:
 -t, --target_file <file_name> Define a file name for the object for the object to be downloaded.
 
 -l, --original_location      Retrieve the data to the original location in the directory structure.
+
+--asis                      Download the object without unpacking tar files and uncompressing zst compressed data
 
 
 Related commands: a-put, a-find, a-info, a-delete
@@ -313,6 +320,12 @@ if [[ to_orig_dir -eq 1 ]]; then
    cd $orig_dir
 fi
 
+# Reset target name, tar and compression information if requested with --asis
+if [[ $asis_mode -eq 1 ]]; then
+   is_tar_file=0
+   is_compressed=0
+   target_name=$(basename $object_name)
+fi
 
 
 #Test if the target file already axists
