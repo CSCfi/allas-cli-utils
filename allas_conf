@@ -13,6 +13,9 @@ export OS_IDENTITY_API_VERSION=3
 
 
 
+
+
+
 allas_conf_scope () {
 
 local usage="
@@ -78,6 +81,14 @@ local chunk_size=5000
 local rconf=$HOME/.config/rclone/rclone.conf
 local mode=swift
 local force=false
+#auth_method options are curl and swift
+local auth_method=curl
+#these are used in curl authentication
+local token_header_re='^X-Subject-Token: '
+local storage_url_re='https://a3s.fi:443/swift'
+local storage_url_interface_re='"interface": "public"'
+local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
+
 
 # Process command line arguments
 
@@ -144,18 +155,29 @@ if $use_s3cmd && ! command -v s3cmd >/dev/null 2>&1; then
         return 1
 fi
 
-if $use_swift && ! command -v swift >/dev/null 2>&1; then
-    echo -e "\nError: swift command not found!" >&2
-    return 1
+if [[ $auth_method == "swift" ]];then 
+   if ! command -v swift >/dev/null 2>&1; then
+      echo -e "\nError: swift command not found!" >&2
+      return 1
+   fi
+else   
+   if ! command -v curl >/dev/null 2>&1; then
+      echo -e "\nError: curl command was not found."
+      return 1
+   fi
 fi
 
 if ! command -v rclone >/dev/null 2>&1; then
     echo "NOTE: rclone command was not found."
 fi
+
 if ! command -v restic >/dev/null 2>&1; then
     echo "NOTE: restic command was not found."
 fi
 
+if ! command -v curl >/dev/null 2>&1; then
+    echo "NOTE: curl command was not found."
+fi
 
 # Ask for CSC password
 
@@ -209,18 +231,40 @@ fi
 # 6.1 swift configuration
 
 if $use_swift; then
+    #authentication either with swift or curl
+    if [[ $auth_method == "curl" ]];  then
+      ## This section replaces swift auth based authentication
+      ##
+      # authenticates and save token to environment variable
+      
+ 
+      os_auth_data='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+                     "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
 
-    #
-    if command -v openstack >/dev/null 2>&1; then
-       activePythonPath=$PYTHONPATH
-       unset PYTHONPATH
-       export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-       export PYTHONPATH=$activePythonPath     
+      # authenticate and get return values
+      #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
+      curl_out=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "${OS_AUTH_URL}/auth/tokens" 2>&1 <<< "$os_auth_data")
+      curl_exit="$?"
+      curl_status=`echo "$curl_out" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+      if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+      else
+           # save token to environment variable
+           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+
+           # save also the storage url, figure it out with just basic tools without dependency to any json tool
+           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|grep "$storage_url_re"|grep "$storage_url_interface_re"|sed "$storage_url_sed"`
+      fi
+    else
+       if command -v openstack >/dev/null 2>&1; then
+         activePythonPath=$PYTHONPATH
+         unset PYTHONPATH
+         export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+         export PYTHONPATH=$activePythonPath     
+       fi
+       eval "$(swift auth)"
     fi
-
-
-    # authenticates and save token to environment variable
-    eval "$(swift auth)"
 
     if [[ $(grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
         mkdir -p  ${rconf%/*}
