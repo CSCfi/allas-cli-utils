@@ -10,12 +10,15 @@ source $inst_root/a_env_conf
 # local variables
 bucket_name=("")              #object to retrieve
 mount_point=("")              #where to store the results
+read_or_write="--read-only"
 print_help=(0)
+task="mount"
 os_project_name=("none")     
 mode=("swift")
 query=("")
 object_with_bucket=(0)
 target_directory=(".")
+
 
 
 #Process command line
@@ -48,6 +51,26 @@ do
                   shift
                   shift
                 ;;
+             '--umount' | '-u' )
+              task="unmount"
+              if [[ -e "$2" ]]; then
+                   mount_point=$(basename $2)
+              else
+                   echo "Mount point: $2 not found"
+                   exit 1
+              fi
+             shift
+             shift
+             ;;
+             '--list' | '-l' )
+               echo "Active rclone mount commands for ${storage_server}:"
+               ps -edalf | grep "rclone mount ${storage_server}:" | grep -v -w grep
+               exit 0
+             ;;
+             '--write' | '-w' )
+             read_or_write=""
+             shift
+             ;;              
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -77,12 +100,32 @@ You can use optional mount points with option -m (--mountpoint)
    
    allas-mount <bucket_name> -m <dir_name>
 
+To unmount a bucket use option -u:
+
+   allas-mount -u  <dir_name>
+
+Option -l lists the currenly active rclone mount commands, launched by allas-mount.
+
+   allas-mount -l
 
 EOF
 
 exit 0
 
 fi 
+
+
+#Unmounting
+if [[ $task == "unmount" ]]; then
+   echo "Un-mounting $mount_point"
+   rclone_pid=$(ps -edalf | grep "rclone mount ${storage_server}:" | grep -v -w grep | grep -w  "$mount_point" | awk '{print $4}')
+   kill $rclone_pid
+   exit 0
+fi
+
+
+
+
 
 if [[ $bucket_name == "" ]]
 then
@@ -119,34 +162,17 @@ else
 fi
 
 #Assign project to be used if not defined 
-if [ $os_project_name == "none" ]
+if [[ $os_project_name == "none" ]]
 then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
+  os_project_name=$OS_PROJECT_NAME
+fi
 
-     #echo      $os_project_name    $OS_PROJECT_NAME
-     if [[ $os_project_name != $OS_PROJECT_NAME ]]
-     then 
-        echo "Switching allas configuration to use project $os_project_name"
-        source $allas_conf_path -user $user $os_project_name -keeppasswd
-        export OS_PROJECT_NAME=$os_project_name
-     fi 
-  else
-     echo "Default project is not defined"
-     source $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-  fi
-  else
+if [[ $os_project_name != $OS_PROJECT_NAME ]]
+then 
      echo "Switching allas configuration to use project $os_project_name"
      source $allas_conf_path -user $user $os_project_name -keeppasswd
      export OS_PROJECT_NAME=$os_project_name
-fi
-
-#source $HOME/.allas_default
-project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+fi 
 
 #Check if connection works
 if [[ $mode == "swift" ]]
@@ -178,7 +204,7 @@ fi
 
 
 check_bucket=$(rclone lsd ${storage_server}:$bucket_name 2>&1 | wc -l)
-if [ $check_bucket -ne 0 ]; then
+if [ $check_bucket -eq 0 ]; then
   echo "Bucket name: $bucket_name not found in $storage_server."
   echo ""
   echo "Exucute command:  a-list "
@@ -195,9 +221,30 @@ if [[ -e ${mount_point} ]]; then
 else
     mkdir $mount_point  
 fi
-  
+
+
+if [[ $read_or_write == "" ]]; then
+   echo ""
+   echo "You are mounting bucket $bucket_name with write access included."
+   echo "The default read-only mounting is recomended."
+   echo "Note that if objects in this bucket are modified by other processes"
+   echo "while the bucket is mounted with write access, you may end up to problems."
+   echo ""
+   echo "Confirm that you understand this:[yes/no]"
+   read ans
+   if [[ $ans == "yes" ||  $ans == "y" ]]; then
+      echo "Mounting."
+   else
+      echo "Bucket was not mounted"
+      exit 0
+   fi
+fi
+
 #mount
-rclone mount ${storage_server}:$bucket_name $mount_point --read-only --daemon --daemon-timeout 21600s
+#rclone mount ${storage_server}:$bucket_name $mount_point --read-only --daemon --daemon-timeout 21600s
+run-rclone-mount.sh  $storage_server $bucket_name $mount_point $read_or_write &
+
+
 
 echo "Allas bucket: $bucket_name is mounted to $mount_point"
 
@@ -205,26 +252,6 @@ echo "Allas bucket: $bucket_name is mounted to $mount_point"
 
 
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
