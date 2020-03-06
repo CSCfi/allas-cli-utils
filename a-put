@@ -499,6 +499,26 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/scratch\/$puhti_project"/""/g)
      fi
+     #FMI Puhti scratch
+     if [ $(echo $file_path  | cut -c1-12) == "/fmi/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\fmi\/scratch\/$puhti_project"/""/g)
+     fi
      #Puhti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
      then
@@ -517,6 +537,26 @@ do
           fi
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+     fi
+     
+     #Puhti FMI-projappl
+     if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\fmi\/projappl\/$puhti_project"/""/g)
      fi
      partial_path=$(remove_slash_from_ends $partial_path)
   fi 

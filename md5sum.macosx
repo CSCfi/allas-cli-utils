@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sum=$(md5 -q $1)
+echo "$sum $1"
