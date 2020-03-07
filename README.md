@@ -26,18 +26,21 @@ For those users, that just want to use Allas for storing data that is in CSC com
 |a-command | Function |
 | :--- | :--- |
 | a-put | Upload a file or directory to Allas as one object |
+| a-check | Comman to check if a-put command was successfully executed |
 | a-list | List buckets and objects in Allas |
 | a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
 | a-get | Download a stored dataset (object) from Allas |
 | a-find | Search and locate data that has been uploaded with a-put |
 | a-delete | Delete an object from Allas |
 | a-info | Display information about an object in Allas |
-| a-mount| mount tool under construction |
    
 In addition to the above command, there is saparate tool to create incremental backups:
 
 *    `allas-backup` : create a backup copy of a local dataset into a backup repository in Allas
 
+And a tool for mounting Allas buckets as directores to a local computer
+
+*    `allas-mount`
 
 ## Installing allas-cli-utils
 
@@ -113,6 +116,13 @@ conda activate allas                                     #activate the environmn
 source allas_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
 a-list
 
+```
+
+
+In MacOSX systems md5sum command may be missing. To fix that, there is simple replacement script (md5sum.macosx) that
+you can take in use in macs by giving following in the command in the allas-cli-utils directory:
+```
+mv md5sum.macosx md5sum
 ```
 
  
