@@ -518,7 +518,7 @@ do
              exit 0
           fi
         fi
-        partial_path=$(dirname $file_path | sed -e s/"\fmi\/scratch\/$puhti_project"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/fmi\/scratch\/$puhti_project"/""/g)
      fi
      #Puhti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
