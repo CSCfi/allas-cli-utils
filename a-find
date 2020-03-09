@@ -151,7 +151,8 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
-  test=$(swift stat 2> /dev/null | grep -c "Account:")
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
     echo "No connection to Allas!"

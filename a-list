@@ -129,7 +129,8 @@ fi
 # run list command
 #Check if connection works
 
-test=$(swift stat 2> /dev/null | grep -c "Account:")
+test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+#test=$(swift stat 2> /dev/null | grep -c "Account:")
 if [[ $test -lt 1 ]]
 then 
   echo "No connection to Allas!"
