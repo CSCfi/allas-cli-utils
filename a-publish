@@ -75,7 +75,7 @@ a-publish works mostly like a-put but there are some differences:
 
 The basic syntax of the command is:
 
-a-publish file_name
+  a-publish file_name
 
 By default, the file is uploaded to a bucket username-projectNumber-pub. You can define other bucket names too using option -b
 but you should note that this command will make all data in the bucket publicly accessible, 
@@ -86,6 +86,13 @@ The public URL to a data object is:
 https://a3s.fi/username-projectNumber-pub/object_name
 
 An object uploaded with a-publish can be removed from Allas with command a-delete.
+
+a-publish options:
+
+ -b, --bucket       Use the defined bucket in stead of the default bucket name
+ -o, --os_file      Define alternative name for the object that will be created      
+
+
 EOF
 
 exit 

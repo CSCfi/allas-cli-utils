@@ -234,7 +234,7 @@ fi
 #check that bucket exists
 
 
-check_bucket=$(rclone ls ${storage_server}:$bucket_name 2>&1 | wc -l)
+check_bucket=$(rclone size ${storage_server}:$bucket_name 2>&1 | wc -l)
 if [[ $check_bucket -eq 0 ]]; then
   echo "Bucket name: $bucket_name not found in $storage_server."
   echo ""
