@@ -103,6 +103,15 @@ while [[ $# -ge 1 ]]; do
         '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
         '-a'|'--active-token')  active_mode=true;        shift;;
         '-f'|'--force' )        force=true;              shift;;
+        '-p'|'--project' )
+          if [[ -z $2 ]]; then
+              export OS_PROJECT_NAME="$2"
+              shift 
+          else 
+              export OS_PROJECT_NAME=""
+          fi    
+          shift
+          ;; 
         *) export OS_PROJECT_NAME="$1";                  shift;;
     esac
 done
