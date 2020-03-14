@@ -105,8 +105,12 @@ while [[ $# -ge 1 ]]; do
         '-f'|'--force' )        force=true;              shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
-              export OS_PROJECT_NAME="$2"
-              shift 
+              if [[ ${2::1} != "-" ]];then
+                export OS_PROJECT_NAME="$2"
+                shift 
+              else
+                export OS_PROJECT_NAME="" 
+              fi
           else 
               export OS_PROJECT_NAME=""
           fi    
