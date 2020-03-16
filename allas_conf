@@ -247,7 +247,7 @@ if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev
        echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
        echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
-       if [ $silent_mode -ne 1 ]; then
+       if [[ $silent_mode = "false" ]]; then
            echo ""
            echo "$storage_service service added to the rclone configuration file."
        fi
