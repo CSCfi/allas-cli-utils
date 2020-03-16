@@ -241,6 +241,18 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    export PYTHONPATH=$activePythonPath
 fi
 
+#rclone configuration file check
+if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]; then
+       mkdir -p  $HOME/.config/rclone/
+       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
+       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
+       echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
+       if [ $silent_mode -ne 1 ]; then
+           echo ""
+           echo "$storage_service service added to the rclone configuration file."
+       fi
+fi
+
 
 # 6.1 swift configuration
 
