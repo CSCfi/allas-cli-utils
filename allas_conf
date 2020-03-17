@@ -224,7 +224,6 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            ;;
        1)
            export OS_PROJECT_NAME=${all_projects[0]}
-           echo "Configuration will be done for project: $OS_PROJECT_NAME"
            ;;
        *)
            PS3="Please choose a project by giving an item number form the list above: "
@@ -253,6 +252,7 @@ if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev
        fi
 fi
 
+echo "Configuration will be done for project: $OS_PROJECT_NAME"
 
 # 6.1 swift configuration
 

@@ -52,13 +52,13 @@ these tools you should have several software componets available:
 
 __allas_conf__ script requires:
 
-*   OpenStack client (3.19 or newer)
-*   swift and/or s3cmd client
+*   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer)
+*   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
 
 I addition to the above, A_ -tools requre:
 
-*   rclone (1.48 or newer)
-*   zstdmt
+*   [rclone](https://rclone.org/) (1.48 or newer)
+*   [zstdmt](https://github.com/mcmilk/zstdmt)
 
 
 Exaple: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
