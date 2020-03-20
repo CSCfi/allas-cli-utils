@@ -46,16 +46,16 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 
 #local variables
-object_name=("")
-print_help=(0)
-os_project_name=("$OS_PROJECT_NAME")
-input_def=("")
-mode=("swift")
-show_filelist=(0)
-query=("")
-object_with_bucket=(0)
-remove_bucket=(0)
-force=(0)
+object_name=""
+print_help=0
+os_project_name="$OS_PROJECT_NAME"
+input_def=""
+mode="swift"
+show_filelist=0
+query=""
+object_with_bucket=0
+remove_bucket=0
+force=0
 defined_user="x"
 
 #Process command line
@@ -64,12 +64,12 @@ do
   case "$1" in
              '--object' | '-o' )
              # query file
-                  object_name=($2)
+                  object_name="$2"
                   shift
                   shift
                 ;;
              '--project' | '-p' )
-                  os_project_name=($2)
+                  os_project_name="$2"
                   shift
                   shift
                 ;;
@@ -102,7 +102,7 @@ do
                       echo "Object name is: $object"
                       exit 1
                    fi
-                   object_name=("$1")
+                   object_name="$1"
                    shift                       # No more switches
                 ;;
     esac
@@ -140,48 +140,10 @@ EOF
 exit
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
-fi
-
-#Assign project to be used if not defined 
-if [ $os_project_name == "" ]
-then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
-  else
-     echo "Default project is not defined"
-     source /appl/opt/allas_conf -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-     source $HOME/.allas_default
-  fi
-fi
-
 #
 if [[ $defined_user != "x" ]]; then
    user=$defined_user
 fi
-
-
 
 #source $HOME/.allas_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
@@ -196,32 +158,29 @@ fi
 
 #The method to remove a bucket
 if [[ $remove_bucket -eq 1 ]]; then
-  if [[ $(swift list $object_name | wc -l ) -gt 0 ]]; then
-     echo "Bucket $object_name is not empty!"
-     exit 1 
-  else
      if [[ $force -eq 1 ]]; then
-        swift delete $object_name  
+        rclone rmdir ${storage_server}:"$object_name"
+        #swift delete "$object_name"  
      else 
         echo ""
         echo "Are you sure want to remove bucket:"
         echo $object_name
         echo "[y/n]"
         read ansver
-        if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
-           swift delete ${object_name}
+        if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
+           rclone rmdir ${storage_server}:"$object_name" 
+           #swift delete ${object_name}
            echo "${object_name} was deleted."
         else
            echo "${object_name} was not deleted."
         fi
      fi
-  fi
   exit 1
 fi
 #the method to remove object
 #check that object exists
 
-check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
+check_os=$(rclone ls ${storage_server}:"$object_name" 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
@@ -245,7 +204,6 @@ if [ $check_os -ne 1 ]; then
 else 
   object_with_bucket=(1)
 fi
-
 
 
 
@@ -301,7 +259,7 @@ then
   object_name=("$bucket/$object_name")
 else
   #check if object exists
-  bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
+  bucket_found=$(rclone ls ${storage_server}:/"$object_name" 2> /dev/null | wc -l)
   if [ $bucket_found -ne 1 ]; then
      echo ""
      echo "Object $object_name was not found"
@@ -311,9 +269,9 @@ else
   fi
 fi 
    
-ameta_found=$(rclone ls ${storage_server}:/${object_name}_ameta 2> /dev/null | wc -l)
+ameta_found=$(rclone ls ${storage_server}:/"${object_name}_ameta" 2> /dev/null | wc -l)
 if [ $ameta_found -eq 1 ]; then
-   object_owner=$(rclone cat ${storage_server}:/${object_name}_ameta |grep "^user:" | awk '{print $2}')
+   object_owner=$(rclone cat ${storage_server}:/"${object_name}_ameta" |grep "^user:" | awk '{print $2}')
 
    if [[ $user != $object_owner ]]; then
      echo ""
@@ -326,9 +284,9 @@ fi
 
 #remove object
 if [[ $force -eq 1 ]]; then
-   rclone deletefile ${storage_server}:/${object_name}
+   rclone deletefile ${storage_server}:/"${object_name}"
    if [ $ameta_found -eq 1 ]; then
-      rclone deletefile ${storage_server}:/${object_name}_ameta
+      rclone deletefile ${storage_server}:/"${object_name}_ameta"
    fi
 else
   echo ""
@@ -337,9 +295,9 @@ else
   echo "[y/n]"
   read ansver
   if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
-     rclone deletefile ${storage_server}:/${object_name}
+     rclone deletefile ${storage_server}:/"${object_name}"
      if [ $ameta_found -eq 1 ]; then
-       rclone deletefile ${storage_server}:/${object_name}_ameta
+       rclone deletefile ${storage_server}:/"${object_name}_ameta"
      fi
      echo "${object_name} was deleted."
   else
