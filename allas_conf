@@ -84,7 +84,7 @@ local force=false
 #auth_method options are curl and swift
 local auth_method=curl
 #these are used in curl authentication
-local token_header_re='^X-Subject-Token: '
+local token_header_re='^[0-9:]*X-Subject-Token: '
 local storage_url_re='https://a3s.fi:443/swift'
 local storage_url_interface_re='"interface": "public"'
 local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
