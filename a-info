@@ -1,5 +1,56 @@
 #!/bin/bash 
 
+#function to check that swift works
+check_swift_connection () {
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
+    if [[ $test -lt 1 ]]
+    then 
+      #if [ -n "$ACTIVE_TOKEN" ]; then
+      #   unset OS_AUTH_TOKEN
+      #   export OS_AUTH_TOKEN=$(check_atoken)
+      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
+      #fi
+      
+    if [[ -n "$OS_PASSWORD" ]]; then 
+      if  [[ $silent -eq 0 ]] ; then     
+          echo "Updating token"
+      fi
+      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
+    fi
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
+    if [[ $test -lt 1 ]]
+    then 
+       echo "No connection to Allas!"
+       echo "Please try setting the the connection again."
+       exit 1
+    else
+      echo "swift connection updated"
+    fi
+  else 
+     echo "swift connection OK" 
+  fi 
+}
+
+#Function to remove the trailing / if it exist
+remove_slash_from_ends(){
+path_string=$1
+if [[ ${path_string:(-1)} == "/" ]]; then
+    path_string=${path_string%/}
+fi
+
+if [[  ${path_string:0:1} == "/" ]]; then
+    tlen=${#path_string}
+    path_string=${path_string:1:tlen}
+fi
+
+echo $path_string
+}
+
+
+
+
 #default user
 user=($USER)
 
@@ -81,51 +132,6 @@ EOF
 exit 0
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
-fi
-
-#Assign project to be used if not defined 
-if [ $os_project_name == "none" ]
-then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
-     #echo      $os_project_name    $OS_PROJECT_NAME
-     if [[ $os_project_name != $OS_PROJECT_NAME ]]
-     then 
-        echo "Switching allas configuration to use project $os_project_name"
-        source $allas_conf_path -user $user $os_project_name -keeppasswd
-        export OS_PROJECT_NAME=$os_project_name
-     fi 
-  else
-     echo "Default project is not defined"
-     source  $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-  fi
-  else
-     echo "Switching allas configuration to use project $os_project_name"
-     source $allas_conf_path -user $user $os_project_name -keeppasswd
-     export OS_PROJECT_NAME=$os_project_name
-fi
 
 #source $HOME/.allas_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
@@ -133,17 +139,9 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
-  test=$(swift stat 2> /dev/null | grep -c "Account:")
-  if [[ $test -lt 1 ]]
-  then 
-    echo "No connection to Allas!"
-    echo "Please try setting the the connection again."
-    echo "by running command:"
-    echo ""
-    echo "   source $allas_conf_path"
-    exit 1
-  fi 
+    check_swift_connection 
 fi
+
 
 if [[ $object_name == "" ]] ; then 
   for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
@@ -165,11 +163,23 @@ if [[ $object_with_bucket == 2 ]]; then
      object_with_bucket=(1)
 fi
 
-# this checks os objectname contains bucket name
+#echo "this checks if objectname contains bucket name"
 check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
-if [ $check_os -eq 1 ]; then
+if [ $check_os -gt 0 ]; then
   object_with_bucket=(1)
+  #echo "this checks if we have just a bucket defined"
+  buc=$(remove_slash_from_ends $object_name)
+  if [[ $(echo $buc | tr -cd '/' | wc -c) -eq 0 ]];then
+       echo "-------------------------------"
+       echo "Bucket: $buc"
+       rclone size ${storage_server}:$buc
+       echo ""
+       exit 
+  fi
 fi
+
+
+  
 
 # check if object name contains bucket (if not defined with bucket)
 if [[ $object_with_bucket == 0 ]]; then

@@ -315,6 +315,7 @@ rm -f   ${tmp_dir}/index.html
 
 #set access control
 swift post ${bucket_name} --read-acl ".r:*,.rlistings"
+swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
 
 rmdir  ${tmp_dir}
 echo ""
