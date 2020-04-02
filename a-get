@@ -71,7 +71,11 @@ do
              '--asis' )
                 asis_mode=1
                   shift
-                ;;       
+                ;; 
+              '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -93,7 +97,7 @@ done
 if [ $print_help -eq 1 ]; then
 cat <<EOF
 This tool is used to download data that has been uploaded to Allas service using the a-put command.
-The basic syntax of the comand is:
+The basic syntax of the command is:
 
    a-get object_name
 
@@ -101,20 +105,21 @@ By default the object is retrieved and uncompressed
 
 Options:
 
--p, --project <project_ID>  Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>    Search matches form the buckets of the defined project in stead of the currently configured project. 
 
 
--f, --file <file_name>      Retrieve just a specific file or directory from the stored dataset. Note that you need to define
-                            the full path of the file or directory within the stored object.
+-f, --file <file_name>        Retrieve just a specific file or directory from the stored dataset. Note that you need to define
+                              the full path of the file or directory within the stored object.
 
--d, --target_dir <dir_name> If this option is defined, a new target directory is created and the data is retrieved there.
+-d, --target_dir <dir_name>   If this option is defined, a new target directory is created and the data is retrieved there.
 
 -t, --target_file <file_name> Define a file name for the object for the object to be downloaded.
 
--l, --original_location      Retrieve the data to the original location in the directory structure.
+-l, --original_location       Retrieve the data to the original location in the directory structure.
 
---asis                      Download the object without unpacking tar files and uncompressing zst compressed data
+--asis                        Download the object without unpacking tar files and uncompressing zst compressed data.
 
+--s3cmd                       Use S3 protocol and s3cmd command for data retrieval in stead of Swift protocol and rclone.
 
 Related commands: a-put, a-find, a-info, a-delete
 
@@ -173,6 +178,7 @@ then
   fi 
 fi
 
+
 #source /appl/opt/allas_conf
 #input=("$1")
 
@@ -203,25 +209,6 @@ else
   #echo object_with_bucket
   object_with_bucket=(1)
 fi
-
-
-## check if object name congains bucket
-
-#if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
-#then 
-#  object_with_bucket=(1) 
-#  bucket=("${user}-${project_label}-MISC")
-#fi
-#if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
-#then 
-#  object_with_bucket=(1) 
-#  bucket=("${user}-${project_label}-HOME")
-#fi
-#if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
-#then 
-#  object_with_bucket=(1) 
-#  bucket=("${user}-${project_label}-HOME")
-#fi
 
 
 # check all buckets if the bucket is not deifned
@@ -376,8 +363,14 @@ if [[ $is_tar_file -eq 1 ]]; then
      fi
      #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
      echo "Dowloading compressed object from Allas"
-     rclone copyto -P "${storage_server}:/$object_name" a-get_download_$$_tmp.zst
-     exitcode=$?
+     
+     if [[ $mode == "swift" ]]; then
+        rclone copyto -P "${storage_server}:/$object_name" a-get_download_$$_tmp.zst
+        exitcode=$?
+     else
+       s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
+     fi
+
      if [[ $exitcode -ne 0 ]]; then
         echo "Donload failed!"
         rm -f  a-get_download_$$_tmp.zst
@@ -417,12 +410,23 @@ else
     fi
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
-       rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
+       if [[ $mode == "swift" ]]; then 
+          rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
+       else
+          s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
+          zstdmt -d a-get_download_$$_tmp.zst 
+          mv a-get_download_$$_tmp > $target_name
+       fi
     else 
        if [[ $target_dir == "" ]]; then 
             target_dir="."
        fi
-       rclone -P copy "${storage_server}:/$object_name"  $target_dir
+       # Just download
+       if [[ $mode == "swift" ]]; then 
+         rclone -P copy "${storage_server}:/$object_name"  $target_dir
+       else
+         s3cmd get "s3://${object_name}"  $target_dir/$target_name
+       fi
     fi
     if [[ $new_target -eq 1 ]];then
        cd -   
