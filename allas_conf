@@ -211,7 +211,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    #unset pythonpaath temporarily
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
-
+ 
    local all_projects=(
        $(openstack project list \
                    --my-projects -c Name -f value --os-username $OS_USERNAME))
@@ -228,10 +228,26 @@ if [ -z "$OS_PROJECT_NAME" ]; then
        *)
            PS3="Please choose a project by giving an item number form the list above: "
            local project
-           select project in "${all_projects[@]}" "abort allas_conf"; do
-               [[ -n "$project" ]] && break
-           done
-	   if [[ "$project" == "abort allas_conf" ]]; then
+           local allas_projects
+           
+           if ! command -v csc-projects >/dev/null 2>&1; then
+             select project in "${all_projects[@]}" "abort allas_conf"; do
+                 [[ -n "$project" ]] && break
+             done
+           else
+             # if csc-projects is available, show the project names
+             for g in ${all_projects[@]}
+             do
+                title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
+                echo $title
+                allas_projects+=("${g}  ${title}")
+             done
+             select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
+                 [[ -n "$allas_project" ]] && break
+             done
+             project=$(echo "$allas_project" | awk '{print $1}')
+           fi
+	   if [[ "$project" == "abort allas_conf" || "$project" == "abort" ]]; then
 	       return 1
 	   fi
            export OS_PROJECT_NAME=$project
