@@ -13,9 +13,6 @@ export OS_IDENTITY_API_VERSION=3
 
 
 
-
-
-
 allas_conf_scope () {
 
 local usage="
@@ -122,7 +119,8 @@ while [[ $# -ge 1 ]]; do
 done
 
 # check if this is executed as sourced command
-if [ "$0" != "bash" -a "$0" != "-bash" -a "$0" != "/bin/bash" -a "$force" == "false" ]; then
+
+if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
     echo "Error: allas_conf should not be executed directly. $usage" >&2
     exit 1
 fi
