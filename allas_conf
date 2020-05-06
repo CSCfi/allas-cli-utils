@@ -369,6 +369,7 @@ if $use_s3cmd; then
    echo '[default]' > $HOME/.aws/credentials
    echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
    echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
+   echo AWS_DEFAULT_REGION =" regionOne " >> $HOME/.aws/credentials
    chmod go-rwx $HOME/.aws/credentials
 
    export PYTHONPATH=$activePythonPath
