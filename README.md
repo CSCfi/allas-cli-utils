@@ -85,6 +85,7 @@ Example: Installing allas-cli-utils to Ubuntu 18.04 so that conda is used in the
 sudo apt-get update
 sudo apt-get install gcc
 sudo apt-get install restic
+curl https://rclone.org/install.sh | sudo bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh 
 bash
