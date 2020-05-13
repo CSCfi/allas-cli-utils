@@ -987,9 +987,19 @@ end_time=$(date +%s)
 (( kesto = end_time - start_time ))
 (( nopeus = cumulative_size / kesto ))
 (( nopeusmbs = nopeus / 1000 ))
-echo "$(date) $user $bucket_name  $kesto $cumulative_size ${nopeusmbs}Mb/s" >> $allas_log
-if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
-   chmod a+rwx  $allas_log
-fi
 
+
+
+
+#Execute log creation
+message="$0 $(date) $bucket_name  $kesto $cumulative_size ${nopeusmbs}Mb/s"
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) > $allas_log
+
+
+#If log is a file and not a service then check permissions
+if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]
+  if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
+     chmod a+rwx  $allas_log
+  fi
+fi
 exit 0
