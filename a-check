@@ -296,22 +296,7 @@ exit
 
 fi 
 
-#Assign project to be used if not defined 
-if [ $os_project_name == "" ]
-then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
-  else
-     echo "Default project is not defined"
-     source $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-     source $HOME/.allas_default
-  fi
-fi
-source $HOME/.allas_default
+
 
 
 #Check if zstdmt is needed and available

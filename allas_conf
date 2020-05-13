@@ -385,15 +385,14 @@ echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
 echo "user=$OS_USERNAME" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
-unset OS_AUTH_URL
-unset OS_USER_DOMAIN_NAME
 if ! $keep_password; then
-  unset OS_PASSWORD
+ unset OS_AUTH_URL
+ unset OS_USER_DOMAIN_NAME
+ unset OS_PASSWORD
+ unset OS_REGION_NAME
+ unset OS_INTERFACE
+ unset OS_IDENTITY_API_VERSION
 fi
-unset OS_REGION_NAME
-unset OS_INTERFACE
-unset OS_IDENTITY_API_VERSION
-
 
 
 }
