@@ -449,7 +449,7 @@ end_time=$(date +%s)
 
 #Execute log creation
 message="$0 $(date) $bucket_name  $kesto s"
-printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) > $allas_log
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
 
 
 #If log is a file and not a service then check permissions
