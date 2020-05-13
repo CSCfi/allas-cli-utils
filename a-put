@@ -997,7 +997,7 @@ printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_m
 
 
 #If log is a file and not a service then check permissions
-if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]
+if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]; then
   if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
      chmod a+rwx  $allas_log
   fi
