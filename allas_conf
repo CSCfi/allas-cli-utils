@@ -55,6 +55,8 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
       -f, --force             Skip check that tries to ensure that this command is
                               sourced correctly. This option needs to ne used in batch jobs.
+  
+      --s3remove              Remove s3 access key for an Allas project. 
 
     DEPENDENCIES
     ------------
@@ -85,7 +87,7 @@ local token_header_re='^[0-9:]*X-Subject-Token: '
 local storage_url_re='https://a3s.fi:443/swift'
 local storage_url_interface_re='"interface": "public"'
 local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
-
+local s3remove=false
 
 # Process command line arguments
 
@@ -101,6 +103,7 @@ while [[ $# -ge 1 ]]; do
         '-a'|'--active-token')  active_mode=true;        shift;;
         '-f'|'--force' )        force=true;              shift;;
         '--swift-auth' )        auth_method=swift;       shift;;
+        '--s3remove' )          mode=s3remove;           shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -137,7 +140,13 @@ case "$mode" in
      'swift')
         local use_swift=true
         local use_s3cmd=false
-        ;;  
+        ;; 
+      's3remove')
+        local use_swift=true
+        local use_s3cmd=false
+        local s3remove=true
+        ;; 
+ 
     *)
         echo "Error: Wrong argument to '--mode' option $usage" >&2
         return 1
@@ -269,7 +278,6 @@ fi
 echo "Configuration will be done for project: $OS_PROJECT_NAME"
 
 # 6.1 swift configuration
-
 if $use_swift; then
     #authentication either with swift or curl
     if [[ $auth_method == "curl" ]];  then
@@ -379,12 +387,48 @@ if $use_s3cmd; then
  #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
 fi
 
+
+# Option to remove s3cmd key
+if $s3remove; then
+    echo ""
+    echo "s3 access key removal requested for project $OS_PROJECT_NAME"
+    activePythonPath=$PYTHONPATH
+    unset PYTHONPATH
+    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+    local accesskeys=($(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | awk '{print $1}'))
+    if [[ ${#accesskeys[*]} -eq 0 ]]; then
+       echo "No access keys found for project $OS_PROJECT_NAME"
+       return 1
+    fi
+    if [[ ${#accesskeys[*]} -eq 1 ]]; then
+       openstack ec2 credentials delete ${accesskeys[0]}
+       echo "Accesskey ${accesskeys[0]} removed"
+       return
+    else
+       echo "Project has several access keys:"
+       PS3="Please choose an access key to be deleted by giving an item number form the list above: "
+       local accesskey
+       select accesskey in "${accesskeys[@]}" "abort allas_conf"; do
+              [[ -n "accesskey" ]] && break
+       done
+       if [[ "$accesskey" == "abort allas_conf" ]]; then
+          return 1
+       else 
+           openstack ec2 credentials delete $accesskey
+       fi
+
+    fi
+fi
+
+
+
 ## 7. Create allas_default and unset some variables
 #reset allas_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
 echo "user=$OS_USERNAME" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
+# These need to be kept is you want to use openstack
 if ! $keep_password; then
  unset OS_AUTH_URL
  unset OS_USER_DOMAIN_NAME
