@@ -371,6 +371,7 @@ if $use_s3cmd; then
              --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
    echo ""
    echo "s3cmd configuration ready."
+   echo ""
 
    #aws.s3 conf   
    mkdir -p $HOME/.aws
@@ -381,6 +382,23 @@ if $use_s3cmd; then
    chmod go-rwx $HOME/.aws/credentials
 
    export PYTHONPATH=$activePythonPath
+
+   #s3allas for rclone
+   rclone config delete s3allas
+   mkdir -p  $HOME/.config/rclone/
+   echo "" >> $HOME/.config/rclone/rclone.conf
+   echo '[s3allas]' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
+   echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
+   echo "access_key_id = $ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf 
+   echo "secret_access_key = $SECRET_KEY" >> $HOME/.config/rclone/rclone.conf
+   echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
+   echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
+
+   echo "rclone remote s3allas: now provides an s3 based connection to project $OS_PROJECT_NAME in $storage_service."
+   echo ""
+
 
  #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
  #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
