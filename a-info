@@ -121,7 +121,7 @@ The basic syntax of the comand is:
 
 Options:
 
--p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Get infromation about objects form the buckets of the defined project in stead of the currently configured project. 
 
 -b, --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 
@@ -149,8 +149,13 @@ if [[ $object_name == "" ]] ; then
     echo "-------------------------------"
     echo "Bucket: $buc"
     rclone size ${storage_server}:$buc
+    if [[ $(curl https://a3s.fi/${buc}/ 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+    then
+        echo "Public URL: https://a3s.fi/$buc"
+    fi
     echo ""
   done
+  echo "-------------------------------" 
   echo ""
   echo "Total summary of data in ${storage_server}"
   rclone about ${storage_server}:
@@ -173,6 +178,10 @@ if [ $check_os -gt 0 ]; then
        echo "-------------------------------"
        echo "Bucket: $buc"
        rclone size ${storage_server}:$buc
+       if [[ $(curl https://a3s.fi/${buc}/ 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+       then
+            echo "Public URL:  https://a3s.fi/$buc"
+       fi
        echo ""
        exit 
   fi
@@ -245,6 +254,15 @@ fi
   
 rclone lsl ${storage_server}:/${object_name}
 rclone cat ${storage_server}:/${object_name}_ameta
+
+#Use curl to check is the pucket is public
+buc2=$(echo ${object_name} | awk -F "/" '{print $1}')
+if [[ $(curl https://a3s.fi/$buc2 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+then
+ echo "Public URL:  https://a3s.fi/${object_name}"
+fi
+
+
 
 
 exit
