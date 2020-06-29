@@ -948,7 +948,11 @@ do
       fi 
   fi
   if [ $mode == "s3cmd" ]; then
-      s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
+      if [[ $partial_path == "" ]] ; then
+         s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${tmp_file}_ameta
+      else
+         s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path/${tmp_file}_ameta
+      fi
   fi
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
