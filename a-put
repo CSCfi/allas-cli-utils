@@ -909,7 +909,11 @@ do
   fi
   if [ $mode == "s3cmd" ]
   then
-     s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
+     if [[ $partial_path == "" ]] ; then
+        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/$tmp_file
+     else
+        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
+     fi
      exitcode=$?
      echo $(date +"%d.%m.%y %H:%m:%S") $input $exitcode >> ${tmp_dir}/upload.log
      if [ $exitcode -ne 0 ]; then
