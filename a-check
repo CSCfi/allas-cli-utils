@@ -234,9 +234,9 @@ The location were data is stored in allas can be defined with options
 --bucket (-b) and --object (-o).
 
 The default option is that data that locates in 
-  a) $SCRATCH in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
+  a) /scratch in Puhti/Mahti is uploaded to bucket:  project_number-puhti/mahti-SCRATCH
 
-  b) $PROJAPPL in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
+  b) /projappl in Puhti/Mahti is uploaded to bucket:  project_number-puhti/mahti-PROJAPPL
 
   c) $WRKDIR in Taito is uploaded to bucket:  username-project_number-taito-WRKDIR 
 
@@ -328,7 +328,7 @@ if [[ $free_space_check -eq 1 ]]; then
        quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
        free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
     fi
-    if [[ $local_host == "puhti" ]];then
+    if [[ $local_host == "puhti" || "mahti" ]];then
       projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
       (( lproj = 600000000 + projnum ))
       #  echo "lfs quota -p $lproj $tmp_root"

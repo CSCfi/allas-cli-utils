@@ -366,7 +366,6 @@ if $use_s3cmd; then
              --access_key=$ACCESS_KEY \
              --secret_key=$SECRET_KEY \
              --host=a3s.fi \
-             --signature-v2 \
              --multipart-chunk-size-mb=$chunk_size \
              --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
    echo ""
