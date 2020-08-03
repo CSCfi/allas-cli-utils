@@ -53,6 +53,8 @@ echo $path_string
 if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
+  echo "For more information, give command:"
+  echo " a-put -h "
   echo ""
   exit 1
 fi
@@ -190,73 +192,88 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tools is used to upload data from the disk environment of Taito and Puhti to 
-allas storage environmnet. The basic syntax of the command is:
+This tool is used to upload data from the disk environment 
+of CSC's supercomputers to Allas storage environmnet. 
+a-put can be used in other environments too.
+
+The basic syntax of the command is:
 
    a-put directory_or_file
 
 By default this tool performs following operations:
 
-1. Ensures that you have working connection to Allas storage service and 
-defines the project that will be used to store the data.
+1. Ensures that you have working connection to Allas storage 
+   service.
 
-2. In case of directory, the content of the directory is collected into a single file
-(using tar command).
+2. In case of directory, the content of the directory is 
+   collected into a single file (using tar command).
 
-3. By default option --compress (-c), is used. This means that the data is compressed using zstdmt command.
-   This is the recommended way if you will be using the data only in CSC computing servers. 
-   If you plan to use the uploaded dataset in other that Linux servers, where zstdmt compression may not be available,
+3. By default option --compress (-c), is used. This means that 
+   the data is compressed using zstdmt command. This is the 
+   recommended way if you will be using the data only in 
+   CSC super computers. If you plan to use the uploaded dataset 
+   in other servers, where zstdmt compression may not be available, 
    you can disable compression with option --nc (-n).
 
-4. The data is uploaded to Allas using rclone command and swift protocol.
+4. By default the  data is uploaded to Allas using rclone command 
+   and swift protocol. S3 protocol is available too.
 
-The location were data is stored in allas can be defined with options
---bucket (-b) and --object (-o).
+The location were data is stored in Allas can be defined with 
+options --bucket (-b) and --object (-o).
 
-The default option is that data that locates in 
-  a) $SCRATCH in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
+The default option is that data that locates in: 
+  - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
+  - scrarch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
+  - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
+  - projapplin Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
 
-  b) $PROJAPPL in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
+In other cases the data uploaded to by default : username-poject_number-MISC
 
-  c) $WRKDIR in Taito is uploaded to bucket:  username-project_number-taito-WRKDIR 
+For example for user kkaytaj belonging in project_201234, data 
+locatioing in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
 
-  c) in other cases the data uploaded to: username-poject_number-MISC
+The compressed dataset will be stored as one object. The object 
+name depends on the file name and location. The logic used is that 
+the possible subdirectory path in Mahti or Puhti is included 
+in the object name. 
 
-For example for user kkaytaj belonging in project_12345, data locatioing in home directory
-will be uploaded to bucket:  kkayttaj-12345-MISC.
+E.g. a file called test_1.txt in scratch directroy of Puhti can be 
+stored with commands:
 
-The compressed dataset will be stored as one object. The object name depends on the
-file name and location.  The logic used is that the possible subdirectory path in Taito or Puhti is included 
-in the object name. E.g. a file called test_1.txt in $WRKDIR can be stored with commands:
-
-   cd $WRKDIR
+   cd /scratch/project_201234
    a-put test_1.txt
 
-In this case the file is stored to bucket: kkayttaj-12345-taito-WRKDIR
+In this case the file is stored to bucket: 201234-puhti-SCRATCH
 as object: test_1.txt.zst
 
-If you have another file called test_1.txt that locates in directory $WRKDIR/project2/sample3
-you can store it with commands:
+If you have another file called test_1.txt that locates in directory 
+/scratch/project_201234/project2/sample3 you can store it with commands:
    
-  cd $WRKDIR/project2/sample3
+  cd /scratch/project_201234/project2/sample3
   a-put test_1.txt
   
 Or commmands
-  cd $WRKDIR
+  cd /scratch/project_201234
   a-put project2/sample3/test_1.txt
 
-In this case the file is stored to bucket: kkayttaj-12345-taito-WRKDIR
+In these cases the file is stored to bucket: 201234-puhti-SCRATCH
 as object:  project2/sample3/test_1.txt.zst
 
-Options
 
--b, --bucket <bucket_name>  Define a name of the bucket into which the data is uploaded.
+a-put command line options:
 
--p, --project <project_ID>  Upload data into buckets of the defined project in stead of the currently configured project.
+-b, --bucket <bucket_name>  Define a name of the bucket into 
+                            which the data is uploaded.
 
--o, --object <object_name>  Define a name for the new object to be created.
+-p, --project <project_ID>  Upload data into buckets of the defined 
+                            project in stead of the currently 
+                            configured project.
 
---s3cmd                     Use s3cmd protocol for upoload in stead of swift protocol.
+-o, --object <object_name>  Define a name for the new object to be 
+                            created.
+
+--s3cmd                     Use s3cmd protocol in stead of swift 
+                            protocol for upoload
 
 -n, --nc                    Do not compress the data that will be uploaded.
 
@@ -268,18 +285,24 @@ Options
 -s, --silent                Less output
 
 -u, --user                  Define username liked to the data to be uploaded
+                            (default: current username)
 
---simple-filelist           Only filenames, not owner, size and date, are collected to the metadatafile.
-                            This feature is automatically used for diredtories that contain more than 5000 items.
+--simple-filelist           Only filenames, not owner, size and date, are 
+                            collected to the metadatafile. This feature is 
+                            automatically used for directories that contain 
+                            more than 5000 items.
 
---skip-filelist             Do not collect information about the files that the object contains to metadata file
-                            Using this option speeds up the upload process significantly if the directory 
-                            that will be uploaded contains large amount of files. However, a-find can't be used
-                            for objects uploaded this way.
+--skip-filelist             Do not collect information about the files that 
+                            the object contains to the metadata file.
+                            Using this option speeds up the upload process 
+                            significantly if the directory to be uploaded 
+                            contains large amount of files. However, a-find 
+                            can't be used to locate objects uploaded this way.
 
 --override                  Allow overwriting existing objects.
 
---input-list                Give a file that lists the files or directtories to be uploaded to Allas.
+--input-list                Give a file that lists the files or directtories 
+                            to be uploaded to Allas.
                             Each item will be stored as one object.
 
 Related commands: a-find, a-get, a-delete, a-info
@@ -443,9 +466,15 @@ do
           fi 
        fi
     else
-      if [[ ${tmp_file: -8} != ".tar.zst" ]]; then     
-          tmp_file="${tmp_file}.tar.zst"
-      fi
+       if [[ $compression -eq 1 ]]; then
+         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then 
+              tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+         fi
+       else
+         if [[ ${tmp_file: -4} != ".tar" ]]; then     
+          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+         fi
+       fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
    fi
   fi
