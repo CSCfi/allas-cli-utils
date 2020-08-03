@@ -225,7 +225,7 @@ The default option is that data that locates in:
   - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
   - scrarch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
   - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
-  - projapplin Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
+  - projappl in Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
 
 In other cases the data uploaded to by default : username-poject_number-MISC
 
@@ -468,11 +468,11 @@ do
     else
        if [[ $compression -eq 1 ]]; then
          if [[ ${tmp_file: -8} != ".tar.zst" ]]; then 
-              tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+           tmp_file="${tmp_file}.tar.zst"
          fi
        else
          if [[ ${tmp_file: -4} != ".tar" ]]; then     
-          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+            tmp_file="${tmp_file}.tar"
          fi
        fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
