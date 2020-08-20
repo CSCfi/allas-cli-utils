@@ -183,7 +183,7 @@ do
                   shift
                   shift
                 ;;
-                '--asis' | '-o' )               
+                '--asis' | '-a' )               
                  input_asis=$2
                  #For field separator changed to allow spaces in file names
                  #IFS contains the default field separator
@@ -325,7 +325,7 @@ a-put command line options:
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 
---asis <directory>          Copy the given file or content of a directory to Allas
+-a, --asis <directory>      Copy the given file or content of a directory to Allas
                             without compression and packing so that each file in the 
                             directory will be copied to Allas as an individual object.
                             The object name contrains the relative path of the file to 
