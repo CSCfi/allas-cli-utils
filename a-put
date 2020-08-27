@@ -88,6 +88,7 @@ filelist_level=0
 cumulative_size=0
 override_mode=0
 asis_mode=0
+tar_extra_options=""
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -184,24 +185,27 @@ do
                   shift
                 ;;
                 '--asis' | '-a' )               
-                 input_asis=$2
-                 #For field separator changed to allow spaces in file names
-                 #IFS contains the default field separator
-                 SAVEIFS=$IFS
-                 IFS=$(echo -en "\n\b")
-                 #parse the file names from the targer directory
-                 input_def=("$(find "$input_asis" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
-                 IFS=$SAVEIFS
-                 a=($(echo $input_def))
-                 num_to_import=${#a[@]}
-                 echo "$input_asis contains ${#a[@]} files."
-                 echo "Each of these files will be copied as a separate object to Allas as"    
-                 compression=0
-                 free_space_check=0
-                 asis_mode=1
-                 fnum=0
+                   input_asis=$2
+                   #For field separator changed to allow spaces in file names
+                   #IFS contains the default field separator
+                   SAVEIFS=$IFS
+                   IFS=$(echo -en "\n\b")
+                   #parse the file names from the targer directory
+                   input_def=("$(find "$input_asis" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
+                   IFS=$SAVEIFS
+                   a=($(echo $input_def))
+                   num_to_import=${#a[@]}
+                   echo "$input_asis contains ${#a[@]} files."
+                   echo "Each of these files will be copied as a separate object to Allas as"    
+                   compression=0
+                   free_space_check=0
+                   asis_mode=1
+                   fnum=0
                  shift
                  shift
+                 ;;
+                 '--follow-links' )
+                 tar_extra_options="-h"
                  ;;
              *)
                    input_def=("$input_def $1")
@@ -330,6 +334,10 @@ a-put command line options:
                             directory will be copied to Allas as an individual object.
                             The object name contrains the relative path of the file to 
                             be copied. 
+
+--follow-links              When uploading a directory, include linked files as real files
+                            in sead of links.
+
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
@@ -828,9 +836,9 @@ do
         #compress data
         if [[ $silent -eq 0 ]] ; then
            echo "Collecting data from directory $input to archive file: $tmp_file"
-           tar -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
+           tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
         else
-           tar -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
+           tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
         fi
         
         if [[ $filelist_level -eq 1 ]]; then      
@@ -847,9 +855,9 @@ do
          #Hakeisto tar-pakettina      
          if [[ $silent -eq 0 ]] ; then
              echo "Collecting data from directory $input to archive file: $tmp_file"
-             tar -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
+             tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
          else
-             tar -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
+             tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
          fi
 
 	 if [[ $filelist_level -eq 1 ]]; then      
