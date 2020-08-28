@@ -206,6 +206,7 @@ do
                  ;;
                  '--follow-links' )
                  tar_extra_options="-h"
+                 shift
                  ;;
              *)
                    input_def=("$input_def $1")
