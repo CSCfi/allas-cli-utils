@@ -367,7 +367,12 @@ if $use_s3cmd; then
              --secret_key=$SECRET_KEY \
              --host=a3s.fi \
              --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
+             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ > /dev/null
+   #replace default signurl_use_https
+   grep -v signurl_use_https $HOME/.s3cfg_$$ > $HOME/.s3cfg
+   rm -f  $HOME/.s3cfg_$$
+   echo "signurl_use_https = True" >> $HOME/.s3cfg
+   
    echo ""
    echo "s3cmd configuration ready."
    echo ""
