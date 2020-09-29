@@ -249,7 +249,6 @@ if [ -z "$OS_PROJECT_NAME" ]; then
              for g in ${all_projects[@]}
              do
                 title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
-                echo $title
                 allas_projects+=("${g}  ${title}")
              done
              select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
