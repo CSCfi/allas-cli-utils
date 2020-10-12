@@ -755,7 +755,7 @@ do
       #IFS contains the default field separator
       SAVEIFS=$IFS
       IFS=$(echo -en "\n\b") 
-      for f in $(find "$input" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}' )
+      for f in $(find "$input" |  file -N -f - | awk '{if ( $NF != "directory") print $0}' | awk -F ': ' '{print $1}' )
       do        
         ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
         (( num_files = num_files + 1 ))
