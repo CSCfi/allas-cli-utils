@@ -88,6 +88,8 @@ local storage_url_re='https://a3s.fi:443/swift'
 local storage_url_interface_re='"interface": "public"'
 local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
 local s3remove=false
+local debug=false
+local devnull="/dev/null"
 
 # Process command line arguments
 
@@ -104,6 +106,7 @@ while [[ $# -ge 1 ]]; do
         '-f'|'--force' )        force=true;              shift;;
         '--swift-auth' )        auth_method=swift;       shift;;
         '--s3remove' )          mode=s3remove;           shift;;
+        '--debug' )             debug=true;              shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -246,7 +249,6 @@ if [ -z "$OS_PROJECT_NAME" ]; then
              for g in ${all_projects[@]}
              do
                 title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
-                echo $title
                 allas_projects+=("${g}  ${title}")
              done
              select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
@@ -345,7 +347,9 @@ fi
 # 6.2 s3cmd configuration
 
 if $use_s3cmd; then
-
+    if $debug ; then
+       devnull='&1'
+    fi
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
 
@@ -367,7 +371,13 @@ if $use_s3cmd; then
              --secret_key=$SECRET_KEY \
              --host=a3s.fi \
              --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg
+             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull
+   #replace default signurl_use_https
+   grep -v signurl_use_https $HOME/.s3cfg_$$ | grep -v public_url_use_https > $HOME/.s3cfg
+   rm -f  $HOME/.s3cfg_$$
+   echo "signurl_use_https = True" >> $HOME/.s3cfg
+   echo "public_url_use_https = True" >> $HOME/.s3cfg
+   
    echo ""
    echo "s3cmd configuration ready."
    echo ""
@@ -407,6 +417,7 @@ fi
 
 # Option to remove s3cmd key
 if $s3remove; then
+    
     echo ""
     echo "s3 access key removal requested for project $OS_PROJECT_NAME"
     activePythonPath=$PYTHONPATH
