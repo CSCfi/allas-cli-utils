@@ -600,6 +600,7 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/fmi\/scratch\/$puhti_project"/""/g)
      fi
+
      #Puhti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
      then
@@ -641,6 +642,27 @@ do
      fi
      partial_path=$(remove_slash_from_ends $partial_path)
   fi 
+
+  #Puhti-NVME disk area
+  if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
+     then
+        puhti_project=$SLURM_JOB_ACCOUNT
+        bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+     fi 
+
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
