@@ -26,7 +26,7 @@ For those users, that just want to use Allas for storing data that is in CSC com
 |a-command | Function |
 | :--- | :--- |
 | a-put | Upload a file or directory to Allas as one object |
-| a-check | Comman to check if a-put command was successfully executed |
+| a-check | Command to check if a-put command was successfully executed |
 | a-list | List buckets and objects in Allas |
 | a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
 | a-get | Download a stored dataset (object) from Allas |
@@ -34,11 +34,11 @@ For those users, that just want to use Allas for storing data that is in CSC com
 | a-delete | Delete an object from Allas |
 | a-info | Display information about an object in Allas |
    
-In addition to the above command, there is saparate tool to create incremental backups:
+In addition to the above commands, there is saparate tool to create incremental backups:
 
 *    `allas-backup` : create a backup copy of a local dataset into a backup repository in Allas
 
-And a tool for mounting Allas buckets as directores to a local computer
+And a tool for mounting Allas buckets as directores to a local computer (not yet in production)
 
 *    `allas-mount`
 
