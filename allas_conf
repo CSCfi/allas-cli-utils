@@ -236,7 +236,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            export OS_PROJECT_NAME=${all_projects[0]}
            ;;
        *)
-           PS3="Please choose a project by giving an item number form the list above: "
+           PS3="Please choose a project by giving an item number from the list above: "
            local project
            local allas_projects
            
