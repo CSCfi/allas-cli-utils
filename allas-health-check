@@ -2,9 +2,10 @@
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+inst_root="/appl/opt/allas-cli-utils"
 source $inst_root/a_env_conf
 
-#allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#allas_conf_path=("/appl/opt/allas-cli-utils/allas_conf")
 
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
@@ -13,7 +14,7 @@ export OS_REGION_NAME="regionOne"
 export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
 project="none"
-
+bucket=""
 #store swift autentication if it is done
 if [ -n "$OS_AUTH_TOKEN" ]
 then
@@ -89,8 +90,15 @@ do
   echo "Project: $pro" >> /tmp/allas-health-tmp-$$
   #Run the test  
   fail_pro=0
+  echo $bucket
+  if [[ $bucket == "" ]]; then
+     bucketlist=$(rclone lsd ${storage_server}: | grep _segments$  | awk '{print $NF}' | sed 's/.\{9\}$//')
+  else
+     bucketlist=$bucket
+  fi
+
   #Go through all the buckets that have segments bucket
-  for bucket in $(rclone lsd ${storage_server}: | grep _segments$  | awk '{print $NF}' | sed 's/.\{9\}$//')
+  for bucket in $bucketlist
   do 
        echo "Cheking bucket: $bucket"
        num_ok=0

@@ -842,15 +842,20 @@ do
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space" 
   fi
 
+  packing_failed=0
   #Pakkaaminen
   if [[ $compression -eq 1 ]]; then
      if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
      then
         if [[ $silent -eq 0 ]] ; then
           echo "Compressing $input"
-          zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 
+          zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file
+          exitcode=$?
+          (( packing_failed = packing_failed + exitcode )) 
         else
           zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
+          exitcode=$?
+       	  (( packing_failed = packing_failed + exitcode ))
         fi
         if [[ $filelist_level -eq 1 ]]; then      
            ls $input >> ${tmp_dir}/${tmp_file}_ameta
@@ -860,8 +865,12 @@ do
         if [[ $silent -eq 0 ]] ; then
            echo "Collecting data from directory $input to archive file: $tmp_file"
            tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
+           exitcode=$?
+       	   (( packing_failed = packing_failed + exitcode ))
         else
            tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
+           exitcode=$?
+       	   (( packing_failed = packing_failed + exitcode ))
         fi
         
         if [[ $filelist_level -eq 1 ]]; then      
@@ -879,8 +888,12 @@ do
          if [[ $silent -eq 0 ]] ; then
              echo "Collecting data from directory $input to archive file: $tmp_file"
              tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
+             exitcode=$?
+             (( packing_failed = packing_failed + exitcode ))
          else
              tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
+             exitcode=$?
+             (( packing_failed = packing_failed + exitcode ))
          fi
 
 	 if [[ $filelist_level -eq 1 ]]; then      
@@ -890,6 +903,17 @@ do
        fi
   fi
   
+  if [[ $packing_failed -gt 0 ]] ; then
+      echo "Packing or compression failed!"
+      echo "Check that you have enough space for temporary files."
+      echo "Temporary files are in: ${tmp_dir}"
+      exit 1
+  else
+      echo "Packing successfull."
+  fi  
+
+
+
   if [[ $compression -eq 1 ]] ; then
     #tmp file size in KB
     tmp_size=$(du ${tmp_dir}/$tmp_file | awk '{print $1}')
