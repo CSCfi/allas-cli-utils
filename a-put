@@ -251,6 +251,7 @@ The default option is that data that locates in:
   - scrarch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
   - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
   - projappl in Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
+  - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
 
 In other cases the data uploaded to by default : username-poject_number-MISC
 
@@ -909,7 +910,9 @@ do
       echo "Temporary files are in: ${tmp_dir}"
       exit 1
   else
+     if [[ $silent -eq 0 ]] ; then
       echo "Packing successfull."
+     fi
   fi  
 
 
