@@ -89,6 +89,7 @@ cumulative_size=0
 override_mode=0
 asis_mode=0
 tar_extra_options=""
+encrypt=0
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -206,6 +207,10 @@ do
                  ;;
                  '--follow-links' )
                  tar_extra_options="-h"
+                 shift
+                 ;;
+                 '--encrypt' )
+                 encrypt=1
                  shift
                  ;;
              *)
@@ -536,31 +541,11 @@ do
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
   if [ $bucket_name == "not_defined" ]
   then
-     ## Taito
-     #Taito home
+     #default
      bucket_name=("${user}-${project_label}-MISC")
-     if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-HOME")
-        partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
-     fi
-     #Taito wrk
-     if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-WRKDIR")
-        partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
-     fi
-
-     #Taito proj
-     if [ $(echo $file_path  | cut -c1-6) == "/proj/" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-PROJ")
-        partial_path=$(dirname $file_path | sed -e s/"\/proj"/""/g)
-     fi
-
- 
-     ## Puhti
-     # In Puhti we check if puhti-project and Allas project match
+           
+     ## Puhti and Mahti
+     # In Puhti and Mahti we check if puhti-project and Allas project match
      #Puhti scratch
      if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
      then
@@ -602,7 +587,7 @@ do
         partial_path=$(dirname $file_path | sed -e s/"\/fmi\/scratch\/$puhti_project"/""/g)
      fi
 
-     #Puhti projappl
+     #Puhti and Mahti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
@@ -667,43 +652,53 @@ do
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
-  if [[ $mode == "swift" && $override_mode -eq 0 ]]
+  if [[ $mode == "swift" ]]
   then
      if [[ $partial_path == "" ]]; then
       if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
       then
-	echo ""
-        echo "A file/directory with the same name has already been uploaded into"
-        echo "bucket $bucket_name in $storage_server"
-        echo ""
-        echo "   ${bucket_name}/${tmp_file}  " 
-        echo ""
-        echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-        echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
-        echo "Aternatrively, you can define different bucket name using option --bucket "
-        echo "or define different object name with option --object"
-
-
-        exit 1
+        if [[ $override_mode -eq 1 ]]; then
+           # in override mode explicitly delete the old object
+           rclone delete ${storage_server}:${bucket_name}/$tmp_file
+        else
+           echo ""
+           echo "A file/directory with the same name has already been uploaded into"
+           echo "bucket $bucket_name in $storage_server"
+           echo ""
+           echo "   ${bucket_name}/${tmp_file}  " 
+           echo ""
+           echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
+           echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
+           echo "Aternatrively, you can define different bucket name using option --bucket "
+           echo "or define different object name with option --object"
+           exit 1
+        fi
       fi
     else
       if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
       then
-
-	echo ""
-        echo "A file/directory with the same name has already been uploaded into"
-        echo "bucket $bucket_name in $storage_server"
-        echo ""
-        echo "   ${bucket_name}/${tmp_file}  " 
-        echo ""
-        echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-        echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
-        echo "Aternatrively, you can define different bucket name using option --bucket "
-        echo "or define different object name with option --object"
-        exit 1
+        if [[ $override_mode -eq 1 ]]; then
+           # in override mode explicitly delete the old object
+           rclone delete ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+        else
+           echo ""
+           echo "A file/directory with the same name has already been uploaded into"
+           echo "bucket $bucket_name in $storage_server"
+           echo ""
+           echo "   ${bucket_name}/${tmp_file}  " 
+           echo ""
+           echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
+           echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
+           echo "Aternatrively, you can define different bucket name using option --bucket "
+           echo "or define different object name with option --object"
+           exit 1
+         fi
       fi
     fi
   fi
+   
+
+
 
   if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
   then
@@ -929,6 +924,18 @@ do
   else
     tmp_size=$tot_size
   fi
+ 
+  # encrypt if requested 
+  if [[ $encrypt -eq 1 ]]; then
+     ls -l ${tmp_dir}
+     gpg --output ${tmp_dir}/${tmp_file}.gpg --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
+     rm   ${tmp_dir}/$tmp_file
+     tmp_file=${tmp_file}.gpg
+     echo  ${tmp_dir}
+     echo  ${tmp_file} 
+  fi 
+
+
 
   #upload
   if [ $mode == "swift" ]
@@ -1054,7 +1061,7 @@ do
         cat ${tmp_dir}/upload.log
         s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
         rm -f ${tmp_dir}/$tmp_file 
-        rm -f ${tmp_dir}/${tmp_file}_ameta
+        rm -f ${tmp_dir}/*_ameta
         rm -f ${tmp_dir}/upload.log
         rmdir ${tmp_dir}
         exit 1
