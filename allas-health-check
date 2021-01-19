@@ -1,11 +1,29 @@
 #!/bin/bash
 
+check_segment_sizes(){
+  local segment_server="$1"
+  local segments_bucket="${2}_segments"
+  local check_object=$3
+  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | grep -v "slo/" | sed  s/"^ "/""/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
+  if [[ ${#segsizes[@]} -eq 2 ]]; then
+     local ssizesum=${segsizes[0]}
+     local ssizeval=${segsizes[1]}
+     (( chek_value = ssizesum - ssizeval ))
+     echo $chek_value
+  else
+     #No segements found. Assuming OK
+      echo 0
+  fi
+}
+
+
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-inst_root="/appl/opt/allas-cli-utils"
+#inst_root="/appl/opt/allas-cli-utils"
+#cat  $inst_root/a_env_conf
 source $inst_root/a_env_conf
 
-#allas_conf_path=("/appl/opt/allas-cli-utils/allas_conf")
+allas_conf_path=("${inst_root}/allas_conf")
 
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
@@ -78,12 +96,15 @@ fi
 
 fail_tot=0
 
+
+
 for pro in $all_projects
 do
   #Open connection
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
+  # source $allas_conf_path -f  --keeppasswd $pro
   source $allas_conf_path -f --silent --keeppasswd $pro
 
   echo "-------------------------------------------" >>  /tmp/allas-health-tmp-$$ 
@@ -93,6 +114,7 @@ do
   echo $bucket
   if [[ $bucket == "" ]]; then
      bucketlist=$(rclone lsd ${storage_server}: | grep _segments$  | awk '{print $NF}' | sed 's/.\{9\}$//')
+     #echo "rclone lsd ${storage_server}: | grep _segments$  | awk '{print $NF}' | sed 's/.\{9\}$//'"
   else
      bucketlist=$bucket
   fi
@@ -105,9 +127,14 @@ do
        num_fail=0
        #List segmented objets
        #echo "rclone ls "${storage_server}:${bucket}_segments" | cut -d " " -f 2| sed 's/.\{9\}$//' | uniq"
-       for sobject in $(rclone ls "${storage_server}:${bucket}_segments" | cut -d " " -f 2 | sed 's/.\{9\}$//' | uniq )
-       do
-         fobject=$( echo "$sobject" | rev | cut -d "/" -f 3-  | rev )
+      ## for sobject in $(rclone ls "${storage_server}:${bucket}_segments" | grep -v "/slo/" | sed  s/"^ "/""/ | cut -d " " -f 2 | sed 's/.\{9\}$//' | uniq )
+      ## do
+      ##   fobject=$( echo "$sobject" | rev | cut -d "/" -f 3-  | rev )
+      for fobject in $(rclone ls "${storage_server}:${bucket}_segments" | grep -v "/slo/" | sed  s/"^ "/""/ | cut -d " " -f 2 | sed 's/.\{9\}$//' | rev | cut -d "/" -f 3-  | rev | sort |uniq )
+      do
+      ## do
+
+
          # this check does not work for segment names with /slo/
          slo_object=$(echo "$fobject" | grep -c '/slo/')
          if [[ $slo_object -eq 0 ]]; then
@@ -120,14 +147,40 @@ do
                (( num_fail = num_fail + 1 )) 
                (( fail_pro = fail_pro + 1 ))
            else
-           bucket_check=$( swift stat ${bucket} ${fobject} | grep Manifest | grep -c "$sobject" ) 
-              if [[ $bucket_check -ne 1 ]]; then      
-                 echo "    Problem with object: ${bucket}/$fobject"
-                 echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/allas-health-tmp-$$
-                 echo "    Segments are either not found or there are several versions available." >>  /tmp/allas-health-tmp-$$
-                (( num_fail = num_fail + 1 )) 
-                (( fail_pro = fail_pro + 1 ))
-              else
+              #echo "check_segment_sizes ${storage_server} ${bucket} ${fobject}"
+              seg_stat=$(check_segment_sizes ${storage_server} ${bucket} ${fobject})
+              if [[ $seg_stat -lt 0 ]]; then
+                  (( num_fail = num_fail + 1 )) 
+                  (( fail_pro = fail_pro + 1 ))
+                  echo  "Object $fobject has segment some objects missing."           
+                  echo  "    Object $bucket/$fobject has some segment objects missing."  >> /tmp/allas-health-tmp-$$
+              fi
+              if [[ $seg_stat -gt 0 ]]; then
+                  (( num_fail = num_fail + 1 )) 
+                  (( fail_pro = fail_pro + 1 ))
+                  mani_obj=$(swift stat ${bucket} ${fobject} | grep Manifest | awk '{print $2}')
+                  meta_size=$(swift stat ${bucket} ${fobject} | grep "Content Length:" | awk '{print $3}')
+                  segs_size=$(rclone ls ${storage_server}:$mani_obj | awk '{a = a + $1}END{print a}')
+                  if [[ $meta_size -eq  $segs_size ]];then
+                     echo  "Object $fobject is OK but it has extra segment objects that could be removed."           
+                     echo  "    Object $fobject is OK but it has extra segment objects that could be removed."  >> /tmp/allas-health-tmp-$$
+                     (( num_ok = num_ok + 1 ))
+                  else
+                     (( num_fail = num_fail + 1 )) 
+                     (( fail_pro = fail_pro + 1 ))
+                     echo  "Object $fobject has segment some objects missing."           
+                     echo  "     Object $bucket/$fobject has some segment objects missing."  >> /tmp/allas-health-tmp-$$
+                  fi
+              fi
+              if [[ $seg_stat -eq 0 ]]; then
+              ## bucket_check=$( swift stat ${bucket} ${fobject} | grep Manifest | grep -c "$sobject" ) 
+              ##if [[ $bucket_check -ne 1 ]]; then      
+              ##  echo "    Problem with object: ${bucket}/$fobject"
+              ##   echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/allas-health-tmp-$$
+              ##   echo "    Segments are either not found or there are several versions available." >>  /tmp/allas-health-tmp-$$
+              ##  (( num_fail = num_fail + 1 )) 
+              ##  (( fail_pro = fail_pro + 1 ))
+              ##else
               # echo "    $fobject OK"
                  (( num_ok = num_ok + 1 ))
               fi
@@ -144,6 +197,7 @@ do
   if [[ $fail_pro -eq 0 ]]; then
     echo "OK" >> /tmp/allas-health-tmp-$$
   fi
+  bucket=""
 done
 
 if [[ fail_tot -gt 0 ]]; then
