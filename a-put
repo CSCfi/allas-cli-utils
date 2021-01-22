@@ -427,17 +427,17 @@ fi
 if [[ $free_space_check -eq 1 ]]; then
   if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
   then
-    if [[ $local_host == "taito" ]];then
-       quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
-       free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
-    fi
     if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
       projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
-      (( lproj = 600000000 + projnum ))
-      #  echo "lfs quota -p $lproj $tmp_root"
-      #lfs quota -p $lproj $tmp_root
-      quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
-      free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+      if [ -n "$projnum" ] && [ "$projnum" -eq "$projnum" ] 2>/dev/null; then
+           (( lproj = 600000000 + projnum ))
+           #  echo "lfs quota -p $lproj $tmp_root"
+           #lfs quota -p $lproj $tmp_root
+           quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
+           free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+       else
+          echo "Scratch size not cheked for this project."      
+      fi
     fi
   else
     free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
@@ -714,7 +714,7 @@ do
            echo "A file/directory with the same name has already been uploaded into"
            echo "bucket $bucket_name in $storage_server"
            echo ""
-           echo "   ${bucket_name}/${tmp_file}  " 
+           echo "   ${bucket_name}/${partial_path}/${tmp_file}  " 
            echo ""
            echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
            echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
