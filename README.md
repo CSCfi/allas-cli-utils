@@ -112,8 +112,13 @@ bash                                      #new sesion to enable miniconda
 git clone https://github.com/CSCfi/allas-cli-utils       #download allas tools
 cd allas-cli-utils/
 export PATH=${PATH}:$(pwd)
-conda env create -n allas --file allas-dependencies.yaml #use conda to installa remaining dependencies
-conda activate allas                                     #activate the environmnet       
+conda create -n allas
+conda activate allas
+conda install -c conda-forge zstd python pip s3cmd
+pip install --upgrade setuptools
+pip install python-openstackclient
+pip install python-rclone
+pip install python-swiftclient    
 source allas_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
 a-list
 
