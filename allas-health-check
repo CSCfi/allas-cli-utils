@@ -54,6 +54,7 @@ With the option -p, you can focus the checking to just one project.
 OPTIONS 
 
   -p, --project    Do testing only for a specific project.
+  -b, --Bucket     Do tesring only for a specific bucket. Project must be expilicitly with -p .
 "
 
 
@@ -105,8 +106,9 @@ do
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
   # source $allas_conf_path -f  --keeppasswd $pro
-  source $allas_conf_path -f --silent --keeppasswd $pro
-
+  source $allas_conf_path -f --silent --keeppasswd $pro > /dev/null
+  echo "-------------------------------------------" >> 
+  echo "Project: $pro"
   echo "-------------------------------------------" >>  /tmp/allas-health-tmp-$$ 
   echo "Project: $pro" >> /tmp/allas-health-tmp-$$
   #Run the test  
@@ -222,4 +224,14 @@ then
    export OS_STORAGE_URL=("$ORIG_OS_STORAGE_URL")
 fi 
 
+#Execute log creation
+message="$0 $(date) broken-objects: $fail_tot "
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
 
+
+#If log is a file and not a service then check permissions
+if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]; then
+  if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
+     chmod a+rwx  $allas_log
+  fi
+fi
