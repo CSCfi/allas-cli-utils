@@ -107,7 +107,7 @@ do
   saldo -p $projnum 2> /dev/null | grep "^Project"
   # source $allas_conf_path -f  --keeppasswd $pro
   source $allas_conf_path -f --silent --keeppasswd $pro > /dev/null
-  echo "-------------------------------------------" >> 
+  echo "-------------------------------------------" 
   echo "Project: $pro"
   echo "-------------------------------------------" >>  /tmp/allas-health-tmp-$$ 
   echo "Project: $pro" >> /tmp/allas-health-tmp-$$
