@@ -259,11 +259,19 @@ fi
    
 
 
-
 #assign name for output file if not defined 
-is_compressed=(0)
+
+#if encrypted, remove .gpg temorarily from the object name to make zst and tar detection work
+is_encrypted=0
+if [[ ${object_name:(-4):4} == ".gpg" ]]; then
+  is_encrypted=1
+  object_name=${object_name:0:-4}
+  echo "Encrypted object"
+fi
+
+is_compressed=0
 if [[ ${object_name:(-4):4} == ".zst" ]]; then
-  is_compressed=(1)
+  is_compressed=1
   #check if zstdmt is available
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
       echo ""      
@@ -275,6 +283,7 @@ if [[ ${object_name:(-4):4} == ".zst" ]]; then
       exit 1
    fi 
 fi
+
 
 is_tar_file=(0)
 
@@ -301,6 +310,11 @@ if [[ $target_name == "" ]];then
    fi 
 fi
 
+if  [[ $is_encrypted -eq 1 ]]; then
+  #return .gpg to the name
+  object_name=${object_name}.gpg
+fi
+
 
 #If selected, extract to the same place were data was from.
 if [[ to_orig_dir -eq 1 ]]; then
@@ -313,6 +327,7 @@ fi
 if [[ $asis_mode -eq 1 ]]; then
    is_tar_file=0
    is_compressed=0
+   is_encrypted=0
    target_name=$(basename $object_name)
 fi
 
@@ -377,6 +392,13 @@ if [[ $is_tar_file -eq 1 ]]; then
         rm -f  a-get_download_$$_tmp.zst
         exit 1
      fi
+     if [[ $is_encrypted -eq 1 ]]; then
+        echo "Based on the object name, thae object has been encrypted with gpg."
+        gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
+        rm -f  a-get_download_$$_tmp.zst
+        mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+     fi
+
      echo "Uncompressing downloaded object"
      if [[ $is_compressed -eq 1 ]]; then
          cat  a-get_download_$$_tmp.zst | zstdmt -d | tar -xv -o $file_name
@@ -412,9 +434,19 @@ else
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
        if [[ $mode == "swift" ]]; then 
-          rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
+           if [[ $is_encrypted -eq 1 ]]; then
+             rclone cat "${storage_server}:/$object_name" | gpg -d | zstdmt -d >  $target_name
+           else
+             rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
+           fi
        else
-          s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
+          s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst
+          if [[ $is_encrypted -eq 1 ]]; then
+              echo "Based on the object name, thae object has been encrypted with gpg."
+              gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
+              rm -f  a-get_download_$$_tmp.zst
+              mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+          fi 
           zstdmt -d a-get_download_$$_tmp.zst 
           mv a-get_download_$$_tmp > $target_name
        fi
@@ -424,11 +456,30 @@ else
        fi
        # Just download
        if [[ $mode == "swift" ]]; then 
-         rclone -P copy "${storage_server}:/$object_name"  $target_dir
+           if [[ $is_enrypted -eq 1 ]]; then
+             rclone cat "${storage_server}:/$object_name" | gpg -d >  $target_name
+           else 
+             rclone -P copy "${storage_server}:/$object_name"  $target_dir
+           fi
        else
-         s3cmd get "s3://${object_name}"  $target_dir/$target_name
+           s3cmd get "s3://${object_name}"  $target_dir/$target_name
+           if [[ $is_enrypted -eq 1 ]]; then
+              echo "Based on the object name, thae object has been encrypted with gpg."
+              gpg --output $target_dir/${target_name}.tmp -d $target_dir/$target_name          
+              rm $target_dir/$target_name
+              mv $target_dir/${target_name}.tmp $target_dir/$target_name
+           fi 
+
        fi
     fi
+    if [[ $is_enrypted -eq 1 ]]; then
+        echo "Based on the object name, thae object has been encrypted with gpg."
+        gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
+        rm -f  a-get_download_$$_tmp.zst
+        mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+    fi
+
+
     if [[ $new_target -eq 1 ]];then
        cd -   
     fi

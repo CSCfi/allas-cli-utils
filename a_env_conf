@@ -1,9 +1,11 @@
 #Common settngs for a_ -tools
-storage_server=("allas")
-local_host=("puhti")
-allas_log=(/dev/null)
+storage_server="allas"
+local_host="$(hostname)"
+allas_log="/dev/null"
 
-allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#change here your allas_cond locatio
+allas_conf_path="/home/kkmattil/allas-cli-utils/allas_conf"
 max_size=500000000
 max_files=100000
-tmp_root=("/tmp")
+#change here the directory that will be used for temporary files
+tmp_root="/tmp"
