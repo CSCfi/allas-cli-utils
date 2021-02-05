@@ -394,8 +394,8 @@ if [[ $is_tar_file -eq 1 ]]; then
      fi
      if [[ $is_encrypted -eq 1 ]]; then
         echo "Based on the object name, thae object has been encrypted with gpg."
-        gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
-        rm -f  a-get_download_$$_tmp.zst
+        gpg -d a-get_download_$$_tmp.zst >   a-get_download_$$_tmp.zst.tmp          
+        rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
      fi
 
@@ -443,7 +443,7 @@ else
           s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst
           if [[ $is_encrypted -eq 1 ]]; then
               echo "Based on the object name, thae object has been encrypted with gpg."
-              gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
+              gpg -d  a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp      
               rm -f  a-get_download_$$_tmp.zst
               mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
           fi 
@@ -465,7 +465,7 @@ else
            s3cmd get "s3://${object_name}"  $target_dir/$target_name
            if [[ $is_enrypted -eq 1 ]]; then
               echo "Based on the object name, thae object has been encrypted with gpg."
-              gpg --output $target_dir/${target_name}.tmp -d $target_dir/$target_name          
+              gpg -d $target_dir/$target_name >  $target_dir/${target_name}.tmp       
               rm $target_dir/$target_name
               mv $target_dir/${target_name}.tmp $target_dir/$target_name
            fi 
@@ -474,7 +474,7 @@ else
     fi
     if [[ $is_enrypted -eq 1 ]]; then
         echo "Based on the object name, thae object has been encrypted with gpg."
-        gpg --output a-get_download_$$_tmp.zst.tmp -d  a-get_download_$$_tmp.zst          
+        gpg -d  a-get_download_$$_tmp.zst >  a-get_download_$$_tmp.zst.tmp         
         rm -f  a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
     fi
