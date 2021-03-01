@@ -45,14 +45,14 @@ And a tool for mounting Allas buckets as directores to a local computer (not yet
 ## Installing allas-cli-utils
 
 Allas-cli-utils is mainly designed to be used in the HPC computing environmemt of CSC.
-In CSC computers (Puhti, Mahti, Taito) these tools are installed and maintained by CSC.
+In CSC computers (Puhti, Mahti ) these tools are installed and maintained by CSC.
 
 You can install these tools in your local Linux and Mac environment too, but in order to use
 these tools you should have several software componets available:
 
 __allas_conf__ script requires:
 
-*   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer)
+*   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer, not mandatory if you use swift and know the project name.)
 *   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
 
 I addition to the above, A_ -tools requre:
@@ -61,7 +61,7 @@ I addition to the above, A_ -tools requre:
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
 
 
-Exaple: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
+Example: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
 
 ```text
 #install pip and openstack client
@@ -101,7 +101,8 @@ Example: Installing allas-cli-utils to Centos 7 based virtual machine in cPouta
 
 ```text
 sudo yum update                          # update everything first
-sudo yum install rclone                  # install rclone  
+sudo yum install unzip                   # install rclone
+curl https://rclone.org/install.sh | sudo bash                
 sudo yum install yum-plugin-copr         # three commands to install restic
 sudo yum copr enable copart/restic
 sudo yum install restic
@@ -117,7 +118,6 @@ conda activate allas
 conda install -c conda-forge zstd python pip s3cmd
 pip install --upgrade setuptools
 pip install python-openstackclient
-pip install python-rclone
 pip install python-swiftclient    
 source allas_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
 a-list
@@ -131,4 +131,10 @@ you can take in use in macs by giving following in the command in the allas-cli-
 mv md5sum.macosx md5sum
 ```
 
- 
+# Configuring your local installation
+
+The file _a_env_conf_ contains some variable settings that you may want to change in your local installation.
+You may for example change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
+You can also choiose to use a fixed default bucket for the uploads.
+
+
