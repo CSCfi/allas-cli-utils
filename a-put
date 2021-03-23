@@ -67,7 +67,7 @@ Some segments are missing?"
          fi
          if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
 local m="ERROR. Total size of segments ${segsizes[0]} is more that original file size ${segsizes[1]}.
-Check the segmensts bucket ${segments_bucket} for object ${check_object}."
+Check the segments bucket ${segments_bucket} for object ${check_object}."
            echo $m
          fi
 
@@ -238,8 +238,22 @@ do
                  tar_extra_options="-h"
                  shift
                  ;;
-                 '--encrypt' )
+                 '--encrypt_pk' )
                  encrypt=1
+                 encrypt_pk=$2
+		 if [[ -e $encrypt_pk ]];then
+                      if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+			  echo ""
+			  echo "crypt4gh is not available!"
+			  echo "Please install crypt4gh in you want to use encryption."
+			  exit 1
+		      fi                          
+                 else  
+                    echo "Import file list $list_file not found"
+                    exit 1  
+                  fi 
+
+                 shift
                  shift
                  ;;
              *)
@@ -551,7 +565,7 @@ do
   
   # ecryption name includes gpg
   if [[ $encrypt -eq 1 ]];then
-     tmp_file="${tmp_file}.gpg"
+     tmp_file="${tmp_file}.c4gh"
   fi
  
 
@@ -763,8 +777,8 @@ do
      echo "compression: none" >> ${tmp_dir}/${tmp_file}_ameta 
   fi 
   if [[ $encrypt -eq 1 ]]; then
-     gpg_version="$(gpg --version |head -2 | tr  "\n" " ")"
-     echo "ecryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
+     crypt4gh_version="$(crypt4gh -v)"
+     echo "ecryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
   fi 
 
   num_files=0
@@ -967,7 +981,8 @@ do
  
   # encrypt if requested 
   if [[ $encrypt -eq 1 ]]; then
-     gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
+     crypt4gh encrypt --recipient_pk $encrypt_pk < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
+     #gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
      rm   ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
   fi 
