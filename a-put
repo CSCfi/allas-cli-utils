@@ -21,7 +21,7 @@ check_swift_connection () {
     fi
     test=$(swift stat 2> /dev/null | grep -c "Account:")
     if [[ $test -lt 1 ]]
-    then 
+    then
        echo "No connection to Allas!"
        echo "Please try setting the the connection again."
        exit 1
@@ -245,20 +245,34 @@ do
                  tar_extra_options="-h"
                  shift
                  ;;               
-                 '--c4gh' | '--crypt4hg' )
-                 encrypt="crypt4gh"
-                 if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
-		    echo ""
-		    echo "crypt4gh is not available!"
-		    echo "Please install crypt4gh if you want to use encryption."
-		    exit 1
-		 fi                          
+                 '-e' | '--encrypt' )
+                 if [[ $2 == "c4gh" || $2 == "crypt4gh" ]];then
+                    if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		       echo ""
+		       echo "crypt4gh is not available!"
+		       echo "Please install crypt4gh if you want to use encryption."
+		       exit 1
+		    fi
+                    encrypt="crypt4gh"
+                 fi         
+                 if [[ $2 == "gpg" ]];then
+                    if [[ $(which  gpg 2> /dev/null | wc -l ) -ne 1 ]];then
+	         	 echo ""
+		         echo "gpg is not available!"
+		         echo "Please install crypt4gh if you want to use encryption."
+		         exit 1
+		    fi
+                    encrypt="gpg"
+                 fi
+                 shift                          
                  shift
                  ;;
                  '--pk' | '--public-key' )
                  # query file
                  public_key="$2"
-                 if ![[ -e $public_key ]];then 
+                 if [[ -e $public_key ]];then 
+                    echo Public key "$public_key"
+                 else
                     echo "Public key $public_key not found"
                     exit 1  
                   fi 
@@ -397,9 +411,9 @@ a-put command line options:
 --follow-links              When uploading a directory, include linked files as real files
                             in sead of links.
 
---c4gh                      Encrypt data with crypt4gh.
+-e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
 
---public-key                Public key used for encryption.
+--public-key                Public key used for crypt4gh encryption.
 
 
 Related commands: a-find, a-get, a-delete, a-info
@@ -567,6 +581,12 @@ do
   fi
   
   # ecryption name includes gpg
+  if [[ $encrypt == "gpg" ]];then
+     tmp_file="${tmp_file}.gpg"
+  fi
+
+
+  # ecryption name includes c4gh
   if [[ $encrypt == "crypt4gh" ]];then
      tmp_file="${tmp_file}.c4gh"
      if [[ $public_key == "" ]];then
@@ -784,6 +804,12 @@ do
   else
      echo "compression: none" >> ${tmp_dir}/${tmp_file}_ameta 
   fi 
+
+  if [[ $encrypt == "gpg" ]]; then
+     gpg_version="$(gpg --version |head -2 | tr  "\n" " ")"
+     echo "ecryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
+  fi 
+
   if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh_version="$(crypt4gh -v)"
      echo "ecryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
@@ -972,8 +998,6 @@ do
      fi
   fi  
 
-
-
   if [[ $compression -eq 1 ]] ; then
     #tmp file size in KB
     tmp_size=$(du ${tmp_dir}/$tmp_file | awk '{print $1}')
@@ -988,17 +1012,23 @@ do
   fi
  
   # encrypt if requested 
+  #gpg
+  if [[ $encrypt == "gpg" ]]; then
+     gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
+     rm   ${tmp_dir}/$tmp_file
+     mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
+  fi 
+
+  #crypt4gh
   if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh encrypt --recipient_pk "$public_key" < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
-     #gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
      rm   ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
   fi 
 
 
-
   #upload
-  if [ $mode == "swift" ]
+  if [[ $mode == "swift" ]]
   then
     #Check if connection works
     test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)

@@ -184,18 +184,18 @@ check_os=$(rclone ls ${storage_server}:"$object_name" 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
-  objects=($(a-find -a | grep "$object_name"))
-  if [ ${#objects[@]} -eq 1 ]; then
-    echo "Did you mean this object:"
-    echo "  $objects"
-  fi
-  if  [ ${#objects[@]} -gt 1 ]; then   
-    echo "Did you mean some of these objects:"
-    for on in ${objects[@]}
-    do 
-        echo "  $on"
-    done
-  fi
+  #objects=($(a-find -a | grep "$object_name"))
+  #if [ ${#objects[@]} -eq 1 ]; then
+  #  echo "Did you mean this object:"
+  #  echo "  $objects"
+  #fi
+  #if  [ ${#objects[@]} -gt 1 ]; then   
+  #  echo "Did you mean some of these objects:"
+  #  for on in ${objects[@]}
+  #  do 
+  #      echo "  $on"
+  #  done
+  #fi
   if [ ${#objects[@]} -eq 0 ]; then
     echo "Try running command:"
     echo "   a-find $object_name"
