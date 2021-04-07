@@ -118,7 +118,14 @@ cumulative_size=0
 override_mode=0
 asis_mode=0
 tar_extra_options=""
-encrypt=0
+encrypt=""
+public_key=""
+
+if [[ -e $HOME/.allas_env_conf ]]; then
+   echo "Reading customer settings"
+   source $HOME/.allas_env_conf
+fi
+
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
@@ -237,24 +244,26 @@ do
                  '--follow-links' )
                  tar_extra_options="-h"
                  shift
+                 ;;               
+                 '--c4gh' | '--crypt4hg' )
+                 encrypt="crypt4gh"
+                 if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		    echo ""
+		    echo "crypt4gh is not available!"
+		    echo "Please install crypt4gh if you want to use encryption."
+		    exit 1
+		 fi                          
+                 shift
                  ;;
-                 '--encrypt_pk' )
-                 encrypt=1
-                 encrypt_pk=$2
-		 if [[ -e $encrypt_pk ]];then
-                      if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
-			  echo ""
-			  echo "crypt4gh is not available!"
-			  echo "Please install crypt4gh in you want to use encryption."
-			  exit 1
-		      fi                          
-                 else  
-                    echo "Import file list $list_file not found"
+                 '--pk' | '--public-key' )
+                 # query file
+                 public_key="$2"
+                 if ![[ -e $public_key ]];then 
+                    echo "Public key $public_key not found"
                     exit 1  
                   fi 
-
-                 shift
-                 shift
+                  shift
+                  shift
                  ;;
              *)
                    input_def=("$input_def $1")
@@ -388,6 +397,10 @@ a-put command line options:
 --follow-links              When uploading a directory, include linked files as real files
                             in sead of links.
 
+--c4gh                      Encrypt data with crypt4gh.
+
+--public-key                Public key used for encryption.
+
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
@@ -462,16 +475,6 @@ fi
 
 if [[ $silent -eq 0 ]] ; then
  echo "Files or directories to be uploaded: $input_def"
-fi
-
-#Check if connection works
-if [[ $mode == "swift" ]]
-then
-  if [[ $silent -eq 0 ]] ; then 
-      check_swift_connection 
-  else 
-      check_swift_connection > /dev/null
-  fi
 fi
 
 mkdir $tmp_dir
@@ -564,8 +567,13 @@ do
   fi
   
   # ecryption name includes gpg
-  if [[ $encrypt -eq 1 ]];then
+  if [[ $encrypt == "crypt4gh" ]];then
      tmp_file="${tmp_file}.c4gh"
+     if [[ $public_key == "" ]];then
+        echo "Encryption key not defined"
+        echo "Use option --public-key to define the encrypotion key"
+        exit
+     fi
   fi
  
 
@@ -717,7 +725,7 @@ do
            echo "   ${bucket_name}/${tmp_file}  " 
            echo ""
            echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-           echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
+           echo "You can add option: --override to your command line, if you want to overwrite the object alrady existing in Allas."
            echo "Aternatrively, you can define different bucket name using option --bucket "
            echo "or define different object name with option --object"
            exit 1
@@ -776,7 +784,7 @@ do
   else
      echo "compression: none" >> ${tmp_dir}/${tmp_file}_ameta 
   fi 
-  if [[ $encrypt -eq 1 ]]; then
+  if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh_version="$(crypt4gh -v)"
      echo "ecryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
   fi 
@@ -980,8 +988,8 @@ do
   fi
  
   # encrypt if requested 
-  if [[ $encrypt -eq 1 ]]; then
-     crypt4gh encrypt --recipient_pk $encrypt_pk < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
+  if [[ $encrypt == "crypt4gh" ]]; then
+     crypt4gh encrypt --recipient_pk "$public_key" < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
      #gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
      rm   ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
