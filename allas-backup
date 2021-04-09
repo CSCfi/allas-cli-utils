@@ -148,6 +148,14 @@ EOF
 exit 0
 fi
 
+
+# update connection is allas-conf -k is in use      
+if [[ -n "$OS_PASSWORD" ]]; then   
+      echo "Updating token"
+      source $allas_conf_path --user $USER -k $OS_PROJECT_NAME -f 
+fi
+
+
 test=$(rclone about ${storage_server}: | wc -l)
 # test=$(swift stat 2> /dev/null | grep -c "Account:")
 if [[ $test -lt 1 ]]
