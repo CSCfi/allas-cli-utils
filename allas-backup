@@ -23,15 +23,7 @@ then
 else
    if [[ -e $1 ]] ;then
      task=("add")
-     echo ""
-     echo "Do you want to backup $1? [yes/no]"
-     read a 
-     if [ $a == "yes" ] || [ $a == "y" ] ; then
-         input=("$1")
-         shift
-     else
-        exit
-     fi
+     input=$1
    else
       help=(1)
    fi
