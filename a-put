@@ -120,6 +120,7 @@ asis_mode=0
 tar_extra_options=""
 encrypt=""
 public_key=""
+include_ameta=1
 
 if [[ -e $HOME/.allas_env_conf ]]; then
    echo "Reading customer settings"
@@ -233,7 +234,7 @@ do
                    a=($(echo $input_def))
                    num_to_import=${#a[@]}
                    echo "$input_asis contains ${#a[@]} files."
-                   echo "Each of these files will be copied as a separate object to Allas as"    
+                   echo "Each of these files will be copied as a separate object to Allas."    
                    compression=0
                    free_space_check=0
                    asis_mode=1
@@ -241,6 +242,10 @@ do
                  shift
                  shift
                  ;;
+                 '--no-ameta')
+                    include_ameta=0
+                    shift
+                 ;;                 
                  '--follow-links' )
                  tar_extra_options="-h"
                  shift
@@ -395,6 +400,9 @@ a-put command line options:
                             significantly if the directory to be uploaded 
                             contains large amount of files. However, a-find 
                             can't be used to locate objects uploaded this way.
+
+--no-ameta                  Don't create metadata objects ( _ameta ) for the 
+                            stored data objects.
 
 --override                  Allow overwriting existing objects.
 
@@ -1179,26 +1187,36 @@ do
   rm -f  ${tmp_dir}/$tmp_file
 
   #update metadata
-  if [[ $silent -eq 0 ]] ; then
-    echo ""
-    echo "Adding metadata for uploaded $input"
-  fi
-  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-  if [ $mode == "swift" ]; then
-      if [[ $silent -eq 0 ]] ; then
-          #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-          rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
-      else
-          rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
-      fi 
-  fi
-  if [ $mode == "s3cmd" ]; then
-      if [[ $partial_path == "" ]] ; then
-         s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${tmp_file}_ameta
-      else
-         s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
-      fi
-  fi
+  if [[ $include_ameta -eq 1 ]]; then
+     if [[ $silent -eq 0 ]] ; then
+       echo ""
+       echo "Adding metadata for uploaded $input"
+       if [[ $encrypt != "" ]]; then
+          echo ""
+          echo "NOTE: The actual data will be encrypted, but the related metadata object will not be encrypted!"
+          echo "      Metadata object ${tmp_file}_ameta will inlude the named of the uploaded files."
+          echo "      This may be a security issue if file names contain sensitive data."
+          echo "      You can use option --no-ameta to skip the creation of the meta data file." 
+          echo ""
+       fi
+     fi
+     #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
+     if [ $mode == "swift" ]; then
+         if [[ $silent -eq 0 ]] ; then
+             #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
+             rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+         else
+             rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+         fi 
+     fi
+     if [ $mode == "s3cmd" ]; then
+         if [[ $partial_path == "" ]] ; then
+            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${tmp_file}_ameta
+         else
+            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
+         fi
+     fi
+  fi   
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   if [[ $silent -eq 0 ]] ; then
