@@ -10,10 +10,14 @@ CSC provides a set of commands (a- tools ) for moving data between CSC computing
 ## Opening connection with allas_conf
 
 Connection configuration tool: allas_conf can be used to configure swift or s3cmd connections to Allas. 
-The basic syntax of this tool is
+The basic syntax of this tool for swift protocol is
 
 ```text
    source allas_conf --user your-CSC-user-account
+```
+and for S3 protocol:
+```text
+   source allas_conf --mode s3cmd --user your-CSC-user-account
 ```
 
 After successfull connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
@@ -26,13 +30,15 @@ For those users, that just want to use Allas for storing data that is in CSC com
 |a-command | Function |
 | :--- | :--- |
 | a-put | Upload a file or directory to Allas as one object |
-| a-check | Command to check if a-put command was successfully executed |
-| a-list | List buckets and objects in Allas |
-| a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
 | a-get | Download a stored dataset (object) from Allas |
-| a-find | Search and locate data that has been uploaded with a-put |
+| a-list | List buckets and objects in Allas |
 | a-delete | Delete an object from Allas |
+| a-check | Command to check if a-put command was successfully executed |
+| a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
+| a-flip | Upload a file to Allas into a bucket that will keep the file temporarily available to the internet |
+| a-find | Search and locate data that has been uploaded with a-put |
 | a-info | Display information about an object in Allas |
+| a-access | Manage access permissions of your bucktes in Allas |
    
 In addition to the above commands, there is saparate tool to create incremental backups:
 
