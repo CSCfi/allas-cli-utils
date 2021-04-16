@@ -137,10 +137,32 @@ you can take in use in macs by giving following in the command in the allas-cli-
 mv md5sum.macosx md5sum
 ```
 
-# Configuring your local installation
+# Configuring a-commands
 
-The file _a_env_conf_ contains some variable settings that you may want to change in your local installation.
-You may for example change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
-You can also choiose to use a fixed default bucket for the uploads.
+You can modify the default settings that the a-tools use in two file. Mostly these settings affect to the a-put data upload command.
+
+## 1. a_env_conf
+
+The file *a_env_conf*, that locates in the installation directory of _allas-cli-utils_, define some installation specific settings.
+Users are not able to modify this file in CSC servers (Puhti and Mahti), but the file includes settings that you may want to change if you
+do a local local allas-cli-utils installation. You may for example change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
+
+## 2. .a_tools_conf
+
+User can define her own default settings for a-commands by making a configuration file named as **.a_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers as in other servers. In this file you can set default values for many of the functions that can be defined with a-put command options.
+
+For example, if you are working with files that do not benefit from compression, you could skip the compression.
+You can do this by using the _--nc_ option with a-put, but if you want this to be default setting you could create .a_tools_conf file
+that contains setting:
+
+```text
+compression=0 
+```
+
+You can check most commonly used settings from this sample file. Copy the sample file to your home directory and un-comment and define the variable you wish to use.
+
+
+
+
 
 
