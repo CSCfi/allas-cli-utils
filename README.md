@@ -167,7 +167,7 @@ Will not compress the data during the upload process. Howerer, you can still use
 ```text
 a-put --compress my_data.b
 ```
-You can check most commonly used settings from this sample [.a_tools_conf](./.atools_conf) file. Copy the sample file to your home directory and un-comment and define the variables you wish to use.
+You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and un-comment and define the variables you wish to use.
 
 
 
