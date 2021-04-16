@@ -19,18 +19,19 @@ check_swift_connection () {
       fi
       source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
     fi
-    test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-    #test=$(swift stat 2> /dev/null | grep -c "Account:")
+    test=$(swift stat 2> /dev/null | grep -c "Account:")
     if [[ $test -lt 1 ]]
-    then 
+    then
        echo "No connection to Allas!"
        echo "Please try setting the the connection again."
        exit 1
     else
       echo "swift connection updated"
     fi
-  else 
-     echo "swift connection OK" 
+  else
+   if [[ $silent -eq 0 ]];then
+         echo "swift connection OK" 
+   fi
   fi 
 }
 
@@ -49,9 +50,42 @@ fi
 echo $path_string
 }
 
+
+check_segment_sizes(){
+  local segment_server="$1"
+  local segments_bucket="${2}_segments"
+  local check_object=$3
+  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
+
+  if [[ ${#segsizes[@]} -eq 2 ]]; then
+     if [[ ${segsizes[0]} -eq  ${segsizes[1]} ]]; then
+         echo "OK"
+     else
+         if [[ ${segsizes[0]} -lt  ${segsizes[1]} ]]; then
+           local m="ERROR.
+Total size of segments ${segsizes[0]} is less that original file size ${segsizes[1]}.
+Some segments are missing?"
+           echo $m
+         fi
+         if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
+local m="ERROR. Total size of segments ${segsizes[0]} is more that original file size ${segsizes[1]}.
+Check the segments bucket ${segments_bucket} for object ${check_object}."
+           echo $m
+         fi
+
+     fi
+  else
+     #No segements found. Assuming OK
+      echo "OK"
+  fi
+}
+
+
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the name of a directory or file to be checked as an argument of this command."
+  echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
+  echo "For more information, give command:"
+  echo " a-put -h "
   echo ""
   exit 1
 fi
@@ -60,13 +94,10 @@ start_time=$(date +%s)
 
 #default user
 user="$USER"
-compression=1
+
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
-
-
 source $inst_root/a_env_conf
 
 #local variables
@@ -84,7 +115,20 @@ free_space_check=1
 filelist_level=0
 cumulative_size=0
 override_mode=0
-quick_check=0
+asis_mode=0
+compression=1
+tar_extra_options=""
+encrypt=""
+public_key=""
+include_ameta=1
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   echo "Reading customer settings"
+   source $HOME/.a_tools_conf
+fi
+
+
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -92,8 +136,8 @@ while [[ $# -ge 1 ]]
 do
   case "$1" in
              '--bucket' | '-b' )
-             # query file
                   bucket_name="$2"
+                  #Remove the trailing / if it exist
                   bucket_name=$(remove_slash_from_ends $bucket_name)
                   fixed_bucket=1
                   shift
@@ -119,12 +163,17 @@ do
                   shift
                   shift
                 ;;
+            '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
              '--compress' | '-c')
                   compression=(1)
                   shift
                 ;;              
              '--nc' | '-n' )
                   compression=(0)
+                  free_space_check=0
                   shift
                 ;;
              '-s' | '--silent' )
@@ -140,13 +189,6 @@ do
                   shift
                   shift
                 ;;
-             '--quick' | '-q' )
-                  quick_check=1
-                  shift
-                  shift
-              ;;
-
-
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
                   tmp_dir=("${tmp_root}/a_put_$$_tmp")  
@@ -180,7 +222,75 @@ do
                   shift
                   shift
                 ;;
-               
+                '--asis' | '-a' )               
+                   input_asis=$2
+                   #For field separator changed to allow spaces in file names
+                   #IFS contains the default field separator
+                   SAVEIFS=$IFS
+                   IFS=$(echo -en "\n\b")
+                   #parse the file names from the targer directory
+                   input_def=("$(find "$input_asis" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
+                   IFS=$SAVEIFS
+                   a=($(echo $input_def))
+                   num_to_import=${#a[@]}
+                   echo "$input_asis contains ${#a[@]} files."
+                   echo "Each of these files will be copied as a separate object to Allas."    
+                   compression=0
+                   free_space_check=0
+                   asis_mode=1
+                   fnum=0
+                 shift
+                 shift
+                 ;;
+                 '--no-ameta')
+                    include_ameta=0
+                    shift
+                 ;;                 
+                 '--follow-links' )
+                 tar_extra_options="-h"
+                 shift
+                 ;;               
+                 '-e' | '--encrypt' )
+                 if [[ $2 == "c4gh" || $2 == "crypt4gh" ]];then
+                    if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		       echo ""
+		       echo "crypt4gh is not available!"
+		       echo "Please install crypt4gh if you want to use encryption."
+		       exit 1
+		    fi
+                    encrypt="crypt4gh"
+                 fi         
+                 if [[ $2 == "gpg" ]];then
+                    if [[ $(which  gpg 2> /dev/null | wc -l ) -ne 1 ]];then
+	         	 echo ""
+		         echo "gpg is not available!"
+		         echo "Please install crypt4gh if you want to use encryption."
+		         exit 1
+		    fi
+                    encrypt="gpg"
+                 fi
+                 shift                          
+                 shift
+                 ;;
+                 '--pk' | '--public-key' )
+                 # query file
+                 public_key="$2"
+                 if [[ -e $public_key ]];then 
+                    echo Public key "$public_key"
+                 else
+                    echo "Public key $public_key not found"
+                    exit 1  
+                  fi 
+                  shift
+                  shift
+                 ;;
+                 
+                 '--quick' | '-q' )
+                  quick_check=1
+                  shift
+                  shift
+                 ;;
+
              *)
                    input_def=("$input_def $1")
                    shift                       # No more switches
@@ -203,8 +313,9 @@ You can use command:
 
    a-check datadir/*
 
-To check if all the directrories and file have corresponding objects in Allas.
-If you have defided the bucket with option -b, you must include this option
+To check if all the directrories and files have corresponding objects in Allas.
+
+If you have defided a bucket with option -b, you must include this option
 in the a-check command too:
 
   a-put -b 123_bukcet datadir/*
@@ -214,89 +325,98 @@ Checking:
   a-check -b 123_bukcet datadir/*   
  
 
-
-By default this tool performs following operations:
-
-1. Ensures that you have working connection to Allas storage service and 
-defines the project that will be used to store the data.
-
-2. In case of directory, the content of the directory is collected into a single file
-(using tar command).
-
-3. By default option --compress (-c), is used. This means that the data is compressed using zstdmt command.
-   This is the recommended way if you will be using the data only in CSC computing servers. 
-   If you plan to use the uploaded dataset in other that Linux servers, where zstdmt compression may not be available,
-   you can disable compression with option --nc (-n).
-
-4. The data is uploaded to Allas using rclone command and swift protocol.
-
-The location were data is stored in allas can be defined with options
---bucket (-b) and --object (-o).
-
-The default option is that data that locates in 
-  a) /scratch in Puhti/Mahti is uploaded to bucket:  project_number-puhti/mahti-SCRATCH
-
-  b) /projappl in Puhti/Mahti is uploaded to bucket:  project_number-puhti/mahti-PROJAPPL
-
-  c) $WRKDIR in Taito is uploaded to bucket:  username-project_number-taito-WRKDIR 
-
-  c) in other cases the data uploaded to: username-poject_number-MISC
-
-For example for user kkaytaj belonging in project_12345, data locatioing in home directory
-will be uploaded to bucket:  kkayttaj-12345-MISC.
-
-The compressed dataset will be stored as one object. The object name depends on the
-file name and location.  The logic used is that the possible subdirectory path in Taito or Puhti is included 
-in the object name. E.g. a file called test_1.txt in $WRKDIR can be stored with commands:
-
-   cd $WRKDIR
-   a-put test_1.txt
-
-In this case the file is stored to bucket: kkayttaj-12345-taito-WRKDIR
-as object: test_1.txt.zst
-
-If you have another file called test_1.txt that locates in directory $WRKDIR/project2/sample3
-you can store it with commands:
-   
-  cd $WRKDIR/project2/sample3
-  a-put test_1.txt
-  
-Or commmands
-  cd $WRKDIR
-  a-put project2/sample3/test_1.txt
-
 Note that the cheking is done only based on the names of files, directories and objects.
-The contents if files and objects is not checked!
+The contents of the files and objects are not checked!
 
 
-Options
 
--b, --bucket <bucket_name>  Define a name of the bucket into which the data is uploaded.
+a-check command line options:
 
--p, --project <project_ID>  Upload data into buckets of the defined project in stead of the currently configured project.
+-b, --bucket <bucket_name>  Define a name of the bucket into 
+                            which the data is uploaded.
 
--o, --object <object_name>  Define a name for the new object to be created.
+-p, --project <project_ID>  Upload data into buckets of the defined 
+                            project in stead of the currently 
+                            configured project.
+
+-o, --object <object_name>  Define a name for the new object to be 
+                            created.
+
+--s3cmd                     Use s3cmd protocol in stead of swift 
+                            protocol for upoload
 
 -n, --nc                    Do not compress the data that will be uploaded.
 
 -h, --help                  Print this help.
 
--q, --quick                 Check just the names of objects. Not sizes or dates.
-                            This makes checking process much faster, but you will
-                            not get more information than just the names about the objects.
+-t, --tmpdir                Define a direcrory that will be used to store 
+                            temporary files of the upload process.
+
+-s, --silent                Less output
 
 -u, --user                  Define username liked to the data to be uploaded
+                            (default: current username)
 
---input-list                Give a file that lists the files or directtories to be checked. 
+--simple-filelist           Only filenames, not owner, size and date, are 
+                            collected to the metadatafile. This feature is 
+                            automatically used for directories that contain 
+                            more than 5000 items.
 
-Related commands: a-put, a-list, a-info, a-delete
+--skip-filelist             Do not collect information about the files that 
+                            the object contains to the metadata file.
+                            Using this option speeds up the upload process 
+                            significantly if the directory to be uploaded 
+                            contains large amount of files. However, a-find 
+                            can't be used to locate objects uploaded this way.
+
+--no-ameta                  Don't create metadata objects ( _ameta ) for the 
+                            stored data objects.
+
+--override                  Allow overwriting existing objects.
+
+--input-list <list_file>    Give a file that lists the files or directtories 
+                            to be uploaded to Allas.
+                            Each item will be stored as one object.
+
+-a, --asis <directory>      Copy the given file or content of a directory to Allas
+                            without compression and packing so that each file in the 
+                            directory will be copied to Allas as an individual object.
+                            The object name contrains the relative path of the file to 
+                            be copied. 
+
+--follow-links              When uploading a directory, include linked files as real files
+                            in sead of links.
+
+-e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
+
+--public-key                Public key used for crypt4gh encryption.
+
+
+Related commands: a-find, a-get, a-delete, a-info
 EOF
 
 exit 
 
 fi 
 
+#Assign project to be used if not defined 
 
+
+
+if [[ $os_project_name == "" ]]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+  else
+     echo "Default project is not defined"
+     source $allas_conf_path -user $user
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
+     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo ""
+  fi
+  source $HOME/.allas_default
+fi
 
 
 #Check if zstdmt is needed and available
@@ -318,23 +438,29 @@ if [[ $mode == "swift" ]]; then
       echo "Please install rclone."
       exit 1
    fi
+else
+   echo "At the moment a-check works only in swift mode."
+   echo "s3cmd mode is not available"
+   exit 1
 fi
 
-#check free space in $WRKDIR
+
+
+#check free space in tmpdir
 if [[ $free_space_check -eq 1 ]]; then
   if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
   then
-    if [[ $local_host == "taito" ]];then
-       quota_s=($(lfs quota -q -u $USER $WRKDIR | tail -1 ))
-       free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
-    fi
-    if [[ $local_host == "puhti" || "mahti" ]];then
+    if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
       projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
-      (( lproj = 600000000 + projnum ))
-      #  echo "lfs quota -p $lproj $tmp_root"
-      #lfs quota -p $lproj $tmp_root
-      quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
-      free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+      if [ -n "$projnum" ] && [ "$projnum" -eq "$projnum" ] 2>/dev/null; then
+           (( lproj = 600000000 + projnum ))
+           #  echo "lfs quota -p $lproj $tmp_root"
+           #lfs quota -p $lproj $tmp_root
+           quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
+           free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
+       else
+          echo "Scratch size not cheked for this project."      
+      fi
     fi
   else
     free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
@@ -347,21 +473,12 @@ if [[ $silent -eq 0 ]] ; then
  echo "Files or directories to be uploaded: $input_def"
 fi
 
-#Check if connection works
-if [[ $mode == "swift" ]]
-then
-  if [[ $silent -eq 0 ]] ; then 
-      check_swift_connection 
-  else 
-      check_swift_connection > /dev/null
-  fi
-fi
-
 mkdir $tmp_dir
 
 #Table header"
 printf "%45s %80s %25s %s\n" "Local file or directory" "Matching object in Allas" "Object size and date"
 echo "---------------------------------------------------------------------------------------------------------------------------------------------------------"
+
 
 for input in $input_def
 do
@@ -384,16 +501,14 @@ do
     exit 1
   fi 
 
+  
   #Remove the trailing / if it exist
-  if [ $(echo -n $input | tail -c 1) == "/" ]
-  then
-    sl=$(expr ${#input} - 1)
-    input=$(echo $input | cut -c 1-$sl)
-  fi
+  input=$(remove_slash_from_ends $input)
+  
  
   #check that file name does not end with _ameta
   if [[ ${input:(-6):6} == "_ameta" ]]; then
-    echo "Found a file/directoryname which ends with _ameta"
+    echo "Found a file/directory name which ends with _ameta"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of a-put"
@@ -419,41 +534,78 @@ do
           tmp_file=($(basename "$input" | tr " " "_" ))
        fi
     else
-       tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+       if [[ $compression -eq 1 ]]; then
+          tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+       else
+          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+       fi
     fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
+  else
+   if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
+   then
+       if [[ $compression -eq 1 ]]; then
+          if [[ ${tmp_file: -4} != ".zst" ]]; then
+               tmp_file="${tmp_file}.zst"
+          fi 
+       fi
+    else
+       if [[ $compression -eq 1 ]]; then
+         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then 
+           tmp_file="${tmp_file}.tar.zst"
+         fi
+       else
+         if [[ ${tmp_file: -4} != ".tar" ]]; then     
+            tmp_file="${tmp_file}.tar"
+         fi
+       fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
+   fi
   fi
+  
+  # ecryption name includes gpg
+  if [[ $encrypt == "gpg" ]];then
+     tmp_file="${tmp_file}.gpg"
+  fi
+
+
+  # ecryption name includes c4gh
+  if [[ $encrypt == "crypt4gh" ]];then
+     tmp_file="${tmp_file}.c4gh"
+     if [[ $public_key == "" ]];then
+        echo "Encryption key not defined"
+        echo "Use option --public-key to define the encrypotion key"
+        exit
+     fi
+  fi
+ 
+
+  #In case of asis-upload, partial_path is the relative path
+  if [[ $asis_mode -eq 1 ]]; then
+      partial_path=$(dirname $input )
+      partial_path=$(remove_slash_from_ends $partial_path)
+      if [[ $partial_path == "." ]]; then
+          partial_path=""
+      fi
+      if [[ $silent -eq 0 ]] ; then
+        (( fnum = fnum + 1 ))
+        echo "$fnum/$num_to_import"
+      fi
+      #echo "input def: $input"
+      #echo "partial path: $partial_path"
+  fi
+
 
   #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
   #sen perusteella
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
   if [ $bucket_name == "not_defined" ]
   then
-     ## Taito
-     #Taito home
+     #default
      bucket_name=("${user}-${project_label}-MISC")
-     if [ $(echo $file_path  | cut -c1-14) == "/homeappl/home" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-HOME")
-        partial_path=$(dirname $file_path | sed -e s/"\/homeappl\/home\/$user"/""/g)
-     fi
-     #Taito wrk
-     if [ $(echo $file_path  | cut -c1-5) == "/wrk/" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-WRKDIR")
-        partial_path=$(dirname $file_path | sed -e s/"\/wrk\/$user"/""/g)
-     fi
-
-     #Taito proj
-     if [ $(echo $file_path  | cut -c1-6) == "/proj/" ]
-     then
-        bucket_name=("${user}-${project_label}-${local_host}-PROJ")
-        partial_path=$(dirname $file_path | sed -e s/"\/proj"/""/g)
-     fi
-
- 
-     ## Puhti
-     # In Puhti we check if puhti-project and Allas project match
+           
+     ## Puhti and Mahti
+     # In Puhti and Mahti we check if puhti-project and Allas project match
      #Puhti scratch
      if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
      then
@@ -474,7 +626,28 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/scratch\/$puhti_project"/""/g)
      fi
-     #Puhti projappl
+     #FMI Puhti scratch
+     if [ $(echo $file_path  | cut -c1-12) == "/fmi/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/fmi\/scratch\/$puhti_project"/""/g)
+     fi
+
+     #Puhti and Mahti projappl
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
@@ -493,36 +666,78 @@ do
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
+     
+     #Puhti FMI-projappl
+     if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/fmi\/projappl\/$puhti_project"/""/g)
+     fi
      partial_path=$(remove_slash_from_ends $partial_path)
   fi 
+
+  #Puhti-NVME disk area
+  if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
+     then
+        puhti_project=$SLURM_JOB_ACCOUNT
+        bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
+          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read vastaus
+          if [[ $vastaus != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
+     fi 
+
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
   is_uploaded=0
-  if [[ $partial_path == "" ]]; then
-    if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
-    then
-        is_uploaded=1
-        allas_object="${bucket_name}/${tmp_file}"
-        if [[ $quick_check -eq 0 ]]; then
-          ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
-        else
-          ainfo="quick mode: Object details not checked"
-        fi
-    fi
-  else
-    if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
-    then
-        is_uploaded=1
-        allas_object="${bucket_name}/${partial_path}/${tmp_file}"
-        if [[ $quick_check -eq 0 ]]; then
-            ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
-        else
+  if [[ $mode == "swift" ]];then
+    if [[ $partial_path == "" ]]; then
+      if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
+      then
+          is_uploaded=1
+          allas_object="${bucket_name}/${tmp_file}"
+          if [[ $quick_check -eq 0 ]]; then
+            ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+          else
             ainfo="quick mode: Object details not checked"
-        fi
+          fi
+      fi
+    else
+      if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
+      then
+          is_uploaded=1
+          allas_object="${bucket_name}/${partial_path}/${tmp_file}"
+          if [[ $quick_check -eq 0 ]]; then
+              ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+          else
+              ainfo="quick mode: Object details not checked"
+          fi
+      fi
     fi
   fi
-  
   #Print results
   if [[ $is_uploaded -eq 1 ]]; then
     printf "%45s %80s %25s %s\n" "$input" "$allas_object" "$ainfo" "GMT"
@@ -531,10 +746,8 @@ do
     echo "$input" >>  ${tmp_dir}/missing_files.txt
   fi
 
-  tmp_file="not_defined"
-
+  tmp_file=("not_defined")
 done
-
 if [[ -e "${tmp_dir}/missing_files.txt" ]];then
   echo "-----------------------------------------------------------------"
   echo ""
@@ -554,9 +767,7 @@ else
 
 fi
 
-
 rm -f ${tmp_dir}/missing_files.txt
 rmdir  ${tmp_dir}
-
 
 exit 0

@@ -92,13 +92,10 @@ start_time=$(date +%s)
 
 #default user
 user="$USER"
-compression=1
+
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
-
-
 source $inst_root/a_env_conf
 
 #local variables
@@ -117,14 +114,16 @@ filelist_level=0
 cumulative_size=0
 override_mode=0
 asis_mode=0
+compression=1
 tar_extra_options=""
 encrypt=""
 public_key=""
 include_ameta=1
 
-if [[ -e $HOME/.allas_env_conf ]]; then
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
    echo "Reading customer settings"
-   source $HOME/.allas_env_conf
+   source $HOME/.a_tools_conf
 fi
 
 
@@ -135,7 +134,6 @@ while [[ $# -ge 1 ]]
 do
   case "$1" in
              '--bucket' | '-b' )
-             # query file
                   bucket_name="$2"
                   #Remove the trailing / if it exist
                   bucket_name=$(remove_slash_from_ends $bucket_name)
@@ -616,8 +614,6 @@ do
         (( fnum = fnum + 1 ))
         echo "$fnum/$num_to_import"
       fi
-      echo "input def: $input"
-      echo "partial path: $partial_path"
   fi
 
 
