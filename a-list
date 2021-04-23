@@ -104,7 +104,7 @@ if [[ $silent -eq 0 ]]; then
    fi
 fi 
 
-if [[ "$mode" == "s3cmd" ]];then
+if [[ $mode == "s3cmd" ]];then
     storage_server="s3allas"
 fi
 
