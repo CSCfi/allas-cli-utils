@@ -122,8 +122,10 @@ include_ameta=1
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
-   echo "Reading customer settings"
+   customized=1
    source $HOME/.a_tools_conf
+else 
+   customized=0
 fi
 
 
@@ -289,7 +291,7 @@ do
     esac
 done
 
-if [ $print_help -eq 1 ]; then
+if [[ $print_help -eq 1 ]]; then
 cat <<EOF
 This tool is used to upload data from the disk environment 
 of CSC's supercomputers to Allas storage environmnet. 
@@ -429,10 +431,14 @@ exit
 
 fi 
 
+# note about customization 
+if [[ $silent -eq 0 ]]; then
+   if [[ $customized -eq 1 ]]; then
+     echo "Customer settings red from $HOME/.a_tools_conf"
+   fi
+fi 
+
 #Assign project to be used if not defined 
-
-
-
 if [[ $os_project_name == "" ]]
 then
   if [ -e $HOME/.allas_default ]
@@ -460,15 +466,19 @@ if [[ $compression -eq 1 ]]; then
    fi
 fi
 
-#Check if rclone is needed and available
-if [[ $mode == "swift" ]]; then
-   if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+#Check if rclone is available
+if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
       echo ""
       echo "rclone is not available!"
       echo "Please install rclone."
       exit 1
-   fi
 fi
+
+# s3cmd mode
+if [[ $mode == "s3cmd" ]]; then 
+   storage_server="s3allas"
+fi
+
 
 #check free space in tmpdir
 if [[ $free_space_check -eq 1 ]]; then
@@ -733,7 +743,7 @@ do
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
-  if [[ $mode == "swift" ]]
+  if [[ $mode == "swift" ]] ||  [[ $mode == "s3cmd" ]]
   then
      if [[ $partial_path == "" ]]; then
       if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
@@ -781,20 +791,20 @@ do
 
 
 
-  if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
-  then
-    echo "cheking s3cmd"
-    if [[ $(s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
-    then
-      echo ""
-      echo "A file/directory with the same name has already been uploaded to $storage_server"
-      echo ""
-      s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
-      echo ""
-      echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
-      exit 1
-    fi
-  fi
+ # if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
+ # then
+ #   echo "cheking s3cmd"
+ #   if [[ $(s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
+ #   then
+ #     echo ""
+ #     echo "A file/directory with the same name has already been uploaded to $storage_server"
+ #     echo ""
+ #     s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
+ #     echo ""
+ #     echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
+ #     exit 1
+ #   fi
+ # fi
 
   #collect and count metadata
   echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
@@ -1040,18 +1050,12 @@ do
     
     if [[ $test -lt 1 ]]
     then 
-        #if [ -n "$ACTIVE_TOKEN" ]; then
-        #   unset OS_AUTH_TOKEN
-        #   export OS_AUTH_TOKEN=$(check_atoken)
-        #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-        #fi
-      
+      # 
       if [[ -n "$OS_PASSWORD" ]]; then      
          echo "Updateting token"
          source $allas_conf_path -user $user -k $OS_PROJECT_NAME -f 
       fi
       test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-      #test=$(swift stat 2> /dev/null | grep -c "Account:")
       if [[ $test -lt 1 ]]
       then 
         echo "No connection to Allas!"
@@ -1059,6 +1063,7 @@ do
         exit 1
       fi
     fi 
+  fi
 
     if [[ $silent -eq 0 ]] ; then
       echo "Uploading data to allas."
@@ -1136,47 +1141,48 @@ do
          exit 1
        fi
        
-    else    
-       #In case of  files Check that all segments are found
-       if [[ $partial_path == "" ]] ; then
-          seg_check=$(check_segment_sizes "${storage_server}" "${bucket_name}" "${tmp_file}")
-       else
-          seg_check=$(check_segment_sizes "${storage_server}" "${bucket_name}" "${partial_path}/${tmp_file}")
-       fi
-       if [[ $seg_check != "OK"  ]];then
-          echo "ERROR"
-          echo "$seg_check"
-          exit 1
-       else
-          if [[ $silent -eq 0 ]] ; then
-            echo "Sum of segment sizes match the object size. OK "
+    else  
+       if [[ $mode == "swift" ]]; then  
+          #In case of big swift files Check that all segments are found
+          if [[ $partial_path == "" ]] ; then
+             seg_check=$(check_segment_sizes "${storage_server}" "${bucket_name}" "${tmp_file}")
+          else
+             seg_check=$(check_segment_sizes "${storage_server}" "${bucket_name}" "${partial_path}/${tmp_file}")
           fi
-       fi
-     
+          if [[ $seg_check != "OK"  ]];then
+             echo "ERROR"
+             echo "$seg_check"
+             exit 1
+          else
+             if [[ $silent -eq 0 ]] ; then
+                echo "Sum of segment sizes match the object size. OK "
+             fi
+          fi
+        fi     
     fi
-  fi
-  if [ $mode == "s3cmd" ]
-  then
-     if [[ $partial_path == "" ]] ; then
-        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/$tmp_file
-     else
-        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
-     fi
-     exitcode=$?
-     echo $(date +"%d.%m.%y %H:%m:%S") $input $exitcode >> ${tmp_dir}/upload.log
-     if [ $exitcode -ne 0 ]; then
-        echo ""
-        echo "File upload for $infile failed"
-        echo "Upload summary:"
-        cat ${tmp_dir}/upload.log
-        s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
-        rm -f ${tmp_dir}/$tmp_file 
-        rm -f ${tmp_dir}/*_ameta
-        rm -f ${tmp_dir}/upload.log
-        rmdir ${tmp_dir}
-        exit 1
-     fi
-  fi
+  
+#  if [ $mode == "s3cmd" ]
+#  then
+#     if [[ $partial_path == "" ]] ; then
+#        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/$tmp_file
+#     else
+#        s3cmd put ${tmp_dir}/$tmp_file s3://${bucket_name}/${partial_path}/$tmp_file
+#     fi
+#     exitcode=$?
+#     echo $(date +"%d.%m.%y %H:%m:%S") $input $exitcode >> ${tmp_dir}/upload.log
+#     if [ $exitcode -ne 0 ]; then
+#        echo ""
+#        echo "File upload for $infile failed"
+#        echo "Upload summary:"
+#       cat ${tmp_dir}/upload.log
+#        s3cmd rm s3://${bucket_name}/${partial_path}/$tmp_file
+#        rm -f ${tmp_dir}/$tmp_file 
+#        rm -f ${tmp_dir}/*_ameta
+#        rm -f ${tmp_dir}/upload.log
+#        rmdir ${tmp_dir}
+#        exit 1
+#     fi
+#  fi
 
  
   #echo "Remopving temporary file"
@@ -1197,7 +1203,7 @@ do
        fi
      fi
      #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-     if [ $mode == "swift" ]; then
+     if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]; then
          if [[ $silent -eq 0 ]] ; then
              #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
              rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
@@ -1205,13 +1211,13 @@ do
              rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          fi 
      fi
-     if [ $mode == "s3cmd" ]; then
-         if [[ $partial_path == "" ]] ; then
-            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${tmp_file}_ameta
-         else
-            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
-         fi
-     fi
+#     if [ $mode == "s3cmd" ]; then
+#"         if [[ $partial_path == "" ]] ; then
+#            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${tmp_file}_ameta
+#         else
+#            s3cmd put -F ${tmp_dir}/${tmp_file}_ameta s3://${bucket_name}/${partial_path}/${tmp_file}_ameta
+#         fi
+#     fi
   fi   
   rm -f ${tmp_dir}/${tmp_file}_ameta
 

@@ -27,6 +27,15 @@ show_filelist=(0)
 query=("")
 all_buckets=(0)
 
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else 
+   customized=0
+fi
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -74,6 +83,15 @@ do
                 ;;
     esac
 done
+
+# note about customization 
+if [[ $silent -eq 0 ]]; then
+   if [[ $customized -eq 1 ]]; then
+     echo "Customer settings red from $HOME/.a_tools_conf"
+   fi
+fi 
+
+
 
 #echo "buk $bucket_name"
 

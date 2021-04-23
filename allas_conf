@@ -51,12 +51,14 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
                               SIZE, in MB, are automatically uploaded
                               multithread-multipart  (default: 5000)
 
-      -s, --silent            Less output
+     -p, --project            Define Allas-project to be used.
 
-      -f, --force             Skip check that tries to ensure that this command is
+     -s, --silent             Less output
+
+     -f, --force              Skip check that tries to ensure that this command is
                               sourced correctly. This option needs to ne used in batch jobs.
   
-      --s3remove              Remove s3 access key for an Allas project. 
+     --s3remove               Remove s3 access key for an Allas project. 
 
     DEPENDENCIES
     ------------
@@ -145,7 +147,7 @@ case "$mode" in
         local use_s3cmd=false
         ;; 
       's3remove')
-        local use_swift=true
+        local use_swift=false
         local use_s3cmd=false
         local s3remove=true
         ;; 
@@ -234,6 +236,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            ;;
        1)
            export OS_PROJECT_NAME=${all_projects[0]}
+           export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
            ;;
        *)
            PS3="Please choose a project by giving an item number from the list above: "
@@ -278,6 +281,20 @@ if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev
 fi
 
 echo "Configuration will be done for project: $OS_PROJECT_NAME"
+echo "Protocols:"
+if $use_swift; then
+   echo "  swift"
+fi 
+
+if $use_s3cmd; then
+   echo "  S3"
+fi
+ 
+if $s3remove; then
+   echo "  S3"
+fi 
+
+
 
 # 6.1 swift configuration
 if $use_swift; then
@@ -341,6 +358,7 @@ if $use_swift; then
             #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi
     fi
+   
 fi
 
 
@@ -357,11 +375,11 @@ if $use_s3cmd; then
     openstack project show $OS_PROJECT_NAME
 
     local ACCESS_KEY=$(
-        openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
-   if [ -z "$ACCESS_KEY" ]; then
-     openstack ec2 credentials create
-     local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
-   fi
+       openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+    if [ -z "$ACCESS_KEY" ]; then
+       openstack ec2 credentials create
+       local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+    fi
 
    local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
 
@@ -468,6 +486,14 @@ fi
 
 
 }
+
+function rclone() {
+  if [[ "$1" = 'info' ]]; then
+    echo 'Do not use rclone command "info"' >&2
+    else command rclone "$@"
+  fi
+}
+
 
 allas_conf_scope "$@"
 unset -f allas_conf_scope

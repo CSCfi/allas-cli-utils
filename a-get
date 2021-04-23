@@ -29,6 +29,14 @@ exe_dir=$(pwd)
 start_time=$(date +%s)
 encrypt=""
 
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   echo "Reading customer settings"
+   source $HOME/.a_tools_conf
+fi
+
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -186,6 +194,10 @@ then
   fi 
 fi
 
+#Rclone through s3
+if [[ $mode == "s3cmd" ]];then
+   storage_server="s3allas"
+fi
 
 #source /appl/opt/allas_conf
 #input=("$1")
@@ -394,12 +406,12 @@ if [[ $is_tar_file -eq 1 ]]; then
      #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
      echo "Dowloading compressed object from Allas"
      
-     if [[ $mode == "swift" ]]; then
+     #if [[ $mode == "swift" ]]; then
         rclone copyto -P "${storage_server}:/$object_name" a-get_download_$$_tmp.zst
         exitcode=$?
-     else
-       s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
-     fi
+     #else
+     #  s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
+     #fi
 
      if [[ $exitcode -ne 0 ]]; then
         echo "Donload failed!"
@@ -407,13 +419,13 @@ if [[ $is_tar_file -eq 1 ]]; then
         exit 1
      fi
      if [[ $encrypt == "gpg" ]]; then
-        echo "Based on the object name, thae object has been encrypted with gpg."
+        echo "Based on the object name, the object has been encrypted with gpg."
         gpg -d a-get_download_$$_tmp.zst >   a-get_download_$$_tmp.zst.tmp          
         rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
      fi
      if [[ $encrypt == "crypt4gh" ]]; then
-        echo "Based on the object name, thae object has been encrypted with crypt4gh."
+        echo "Based on the object name, the object has been encrypted with crypt4gh."
         crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
         rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
@@ -454,7 +466,7 @@ else
     fi
     # uncompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
-       if [[ $mode == "swift" ]]; then 
+       #if [[ $mode == "swift" ]]; then 
            if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:/$object_name" | gpg -d | zstdmt -d >  $target_name
            elif [[  $encrypt == "crypt4gh" ]]; then
@@ -462,30 +474,30 @@ else
            else
              rclone cat "${storage_server}:/$object_name" | zstdmt -d >  $target_name
            fi
-       else
-          s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst
-	  if [[ $encrypt == "gpg" ]]; then
-             echo "Based on the object name, thae object has been encrypted with gpg."
-             gpg -d a-get_download_$$_tmp.zst >   a-get_download_$$_tmp.zst.tmp          
-             rm -f a-get_download_$$_tmp.zst
-             mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
-          fi
-          if [[ $encrypt == "crypt4gh" ]]; then
-             echo "Based on the object name, thae object has been encrypted with crypt4gh."
-             crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
-             rm -f a-get_download_$$_tmp.zst
-             mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
-          fi
-
-          zstdmt -d a-get_download_$$_tmp.zst 
-          mv a-get_download_$$_tmp > $target_name
-       fi
+       #else
+       #   s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst
+       #  if [[ $encrypt == "gpg" ]]; then
+       #      echo "Based on the object name, thae object has been encrypted with gpg."
+       #      gpg -d a-get_download_$$_tmp.zst >   a-get_download_$$_tmp.zst.tmp          
+       #      rm -f a-get_download_$$_tmp.zst
+       #      mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+       #   fi
+       #   if [[ $encrypt == "crypt4gh" ]]; then
+       #      echo "Based on the object name, thae object has been encrypted with crypt4gh."
+       #      crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
+       #      rm -f a-get_download_$$_tmp.zst
+       #      mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+       #   fi
+       #
+       #   zstdmt -d a-get_download_$$_tmp.zst 
+       #   mv a-get_download_$$_tmp > $target_name
+       #fi
     else 
        if [[ $target_dir == "" ]]; then 
             target_dir="."
        fi
        # Just download
-       if [[ $mode == "swift" ]]; then 
+       #if [[ $mode == "swift" ]]; then 
 	   if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:/$object_name" | gpg -d >  $target_name
            elif [[  $encrypt == "crypt4gh" ]]; then
@@ -493,21 +505,21 @@ else
            else
              rclone -P copy "${storage_server}:/$object_name"  $target_dir
            fi
-       else
-           s3cmd get "s3://${object_name}"  $target_dir/$target_name
-           if [[ $enrypted == "gpg" ]]; then
-              echo "Based on the object name, thae object has been encrypted with gpg."
-              gpg -d $target_dir/$target_name >  $target_dir/${target_name}.tmp       
-              rm $target_dir/$target_name
-              mv $target_dir/${target_name}.tmp $target_dir/$target_name
-           fi 
-           if [[ $enrypted == "crypt4gh" ]]; then
-              echo "Based on the object name, thae object has been encrypted with crypt4gh."
-              crypt4gh decrypt --sk "$secret_key" < $target_dir/$target_name >  $target_dir/${target_name}.tmp       
-              rm $target_dir/$target_name
-              mv $target_dir/${target_name}.tmp $target_dir/$target_name
-           fi 
-       fi
+       #else
+       #    s3cmd get "s3://${object_name}"  $target_dir/$target_name
+       #    if [[ $enrypted == "gpg" ]]; then
+       #       echo "Based on the object name, thae object has been encrypted with gpg."
+       #       gpg -d $target_dir/$target_name >  $target_dir/${target_name}.tmp       
+       #       rm $target_dir/$target_name
+       #       mv $target_dir/${target_name}.tmp $target_dir/$target_name
+       #    fi 
+       #    if [[ $enrypted == "crypt4gh" ]]; then
+       #       echo "Based on the object name, thae object has been encrypted with crypt4gh."
+       #       crypt4gh decrypt --sk "$secret_key" < $target_dir/$target_name >  $target_dir/${target_name}.tmp       
+       #       rm $target_dir/$target_name
+       #       mv $target_dir/${target_name}.tmp $target_dir/$target_name
+       #    fi 
+       #fi
     fi
 
 

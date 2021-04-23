@@ -76,43 +76,6 @@ exit
 
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
-fi
-
-#Assign project to be used if not defined 
-if [ $os_project_name == "" ]
-then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
-  else
-     echo "Default project is not defined"
-     source $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-  fi
-  source $HOME/.allas_default
-fi
-
-
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
@@ -123,8 +86,13 @@ then
     echo "No connection to Allas!"
     echo "Please try setting the the connection again."
     exit 1
-  fi 
+  fi
+else 
+  echo "a-flip is available only in swift mode"
 fi
+
+
+
 
 #source /appl/opt/allas_conf
 #input=("$1")

@@ -7,26 +7,21 @@ check_swift_connection () {
     
     if [[ $test -lt 1 ]]
     then 
-      #if [ -n "$ACTIVE_TOKEN" ]; then
-      #   unset OS_AUTH_TOKEN
-      #   export OS_AUTH_TOKEN=$(check_atoken)
-      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-      #fi
-      
-    if [[ -n "$OS_PASSWORD" ]]; then 
-      if  [[ $silent -eq 0 ]] ; then     
+      if [[ -n "$OS_PASSWORD" ]]; then 
+        if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token"
+        fi
+        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f 
       fi
-      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
-    fi
-    test=$(swift stat 2> /dev/null | grep -c "Account:")
-    if [[ $test -lt 1 ]]
-    then 
-       echo "No connection to Allas!"
-       echo "Please try setting the the connection again."
-       exit 1
-    else
-      echo "swift connection updated"
+      #test=$(swift stat 2> /dev/null | grep -c "Account:")
+      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l) 
+      if [[ $test -lt 1 ]]
+      then 
+         echo "No connection to Allas!"
+         echo "Please try setting the the connection again."
+         exit 1
+      else
+         echo "swift connection updated"
     fi
   else 
      echo "swift connection OK" 
@@ -57,6 +52,14 @@ object_with_bucket=0
 remove_bucket=0
 force=0
 defined_user="x"
+
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   echo "Reading customer settings"
+   source $HOME/.a_tools_conf
+fi
+
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -92,6 +95,11 @@ do
                   remove_bucket=(1)
                   shift
                 ;;
+             '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
+
              '-h' | '--help' )
                   print_help=(1)
                   shift
@@ -150,9 +158,12 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 
 #Check if connection works
-if [[ $mode == "swift" ]]
-then
+if [[ $mode == "swift" ]]; then
  check_swift_connection
+fi
+
+if [[ $mode == "s3cmd" ]]; then
+ storage_server="s3allas"
 fi
 
 

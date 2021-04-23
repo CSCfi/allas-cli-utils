@@ -7,8 +7,8 @@ echo "bbb" > test_$$/b.txt
 echo "ccc" > test_$$/c.txt
 
 #a-put
-echo "Testing A commands"
-object=$(a-put -b allastest_$$ test_$$ -s | tr -d "\n")
+
+object=$(a-put -b allastest_$$ test_$$ -s 2> /dev/null | tail -1 | tr -d "\n")
 if [[ $object == "allastest_$$/test_$$.tar.zst" ]]; then
   echo "a-put OK"
 else
@@ -25,6 +25,7 @@ else
   echo "a-list FAILED"
   echo "a-list  allastest_$$"
   a-list  allastest_$$
+  exit
 fi
 
 #a-info
@@ -33,6 +34,8 @@ if [[ $(a-info $object | grep -c "test_") -eq 6 ]]; then
   echo "a-info OK"
 else
   echo "a-info FAILED"
+  echo "a-info $object"
+  exit
 fi
 
 rm -rf test_$$
@@ -50,8 +53,8 @@ a-delete --rmb  allastest_$$ -f > /dev/null
 
 rm -rf test_$$
 
-a=$(a-list allastest_$$ 2>&1 | tr -d "'")
-if [[ $a == "Container allastest_$$ not found" ]]; then
+a=$(a-list allastest_$$ 2>&1 | awk '{print $(NF-1)" "$NF}' )
+if [[ $a == "not found" ]]; then
    echo "a-delete OK"
 else
    echo "a-delete FAILED"

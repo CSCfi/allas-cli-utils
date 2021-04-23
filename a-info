@@ -71,6 +71,16 @@ show_filelist=(0)
 query=("")
 object_with_bucket=(0)
 
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else 
+   customized=0
+fi
+
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -137,10 +147,13 @@ fi
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
-if [[ $mode == "swift" ]]
-then
+if [[ $mode == "swift" ]]; then
     check_swift_connection 
 fi
+ 
+if [[ $mode == "s3cmd" ]]; then
+  storage_server="s3allas"
+fi 
 
 
 if [[ $object_name == "" ]] ; then 
