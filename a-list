@@ -1,5 +1,32 @@
 #!/bin/bash 
 
+
+#function to check that swift works
+check_swift_connection () {
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
+    
+  if [[ $test -lt 1 ]]; then 
+      if [[ -n "$OS_PASSWORD" ]]; then 
+        if  [[ $silent -eq 0 ]] ; then     
+          echo "Updating token"
+        fi
+        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f 
+      fi
+      #test=$(swift stat 2> /dev/null | grep -c "Account:")
+      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l) 
+      if [[ $test -lt 1 ]]
+      then 
+         echo "No connection to Allas!"
+         echo "Please try setting the the connection again."
+         exit 1
+      else
+         echo "swift connection updated"
+      fi 
+  fi 
+}
+
+
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
@@ -14,6 +41,16 @@ os_project_name=("$OS_PROJECT_NAME")
 options=("")
 dir_like=0
 long_listing=0
+silent=1
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else 
+   customized=0
+fi
+
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -60,6 +97,17 @@ do
     esac
 done
 
+#Assign project to be used if not defined 
+if [[ $silent -eq 0 ]]; then
+   if [[ $customized -eq 1 ]]; then
+     echo "Customer settings red from $HOME/.a_tools_conf"
+   fi
+fi 
+
+if [[ "$mode" == "s3cmd" ]];then
+    storage_server="s3allas"
+fi
+
 #chek that we have a bucket only
 if [ $(echo $bucket_name | grep -o "/" | wc -l) -gt 0 ]; then
   echo ""
@@ -92,43 +140,16 @@ EOF
 exit 0
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
+
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+ check_swift_connection
 fi
 
 
 # run list command
-#Check if connection works
-
-test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-#test=$(swift stat 2> /dev/null | grep -c "Account:")
-if [[ $test -lt 1 ]]
-then 
-  echo "No connection to Allas!"
-  echo "Please try setting the the connection again."
-  echo "by running command:"
-  echo ""
-  echo "   source $allas_conf_path"
-  exit 1 
-fi
-
-#echo "swift list $options $bucket_name | grep -v '_ameta$'"
 if [[ $dir_like -eq 1 ]]; then
   #echo rclone lsf ${storage_server}:${full_name}
   rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
@@ -143,13 +164,16 @@ if [[ $bucket_name == "" ]]; then
    fi
    # swift list $options
 else
-  #
-  # if [[ $long_listing -eq 0 ]]; then
-  #   rclone ls ${storage_server}:$full_name  | grep -v "_ameta$" | awk '{print "'$full_name'/" $NF}'
-  # else
-  #   rclone lsl allas:roska_123/roska | awk '{print $1"\t"$2"\t"$3"\t'$full_name'/" $4}'
-  # fi
-  swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+   if [[ $mode == "s3cmd"  ]]; then
+     if [[ $long_listing -eq 0 ]]; then
+       rclone ls ${storage_server}:$full_name  | grep -v "_ameta$" | awk '{print "'$full_name'/" $NF}'
+     else
+       rclone lsl ${storage_server}:$full_name  | awk '{print $1"\t"$2"\t"$3"\t'$full_name'/" $4}'
+     fi
+   else
+     # listing in swift mode
+     swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+   fi
 fi 
 exit 0
 
