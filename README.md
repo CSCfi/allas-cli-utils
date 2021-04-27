@@ -5,12 +5,13 @@ In many cases, effective usage of Allas requires that the user knows the feature
 both Object Storage systems and the software or protocol that is used to manage data in Allas.
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, 
-CSC provides a set of commands (a- tools ) for moving data between CSC computing environment and Allas.
+CSC provides a set of commands (a-tools ) for moving data between CSC computing environment and Allas.
 
 ## Opening connection with allas_conf
 
 Connection configuration tool: allas_conf can be used to configure swift or s3cmd connections to Allas. 
-The basic syntax of this tool for swift protocol is
+The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
+The basic syntax of this tool for swift protocol is:
 
 ```text
    source allas_conf --user your-CSC-user-account
