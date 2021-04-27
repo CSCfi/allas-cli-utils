@@ -59,6 +59,7 @@ these tools you should have several software componets available:
 
 __allas_conf__ script requires:
 
+*   [bash shell](https://en.wikipedia.org/wiki/Bash_(Unix_shell))
 *   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer, not mandatory if you use swift and know the project name.)
 *   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
 
