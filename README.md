@@ -30,16 +30,16 @@ For those users, that just want to use Allas for storing data that is in CSC com
   
 |a-command | Function |
 | :--- | :--- |
-| a-put | Upload a file or directory to Allas as one object |
-| a-get | Download a stored dataset (object) from Allas |
-| a-list | List buckets and objects in Allas |
-| a-delete | Delete an object from Allas |
-| a-check | Command to check if a-put command was successfully executed |
-| a-publish | Upload a file to Allas into a bucket that allows public access over the internet |
-| a-flip | Upload a file to Allas into a bucket that will keep the file temporarily available to the internet |
-| a-find | Search and locate data that has been uploaded with a-put |
-| a-info | Display information about an object in Allas |
-| a-access | Manage access permissions of your bucktes in Allas |
+| [a-put](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-put) | Upload a file or directory to Allas as one object |
+| [a-get](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-get) | Download a stored dataset (object) from Allas |
+| [a-list](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-list) | List buckets and objects in Allas |
+| [a-delete](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-delete) | Delete an object from Allas |
+| [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
+| [a-publish](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-publish) | Upload a file to Allas into a bucket that allows public access over the internet |
+| [a-flip](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-flip)| Upload a file to Allas into a bucket that will keep the file temporarily available to the internet |
+| [a-find](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-find)| Search and locate data that has been uploaded with a-put |
+| [a-info](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-info)| Display information about an object in Allas |
+| [a-access](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-access)| Manage access permissions of your bucktes in Allas |
    
 In addition to the above commands, there is saparate tool to create incremental backups:
 
