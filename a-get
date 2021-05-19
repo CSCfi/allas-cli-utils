@@ -503,7 +503,7 @@ else
            elif [[  $encrypt == "crypt4gh" ]]; then
              rclone cat "${storage_server}:/$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
            else
-             rclone -P copy "${storage_server}:/$object_name"  $target_dir
+             rclone -P copyto "${storage_server}:/$object_name"  $target_dir/$target_name
            fi
        #else
        #    s3cmd get "s3://${object_name}"  $target_dir/$target_name
