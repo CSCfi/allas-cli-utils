@@ -134,13 +134,7 @@ do
                 ;;
     esac
 done
-
-#Check that bucket exists
-bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
-if [[ $bnrows -eq 0 ]]; then
-   echo "Bucket $bucket was not found in your current Allas project!"
-   exit 1 
-fi     
+   
 
 
 if [ $print_help -eq 1 ]; then
@@ -200,6 +194,14 @@ Related commands: a-put, a-get, a-list
 EOF
 exit 0
 fi 
+
+#Check that bucket exists
+bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
+if [[ $bnrows -eq 0 ]]; then
+   echo "Bucket $bucket was not found in your current Allas project!"
+   exit 1 
+fi  
+
 
 
 #source $HOME/.allas_default
