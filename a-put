@@ -119,6 +119,7 @@ tar_extra_options=""
 encrypt=""
 public_key=""
 include_ameta=1
+sdx=0
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -168,11 +169,11 @@ do
                   shift
                 ;;
              '--compress' | '-c')
-                  compression=(1)
+                  compression=1
                   shift
                 ;;              
              '--nc' | '-n' )
-                  compression=(0)
+                  compression=0
                   free_space_check=0
                   shift
                 ;;
@@ -181,7 +182,7 @@ do
                   shift
                 ;;
              '-h' | '--help' )
-                  print_help=(1)
+                  print_help=1
                   shift
                 ;;
              '--user' | '-u' )
@@ -223,23 +224,10 @@ do
                   shift
                 ;;
                 '--asis' | '-a' )               
-                   input_asis=$2
-                   #For field separator changed to allow spaces in file names
-                   #IFS contains the default field separator
-                   SAVEIFS=$IFS
-                   IFS=$(echo -en "\n\b")
-                   #parse the file names from the targer directory
-                   input_def=("$(find "$input_asis" |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
-                   IFS=$SAVEIFS
-                   a=($(echo $input_def))
-                   num_to_import=${#a[@]}
-                   echo "$input_asis contains ${#a[@]} files."
-                   echo "Each of these files will be copied as a separate object to Allas."    
                    compression=0
                    free_space_check=0
                    asis_mode=1
                    fnum=0
-                 shift
                  shift
                  ;;
                  '--no-ameta')
@@ -284,12 +272,34 @@ do
                   shift
                   shift
                  ;;
+                 '--sdx' )
+                    if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		         echo ""
+		         echo "crypt4gh is not available!"
+		         echo "Please install crypt4gh if you want to use encryption."
+		         exit 1
+		    fi
+                    include_ameta=0
+                    encrypt="crypt4gh"
+                    compression=0
+                    sdx=1
+                    asis_mode=1
+                    fnum=0                  
+                 shift
+                 ;;
+
              *)
-                   input_def=("$input_def $1")
+                   if [[ $input_def == "" ]]; then
+                      input_def=("$1")
+                   else
+                      input_def=("$input_def $1")
+                      several_inputs=TRUE
+                   fi
                    shift                       # No more switches
                 ;;
     esac
 done
+
 
 if [[ $print_help -eq 1 ]]; then
 cat <<EOF
@@ -410,7 +420,7 @@ a-put command line options:
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 
--a, --asis <directory>      Copy the given file or content of a directory to Allas
+-a, --asis                  Copy the given file or content of a directory to Allas
                             without compression and packing so that each file in the 
                             directory will be copied to Allas as an individual object.
                             The object name contrains the relative path of the file to 
@@ -507,6 +517,29 @@ if [[ $silent -eq 0 ]] ; then
  echo "Files or directories to be uploaded: $input_def"
 fi
 
+
+#Create file list in case of asis
+if [[ $asis_mode -eq 1 ]];then
+   if [[ $several_inputs=="TRUE" ]]; then
+     echo "In asis and sensitive data mode you can define only one file or directory to be imported."
+     exit 1
+   fi
+   #For field separator changed to allow spaces in file names
+   #IFS contains the default field separator  
+   SAVEIFS=$IFS
+   #input_def=($(echo $input_def))
+   IFS=$(echo -en "\n\b")
+   #parse the file names from the targer directory
+   input_def=("$(find $input_def |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
+   #IFS=$SAVEFS
+   num_to_import=($(echo "$input_def" | wc -l ))
+   if [[ $num_to_import -lt 1 ]]; then
+          echo "Input definiton: $one_input_def"
+          echo "dot't return any files to input"
+          exit 1
+   fi   
+fi   
+
 mkdir $tmp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in allas" >> ${tmp_dir}/upload.log
 
@@ -596,19 +629,26 @@ do
    fi
   fi
   
-  # ecryption name includes gpg
+  # encryption name includes gpg
   if [[ $encrypt == "gpg" ]];then
      tmp_file="${tmp_file}.gpg"
   fi
 
 
-  # ecryption name includes c4gh
+  # encryption name includes c4gh
   if [[ $encrypt == "crypt4gh" ]];then
      tmp_file="${tmp_file}.c4gh"
-     if [[ $public_key == "" ]];then
-        echo "Encryption key not defined"
-        echo "Use option --public-key to define the encrypotion key"
-        exit
+     if [[ $sdx -eq 0 ]]; then
+       if [[ $public_key == "" ]];then
+          echo "Encryption key not defined"
+          echo "Use option --public-key to define the encryption key"
+          exit
+       fi
+     else
+       # Create key for sdx enryption
+       echo "echo -----BEGIN CRYPT4GH PUBLIC KEY-----
+dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
+-----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
      fi
   fi
  
@@ -722,7 +762,7 @@ do
 
   #Puhti-NVME disk area
   if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
-     then
+  then
         puhti_project=$SLURM_JOB_ACCOUNT
         bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
         if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
@@ -738,8 +778,12 @@ do
           fi
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
-     fi 
+  fi 
 
+  #SD services:
+  if [[ $sdx -eq 1 ]]; then
+    bucket_name=("${project_label}-SD_CONNECT")
+  fi
 
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
@@ -821,13 +865,16 @@ do
 
   if [[ $encrypt == "gpg" ]]; then
      gpg_version="$(gpg --version |head -2 | tr  "\n" " ")"
-     echo "ecryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "encryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
   fi 
 
   if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh_version="$(crypt4gh -v)"
-     echo "ecryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "encryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
   fi 
+  if [[ $sdx -eq 1 ]]; then
+     echo "sd_connect: yes" >>  ${tmp_dir}/${tmp_file}_ameta
+  fi
 
   num_files=0
 
@@ -1034,9 +1081,19 @@ do
   fi 
 
   #crypt4gh
-  if [[ $encrypt == "crypt4gh" ]]; then
-     crypt4gh encrypt --recipient_pk "$public_key" < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
-     rm   ${tmp_dir}/$tmp_file
+  if [[ $encrypt == "crypt4gh" ]]; then  
+     if [[ $sdx -eq 1 ]]; then
+       # encryption for sdx 
+       if [[ $public_key == "" ]];then
+         crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
+       else
+         crypt4gh encrypt --recipient_pk "$public_key" --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
+       fi
+     else
+       #normal encryption
+       crypt4gh encrypt --recipient_pk "$public_key" < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
+     fi
+     rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
   fi 
 
@@ -1201,9 +1258,11 @@ do
        echo "Adding metadata for uploaded $input"
        if [[ $encrypt != "" ]]; then
           echo ""
-          echo "NOTE: The actual data will be encrypted, but the related metadata object will not be encrypted!"
-          echo "      Metadata object ${tmp_file}_ameta will inlude the named of the uploaded files."
-          echo "      This may be a security issue if file names contain sensitive data."
+          echo "NOTE: The actual data will be encrypted, but the related metadata "
+          echo "      object will not be encrypted!"
+          echo "      Metadata object ${tmp_file}_ameta will include the names of " 
+          echo "      the uploaded files. This may be a security issue if file "
+          echo "      names contain sensitive data."
           echo "      You can use option --no-ameta to skip the creation of the meta data file." 
           echo ""
        fi
@@ -1259,6 +1318,7 @@ if [[ $silent -eq 0 ]] ; then
   echo "-----------------------------------------------------------------"
   echo OK
 fi
+rm -f .sdx_key_tmp_$$
 rm -f ${tmp_dir}/tar_list
 rm -f ${tmp_dir}/upload.log 
 rmdir  ${tmp_dir}
