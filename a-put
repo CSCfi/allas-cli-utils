@@ -291,9 +291,10 @@ do
              *)
                    if [[ $input_def == "" ]]; then
                       input_def=("$1")
+                      num_inputs=1
                    else
                       input_def=("$input_def $1")
-                      several_inputs=TRUE
+                      (( num_inputs = num_inputs + 1 ))
                    fi
                    shift                       # No more switches
                 ;;
@@ -433,6 +434,13 @@ a-put command line options:
 
 --public-key                Public key used for crypt4gh encryption.
 
+--sdx                       Upload data to allas in SD-connect compatible format. The 
+                            files are ecrypted with crypt4gh using CSC public key after which 
+                            the files are inported to Allas as individual objects as in 
+                            --asis format. With --public-key you can do the encryption with both
+                            csc and your own data. By default data is stored to bucket with name:
+                            your-projecyt-number_SD-CONNECT,
+
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
@@ -520,9 +528,9 @@ fi
 
 #Create file list in case of asis
 if [[ $asis_mode -eq 1 ]];then
-   if [[ $several_inputs=="TRUE" ]]; then
-     echo "In asis and sensitive data mode you can define only one file or directory to be imported."
-     exit 1
+   if [[ $num_inputs -gt 1 ]]; then
+      echo "In asis and sensitive data mode you can define only one file or directory to be imported."
+      exit 1
    fi
    #For field separator changed to allow spaces in file names
    #IFS contains the default field separator  
