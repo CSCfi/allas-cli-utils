@@ -117,9 +117,11 @@ asis_mode=0
 compression=1
 tar_extra_options=""
 encrypt=""
-public_key=""
+all_keys=""
 include_ameta=1
 sdx=0
+
+echo "x${IFS}eka"
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -264,13 +266,15 @@ do
                  # query file
                  public_key="$2"
                  if [[ -e $public_key ]];then 
-                    echo Public key "$public_key"
+                    echo Public key: "$public_key"
+                    all_keys=$(echo -en  "\t$all_keys\t--recipient_pk\t$public_key ")
+                    echo $all_keys
                  else
                     echo "Public key $public_key not found"
                     exit 1  
-                  fi 
-                  shift
-                  shift
+                 fi 
+                 shift
+                 shift
                  ;;
                  '--sdx' )
                     if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -432,7 +436,7 @@ a-put command line options:
 
 -e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
 
---public-key                Public key used for crypt4gh encryption.
+--pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to allas in SD-connect compatible format. The 
                             files are ecrypted with crypt4gh using CSC public key after which 
@@ -534,13 +538,14 @@ if [[ $asis_mode -eq 1 ]];then
    fi
    #For field separator changed to allow spaces in file names
    #IFS contains the default field separator  
-   SAVEIFS=$IFS
+   SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
-   IFS=$(echo -en "\n\b")
+   IFS=$(echo -en "\t\n\b")
    #parse the file names from the targer directory
-   input_def=("$(find $input_def |  file -N -f - | awk -F ': ' '{if  ( $2 != "directory") print $1}')")
+   input_def=("$(find $input_def -type f)")
    #IFS=$SAVEFS
    num_to_import=($(echo "$input_def" | wc -l ))
+   #IFS=$(echo -en " \n\b")
    if [[ $num_to_import -lt 1 ]]; then
           echo "Input definiton: $one_input_def"
           echo "dot't return any files to input"
@@ -647,7 +652,7 @@ do
   if [[ $encrypt == "crypt4gh" ]];then
      tmp_file="${tmp_file}.c4gh"
      if [[ $sdx -eq 0 ]]; then
-       if [[ $public_key == "" ]];then
+       if [[ $all_keys == "" ]];then
           echo "Encryption key not defined"
           echo "Use option --public-key to define the encryption key"
           exit
@@ -678,6 +683,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
   #sen perusteella
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+  if [[ $sdx -eq 1 ]]; then
+    if [[ $bucket_name == "not_defined" ]]; then
+       bucket_name=("${project_label}-SD_CONNECT")
+    fi
+  fi
+
   if [ $bucket_name == "not_defined" ]
   then
      #default
@@ -788,11 +800,6 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
   fi 
 
-  #SD services:
-  if [[ $sdx -eq 1 ]]; then
-    bucket_name=("${project_label}-SD_CONNECT")
-  fi
-
   #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
   if [[ $mode == "swift" ]] || [[ $mode == "s3cmd" ]]
@@ -840,8 +847,6 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     fi
   fi
    
-
-
 
  # if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
  # then
@@ -928,8 +933,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
       #For field separator changed to allow spaces in file names
       #IFS contains the default field separator
-      SAVEIFS=$IFS
-      IFS=$(echo -en "\n\b") 
+      #SAVEIFS=$IFS
+      IFS=$(echo -en "\t\n\b") 
       for f in $(find "$input" |  file -N -f - | awk '{if ( $NF != "directory") print $0}' | awk -F ': ' '{print $1}' )
       do        
         ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
@@ -940,7 +945,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           d=0
         fi 
       done
-      IFS=$SAVEIFS
+      #IFS=$(echo -en " \n\b") 
+      #IFS=$SAVEIFS
 
       if [ $num_files -eq 0 ]
       then
@@ -1092,14 +1098,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $encrypt == "crypt4gh" ]]; then  
      if [[ $sdx -eq 1 ]]; then
        # encryption for sdx 
-       if [[ $public_key == "" ]];then
-         crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
-       else
-         crypt4gh encrypt --recipient_pk "$public_key" --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
-       fi
+       #if [[ $all_keys == "" ]];then
+       #   crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
+       #else
+         crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
+       #fi
      else
        #normal encryption
-       crypt4gh encrypt --recipient_pk "$public_key" < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
+       crypt4gh encrypt $all_keys < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
      fi
      rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
