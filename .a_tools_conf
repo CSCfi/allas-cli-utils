@@ -29,7 +29,7 @@
 ##
 ## Encryption
 #encrypt=""             ## options: ""(no encryption), gpg, crypt4gh 
-#public_key=""          ## Location of crypt4gc encrypotion key
+#public_key=""          ## Location of crypt4gc encryption key
 ##
 ## Create metadata object (_ameta)
 # include_ameta=1       # 1: create metadata object, 0: don't create metadataobject
