@@ -1101,6 +1101,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        #if [[ $all_keys == "" ]];then
        #   crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
        #else
+         echo "crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys"
          crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
        #fi
      else

@@ -87,6 +87,11 @@ do
                 ;;
              '--sk' )
                   secret_key="$2"
+                  if [[ ! -e $secret_key ]]; then
+                     echo "Error!"
+                     echo "Secret key: $secret_key not found."
+                     exit 1
+                  fi
                   shift
                   shift
                 ;;
@@ -462,7 +467,7 @@ else
        else
           mkdir -p $target_dir
        fi
-       if [[ $(file -b $target_dir) != "directory" ]]; then
+       if [[ $(file -b $target_dir | awk '{print $NF}' ) != "directory" ]]; then
             echo "Unable to create diretory: $target_dir"
             exit 1
        fi
