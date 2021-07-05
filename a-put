@@ -121,7 +121,6 @@ all_keys=""
 include_ameta=1
 sdx=0
 
-echo "x${IFS}eka"
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -777,12 +776,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/fmi\/projappl\/$puhti_project"/""/g)
      fi
-     partial_path=$(remove_slash_from_ends $partial_path)
-  fi 
 
-  #Puhti-NVME disk area
-  if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
-  then
+
+    #Puhti-NVME disk area
+    if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
+    then
         puhti_project=$SLURM_JOB_ACCOUNT
         bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
         if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
@@ -798,6 +796,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           fi
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
+     fi
+     partial_path=$(remove_slash_from_ends $partial_path)
   fi 
 
   #Check if stored file already exitst
