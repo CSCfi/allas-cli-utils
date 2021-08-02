@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# "rclone ls" with swift access lists only part of the objects if
+# there are a lot of them in a bucket (probably around 100000).
+#
+# This is a workaround script for puhti.
+#
+# This uses s3 access to list the objects. As segmented objects are reported
+# as size 0 objects, script uses "rclone lsl" to get the correct size.
+# You must have a rclone configuration with remote s3allas.
+#
+# Note: simply running "rclone lsl s3allas:bucket" for a lot of objects
+#       would be unusable slow. Also if there are a lot of size 0 objects
+#       or segmented objects, this script will be very slow.
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 bucket_name"
+	exit 1
+fi
+
+rclone ls s3allas:"$1" | while IFS= read -r line
+do
+	if [ "${line:0:10}" == '        0 ' ]; then
+		name=`echo $line|sed 's/ *[0-9]* \(.*\)/\1/'`
+		rclone lsl s3allas:"$1"/"$name" | awk '{print $1}' | tr -d '\n'
+		echo " $name"
+	else
+		echo "$line"
+	fi
+done
+
