@@ -252,10 +252,10 @@ do
                  ;;
                  '--pk' | '--public-key' )
                  # query file
-                 public_key="$2"
+                 public_key=$(abspath "$2")
                  if [[ -e $public_key ]];then 
                     echo Public key: "$public_key"
-                    all_keys=$(echo -en  "\t$all_keys\t--recipient_pk\t$public_key ")
+                    all_keys=$(echo -en  "$all_keys\t--recipient_pk\t$public_key\t")
                     echo $all_keys
                  else
                     echo "Public key $public_key not found"
@@ -1090,11 +1090,10 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        #if [[ $all_keys == "" ]];then
        #   crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
        #else
-         echo "crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys"
          crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
        #fi
      else
-       #normal encryption
+       echo "normal encryption"
        crypt4gh encrypt $all_keys < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
      fi
      rm  ${tmp_dir}/$tmp_file
@@ -1323,9 +1322,9 @@ if [[ $silent -eq 0 ]] ; then
   echo OK
 fi
 rm -f .sdx_key_tmp_$$
-rm -f ${tmp_dir}/tar_list
-rm -f ${tmp_dir}/upload.log 
-rmdir  ${tmp_dir}
+#rm -f ${tmp_dir}/tar_list
+#rm -f ${tmp_dir}/upload.log 
+#rmdir  ${tmp_dir}
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
 (( nopeus = cumulative_size / kesto ))
