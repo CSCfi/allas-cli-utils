@@ -492,22 +492,10 @@ fi
 
 #check free space in tmpdir
 if [[ $free_space_check -eq 1 ]]; then
-  if [[ $(which lfs 2> /dev/null | wc -l ) -eq 1 ]]
-  then
-    if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
-      projnum=$(echo $tmp_root | awk -F "_" '{ print $2}')
-      if [ -n "$projnum" ] && [ "$projnum" -eq "$projnum" ] 2>/dev/null; then
-           (( lproj = 600000000 + projnum ))
-           #  echo "lfs quota -p $lproj $tmp_root"
-           #lfs quota -p $lproj $tmp_root
-           quota_s=($(lfs quota -p $lproj $tmp_root | tail -1 ))
-           free_space=$(expr ${quota_s[1]} - ${quota_s[0]})
-       else
-          echo "Scratch size not cheked for this project."      
-      fi
-    fi
+  if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
+      free_space=$(list-dir-quota $tmp_root | tail -1 | tr "/" " " | awk '{ a=$3-$2}{print a}')
   else
-    free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
+      free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
   fi
 else
     free_space=10000000000
@@ -836,21 +824,6 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     fi
   fi
    
-
- # if [[ $mode == "s3cmd" &&  $override_mode -eq 0 ]]
- # then
- #   echo "cheking s3cmd"
- #   if [[ $(s3cmd ls s3://${bucket_name}${partial_path}/$tmp_file 2> /dev/null | wc -l ) > 1 ]]
- #   then
- #     echo ""
- #     echo "A file/directory with the same name has already been uploaded to $storage_server"
- #     echo ""
- #     s3cmd ls s3://${bucket_name}/${partial_path}/$tmp_file | grep -v "_ameta" | sed -e s/'s3:\/\/'// 
- #     echo ""
- #     echo "Remove the old file if you wish to upload a new version of $input to $storage_server"
- #     exit 1
- #   fi
- # fi
 
   #collect and count metadata
   echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
