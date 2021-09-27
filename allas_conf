@@ -92,6 +92,7 @@ local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
 local s3remove=false
 local debug=false
 local devnull="/dev/null"
+local ood=false
 
 # Process command line arguments
 
@@ -104,11 +105,11 @@ while [[ $# -ge 1 ]]; do
         '-k'|'--keeppasswd')    keep_password=true;      shift;;
         '-s'|'--silent')        echop=:;                 shift;;
         '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
-        '-a'|'--active-token')  active_mode=true;        shift;;
         '-f'|'--force' )        force=true;              shift;;
         '--swift-auth' )        auth_method=swift;       shift;;
         '--s3remove' )          mode=s3remove;           shift;;
         '--debug' )             debug=true;              shift;;
+        '--store-token' )       ood=true;                shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -358,7 +359,10 @@ if $use_swift; then
             #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi
     fi
-   
+   if $ood; then
+     echo "OS_AUTH_TOKEN=$OS_AUTH_TOKEN" > $HOME/.allas_connection
+     echo "OS_STORAGE_URL=$OS_STORAGE_URL" >> $HOME/.allas_connection
+   fi
 fi
 
 
