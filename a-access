@@ -147,11 +147,15 @@ accessible to the internet.
 
 a-access is a tool to control access permissions of a bucket in Allas.
 
-Syntax 
+In cases where access permissions are given or revored to a spcific projet thet syntax is: 
 
    a-access +/-type project_id bucket
 
-Options:
+In cases were a public access is given or removed, the syntax is:
+
+   a-access +/-p bucket
+
+a-access options:
 
   +r,  +read <project_id>          Grant read access to the bucket for the project.
   +w,  +write <project_id>         Grant write access to the bucket for the project.
