@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+ 
+# Usage: source this_script [projectname]
+ 
+# Script to get OS_AUTH_TOKEN and OS_STORAGE_URL from Allas for swift applications like python-swiftclient, rclone or curl
+# OS_PROJECT_NAME and OS_USERNAME are also saved
+# the project name can be specified as an argument for this or else the project list is fetched and the user is prompted to select one
+
+# This script requires curl
+# This script needs to be sourced instead of runnig it
+ 
+# constants
+OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
+OS_PROJECTS_URL='https://pouta.csc.fi:5001/v3/auth/projects'
+TOKEN_HEADER_RE='^[0-9:]*X-Subject-Token: '
+STORAGE_URL_RE='https://a3s.fi:443/swift'
+STORAGE_URL_INTERFACE_RE='"interface": "public"'
+STORAGE_URL_SED='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
+
+if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+    echo "In odred to be useful this script needs to be sourced instead of runnig it" >&2
+    exit 1
+fi
+ 
+if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
+    echo "curl command is missing" >&2
+else
+    export OS_USERNAME="$USER"
+
+    # get password
+    echo "Please enter your CSC password to authenticate to Allas as user $OS_USERNAME: "
+    read -sr OS_PASSWORD_INPUT
+    OS_PASSWORD="$OS_PASSWORD_INPUT"
+
+    if [ -n "$1" ]; then
+        export OS_PROJECT_NAME="$1"
+    else
+        # get an unscoped token
+        OS_AUTH_DATA='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+            "password": "'$OS_PASSWORD'" } } } } }'
+
+        OUT=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 <<< "$OS_AUTH_DATA"`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+            exit 1
+        fi
+
+        OS_UNSCOPED_AUTH_TOKEN=`echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"`
+
+        # get the project list authenticating with the unscoped token
+        OUT=`curl -s -S -X GET -D - -H "X-Auth-Token: $OS_UNSCOPED_AUTH_TOKEN" "$OS_PROJECTS_URL" 2>&1`
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+            exit 1
+        fi
+
+        # figure the project list out with just basic tools without dependency to any json tool
+        PROJECTS_LIST=($(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
+
+        # the user selects one project
+        PS3="Please choose a project by giving an item number from the list above: "
+        select OS_PROJECT_NAME in "${PROJECTS_LIST[@]}" "exit without selecting a project"; do
+            [[ -n "$OS_PROJECT_NAME" ]] && break
+        done
+
+	export OS_PROJECT_NAME
+    fi
+
+    # get a project scoped token
+    OS_AUTH_DATA='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+        "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
+
+    # authenticate and get return values
+    OUT=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 <<< "$OS_AUTH_DATA"`
+    CURL_EXIT="$?"
+    STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+    if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+        echo "FAILED" >&2
+        echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+    else
+        # save token to environment variable
+        export OS_AUTH_TOKEN=`echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//"`
+
+        # save also the storage url, figure it out with just basic tools without dependency to any json tool
+        export OS_STORAGE_URL=`echo "$OUT"|tr '}' '\n'|grep "$STORAGE_URL_RE"|grep "$STORAGE_URL_INTERFACE_RE"|sed "$STORAGE_URL_SED"`
+    fi
+fi
