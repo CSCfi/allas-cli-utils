@@ -109,6 +109,7 @@ encrypt=""
 all_keys=""
 include_ameta=1
 sdx=0
+meta_message=""
 
 
 # read customer defaults
@@ -220,6 +221,12 @@ do
                    fnum=0
                  shift
                  ;;
+                 '-m' | '--message' )
+                   meta_message=$2
+                  shift
+                  shift
+                ;;        
+                 
                  '--no-ameta')
                     include_ameta=0
                     shift
@@ -406,6 +413,8 @@ a-put command line options:
 
 --no-ameta                  Don't create metadata objects ( _ameta ) for the 
                             stored data objects.
+
+-m, --message "your notes"  Add a one line text note to the metadata object.
 
 --override                  Allow overwriting existing objects.
 
@@ -635,7 +644,7 @@ do
        fi
      else
        # Create key for sdx enryption
-       echo "echo -----BEGIN CRYPT4GH PUBLIC KEY-----
+       echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
 dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
      fi
@@ -850,7 +859,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $sdx -eq 1 ]]; then
      echo "sd_connect: yes" >>  ${tmp_dir}/${tmp_file}_ameta
   fi
-
+  if [[ $meta_message != "" ]]; then
+     echo "Note: $meta_message"  >>  ${tmp_dir}/${tmp_file}_ameta
+  fi
   num_files=0
 
   #initial check of file or directory count
