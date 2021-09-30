@@ -93,6 +93,8 @@ local s3remove=false
 local debug=false
 local devnull="/dev/null"
 local ood=false
+#project_list_method options are curl and openstack
+local project_list_method=curl
 
 # Process command line arguments
 
@@ -107,6 +109,7 @@ while [[ $# -ge 1 ]]; do
         '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
         '-f'|'--force' )        force=true;              shift;;
         '--swift-auth' )        auth_method=swift;       shift;;
+        '--openstack-project-list' )        project_list_method=openstack;       shift;;
         '--s3remove' )          mode=s3remove;           shift;;
         '--debug' )             debug=true;              shift;;
         '--store-token' )       ood=true;                shift;;
@@ -225,9 +228,40 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
  
-   local all_projects=(
-       $(openstack project list \
-                   --my-projects -c Name -f value --os-username $OS_USERNAME))
+   if [[ $project_list_method == "curl" ]];  then
+      ## This section replaces openstack based project listing
+      ##
+
+      local os_auth_data_unscoped='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+         "password": "'$OS_PASSWORD'" } } } } }'
+
+      # get an unscoped token
+      local curl_out=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL/auth/tokens" 2>&1 <<< "$os_auth_data_unscoped"`
+      local curl_exit="$?"
+      local curl_status=`echo "$curl_out" | grep '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
+      if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
+         echo "FAILED" >&2
+         echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+      else
+         local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+
+         # get the project list authenticating with the unscoped token
+         local curl_out=`curl -s -S -X GET -D - -H "X-Auth-Token: $os_auth_token_unscoped" "$OS_AUTH_URL/auth/projects" 2>&1`
+         local curl_exit="$?"
+         local curl_status=`echo "$curl_out" | grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
+         if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+         fi
+
+         # figure the project list out with just basic tools without dependency to any json tool
+         local all_projects=($(echo "$curl_out"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
+      fi
+   else
+      local all_projects=(
+          $(openstack project list \
+                      --my-projects -c Name -f value --os-username $OS_USERNAME))
+   fi
 
    case ${#all_projects[@]} in
        0)
