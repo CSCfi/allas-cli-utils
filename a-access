@@ -236,7 +236,7 @@ if  [[ $add_write_project != "" ]] ; then
        echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
        rclone mkdir "${storage_server}:${bucket}_segments"
    fi  
-   swift post "${bucket}_segments" -w "${read_acl}" 2> /dev/null
+   swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
 fi
 
 if  [[ $remove_read_project != "" ]] ; then
@@ -248,7 +248,7 @@ fi
 if  [[ $remove_write_project != "" ]] ; then
    write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${remove_write_project}:\*"/""/g )  
    swift post "$bucket" -w "${write_acl}"
-   swift post "${bucket}_segments" -w "${read_acl}" 2> /dev/null
+   swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
 fi
 
 if [[ $public -gt 0 ]];then
