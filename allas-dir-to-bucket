@@ -59,6 +59,7 @@ input=""
 bucket_name=""
 user=$(whoami)
 print_help=0
+check_md5=0
 
 if [[ $# -lt 1 ]]; then
    print_help=1
@@ -95,6 +96,10 @@ do
                 ;;
                '-h' | '--help' )
                   print_help=1
+                  shift
+                ;;
+                '--md5' | '-m' )
+                   check_md5=1
                   shift
                 ;;
 
@@ -177,15 +182,15 @@ allas-dir-to-bucket command line options:
 -p, --proc <number>         Number of simultaneous uploade processes.
                             Default 4.
 
+-m, --md5                   Check md5 sums of uploaded segments.
+
 -u, --user <csc-user-name>  Define username liked to the data to be uploaded
                             (default: current username).
 
 -h, --help                  Print this help.
-
-
-
  
 EOF
+
 fi
 
 
@@ -271,6 +276,7 @@ else
               echo ""
               echo "Removing old data"
               rclone delete ${storage_server}:${bucket_name}/${input}
+              rclone delete ${storage_server}:${bucket_name}_segments/${input}
            else
               exit
            fi
@@ -299,7 +305,7 @@ for file in $FILES_LARGE; do
     filesize=$(stat --printf="%s" $file)
     (( filesize_mb = filesize / 1000000 ))
     (( filesize_gb = filesize_mb / 1024 ))
-    stat_time=$(date +%s)
+    start_time=$(date +%s)
     echo ""
     echo "${fn}/${num_large_files} Uploading file $file ${filesize_gb}GiB."
     (( token_age = start_time - token_time ))
@@ -307,26 +313,46 @@ for file in $FILES_LARGE; do
        check_swift_connection 
        token_time=$start_time 
     fi 
+    # echo "start_time $start_time"
     # echo "concurrent_rclone_rcat.sh $file $bucket_name"
-    concurrent_rclone_rcat.sh $file $bucket_name 
-    if [[ $? -ne 0 ]]; then
-       echo "Data upload failed!"
-       exit 1
-    fi
-    end_time=$(date +%s)
-    (( duration = end_time - stat_time ))
-    (( speed = filesize_mb / duration ))
-    #check size of uploaded file
-    allas_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')     
-    allas_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')    
-    if [[ $filesize -eq $allas_size && $allas_size -eq $allas_segments_size ]]; then
-       echo "Upload was done in ${duration}s. ( $speed MB/s )"
-    else
-       echo
-       echo "ERROR"
-       echo "Upload failed for $file !"
-       exit 1
-    fi   
+    # Try 3 times to upload a large file
+    i=0
+    success=0
+    while [ $success -ne 1 ]; do  
+       concurrent_rclone_rcat.sh $file $bucket_name $check_md5
+       if [[ $? -ne 0 ]]; then
+         echo "Data upload failed!"
+       fi
+  
+      end_time=$(date +%s)
+      (( duration = end_time - start_time ))
+      (( speed = filesize_mb / duration ))
+      #check size of uploaded file
+      allas_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')     
+      allas_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')    
+      #echo allas_size  $allas_size
+      #echo allas_segments_size    $allas_segments_size
+      #echo filesize $filesize
+
+      if [[ $filesize -eq $allas_size && $allas_size -eq $allas_segments_size ]]; then
+          echo "Upload was done in ${duration}s. ( $speed MB/s )"
+          success=1
+      else
+         echo "Data upload failed!"
+         (( i = i + 1 ))
+         if [[ $i -gt 2 ]]; then
+            echo "Too many failed upload attempts"
+            failed_uploads=(${failed_uploads[@]} "$file")
+            success=1                       
+         else
+            echo "Retrying to upload $file"
+         fi
+         if [[  $file != "" ]]; then
+            rclone delete $RCLONE_DESTINATION:$bucket_name/$file
+            rclone delete $RCLONE_DESTINATION:${bucket_name}_segments/$file 
+         fi  
+      fi
+   done   
 done
 
 # Upload the rest
@@ -346,3 +372,13 @@ else
 fi
  
 echo "DONE uploading ${1}"
+
+if [[ ${#failed_uploads[@]} -gt 0 ]]; then
+  echo "NOTE! Not all files were successfully uploaded!"
+  echo "Upload failed for following files:"
+  for value in "${failed_uploads[@]}"  
+  do
+       echo $value
+  done 
+
+fi
