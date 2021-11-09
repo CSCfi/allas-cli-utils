@@ -84,7 +84,7 @@ do
                   shift
                   shift
               ;;
-              '--proc' | '-p' )
+              '--stream' | '-s' )
                   export MAX_PROCESSES=$2
                   shift
                   shift
@@ -128,13 +128,13 @@ cat <<EOF
 
 DESCRIPTION
 
-This tool is used to upload on content of a directory to a bucket in
+This tool is used to upload on content of a directory or a file to a bucket in
 Allas. Upload is done with rclone. 
 
-The upoload is done so that the content detween the source directory in your local 
+The upoload is done so that the content between the source directory in your local 
 computer and the target bucket in Allas is synchronized. This means that in addition to 
 copying data from the local directory to the bucket in Allas, the objects 
-in Allas, that don't match files in the local dierctory, are removed.
+in Allas, that don't match files in the local directory, are removed.
 
 Because of that you should mainly use this tool to upoload data to
 a new empty bucket in Allas. If the target bucket does not exist, it will be 
@@ -143,7 +143,7 @@ automatically created.
 In Allas, files larger than 5 GiB will be stored as 5GiB segments. 
 This tool utilizes this segmentation to speed up the upload process 
 by uploading several segments of a large file simultaneously.
-Smaller files will be uploaded using normal rclone sync command.
+Smaller files will be uploaded using normal rclone copy command.
 
 USAGE
 
@@ -151,11 +151,11 @@ The basic syntax of the command is:
 
    allas-dir-to-bucket source-directory  target-bucket
 
-You can also define sourece directory and target bucket with 
+You can also define source directory and target bucket with 
 command line options.
 
 The files will be uploaded to the defined bucket and the object names 
-will include the source direcrtory name. For example is we have a directory
+will include the source direcrtory name. For example if we have a directory
 "data1" containing files sample_1.dat and sample_2.dat, then command:
   
   allas-dir-to-bucket data1  p20001234_backup
@@ -174,12 +174,12 @@ COMMAND LINE OPTIONS
 
 allas-dir-to-bucket command line options:
 
--d, --directory' <dir_name> Name of the directory to be uploaded to Allas.
+-d, --directory' <dir_name> Name of the directory or file to be uploaded to Allas.
 
 -b, --bucket <bucket_name>  Define a name of the bucket into 
                             which the data is uploaded.
 
--p, --proc <number>         Number of simultaneous uploade processes.
+-s, --stream <number>         Number of simultaneous upload streams.
                             Default 4.
 
 -m, --md5                   Check md5 sums of uploaded segments.
