@@ -87,6 +87,7 @@ do
                 ;;
              '--FORCE' | '-F')
                   force=2
+                  shift
                 ;;
              '--user' | '-u')
                   user="$2"
@@ -178,6 +179,7 @@ if [[ $remove_bucket -eq 1 ]]; then
      if [[ $force -eq 2 ]]; then
         if [[ $object_name != "" ]]; then
             rclone delete ${storage_server}:"$object_name"
+            echo "$object_name deleted"
         fi
      fi
      if [[ $force -eq 1 ]]; then
@@ -185,7 +187,8 @@ if [[ $remove_bucket -eq 1 ]]; then
            rclone rmdir ${storage_server}:"$object_name"
            #swift delete "$object_name"  
         fi
-     else 
+     fi
+     if [[ $force -eq 0 ]]; then
         echo ""
         echo "Are you sure want to remove bucket:"
         echo $object_name
