@@ -3,7 +3,7 @@ storage_server="allas"
 local_host="$(hostname)"
 allas_log="/dev/null"
 
-#change here your allas_cond locatio
+#change here your allas_conf location
 allas_conf_path="/home/kkmattil/allas-cli-utils/allas_conf"
 max_size=500000000
 max_files=100000
