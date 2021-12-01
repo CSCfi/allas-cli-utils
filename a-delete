@@ -146,8 +146,7 @@ Options:
  
 --rmb                        Remove empty bucket. 
 
--F, --FORCE                  In conjumction with --rmb, this option removes a 
-                             non-empty bucket.
+-F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
 
 Related commands: a-put, a-get, a-find, a-info

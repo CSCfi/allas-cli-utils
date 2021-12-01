@@ -242,6 +242,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
          echo "FAILED" >&2
          echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+         unset OS_PASSWORD
       else
          local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
 
@@ -252,6 +253,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
          if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
             echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+            unset OS_PASSWORD
          fi
 
          # figure the project list out with just basic tools without dependency to any json tool
