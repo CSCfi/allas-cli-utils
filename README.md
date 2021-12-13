@@ -75,8 +75,8 @@ Example: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
 #install pip and openstack client
 sudo apt install python-pip python-dev
 sudo apt-get install python-setuptools
-sudo pip install --upgrade pip
-sudo pip install python-openstackclient
+pip install --upgrade pip
+pip install python-openstackclient
 
 #install swift client
 sudo apt install python3-swiftclient
