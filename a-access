@@ -215,6 +215,37 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 # check connection
 check_swift_connection 
 
+## Make sure that user project has read and write permissions
+if [[  $add_read_project != "" || $add_write_project != "" ]]; then
+  user_read=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}'| grep -c "${OS_PROJECT_NAME}")
+  if [[ $user_read -lt 1 ]];then
+    read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )  
+    read_acl="${OS_PROJECT_NAME}:*,$read_acl"
+    swift post "$bucket" -r "${read_acl}"
+    bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
+    if [[ $bnrows -eq 0 ]]; then  
+        echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
+        rclone mkdir "${storage_server}:${bucket}_segments"
+    fi    
+    swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
+  fi
+
+  user_write=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}'| grep -c "${OS_PROJECT_NAME}")
+  if [[ $user_write -lt 1 ]]; then
+     write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )  
+     write_acl="${OS_PROJECT_NAME}:*,$write_acl"
+     echo "swift post $bucket -w ${write_acl}"
+     swift post "$bucket" -w "${write_acl}"
+     bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
+     if [[ $bnrows -eq 0 ]]; then
+         echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
+         rclone mkdir "${storage_server}:${bucket}_segments"
+     fi  
+     swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
+  fi
+fi
+
+### Add new settings
 if  [[ $add_read_project != "" ]] ; then
    read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${add_read_project}:\*"/""/g )  
    read_acl="${add_read_project}:*,$read_acl"
@@ -275,10 +306,10 @@ fi
 
 
 echo "----------------------------------------------------------"
-echo "External projects that have read access to bucket $bucket:" 
+echo "Projects that have read access to bucket $bucket:" 
 swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' | sed -e s/".r:\*"/"Public access"/g | sed -e s/".rlistings,"/""/g | sed -e s/".rlistings"/""/g | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
 echo "----------------------------------------------------------"
-echo "External projects that have write access to bucket $bucket:" 
+echo "Projects that have write access to bucket $bucket:" 
 swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
 echo "----------------------------------------------------------"
 
