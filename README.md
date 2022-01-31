@@ -9,7 +9,7 @@ CSC provides a set of commands (a-tools ) for moving data between CSC computing 
 
 ## Opening connection with allas_conf
 
-Connection configuration tool: allas_conf can be used to configure swift or s3cmd connections to Allas. 
+Connection configuration tool: allas_conf can be used to configure swift or S3 connections to Allas. 
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
 The basic syntax of this tool for swift protocol is:
 
@@ -141,7 +141,7 @@ mv md5sum.macosx md5sum
 
 ## Configuring a-commands
 
-You can define the default settings that the a-tools use in two files: a_env_conf and .a_tools_cond. These settings affect mostly to the a-put data upload command.
+You can define the default settings that the a-tools use in two files: a_env_conf and .a_tools_conf. These settings affect mostly to the a-put data upload command.
 
 ### 1. a_env_conf
 
