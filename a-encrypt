@@ -1,0 +1,313 @@
+#!/bin/bash 
+
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+
+
+#default user
+user=($USER)
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+#inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
+
+# local variable
+object_name=""              #object to retrieve
+print_help=0
+os_project_name="$OS_PROJECT_NAME"     
+mode="swift"
+tmp_dir="${tmp_root}/a_get_$$_tmp"
+show_filelist=0
+query=""
+object_with_bucket=0
+to_orig_dir=0
+orig_dir=""
+bucket=""
+all=0
+exe_dir=$(pwd)
+start_time=$(date +%s)
+encrypt=""
+secret_key=""
+all_keys=""
+suffix=".c4gh"
+replace=0
+
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   echo "Reading customer settings"  >&2
+   source $HOME/.a_tools_conf
+fi
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--object' | '-o')
+             # query file
+                  object_name="$2"
+                  shift
+                  shift
+                ;;
+              '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
+             '-b' | '--bucket' )
+                  bucket="$2"
+                  shift
+                  shift
+             ;;
+             '-r' | '--replace')
+                  replace=1
+                  shift
+             ;;
+             '-s' | '--suffix')
+                  suffix="$2"
+                  shift
+                  shift
+             ;;
+              '-a' | '--all')
+                  all=1
+                  shift
+             ;;
+
+              '-p' | '--pk' | '--public-key' )
+                 # query file
+                 public_key=$(abspath "$2")
+                 if [[ -e $public_key ]];then 
+                    echo Public key: "$public_key"
+                    all_keys=$(echo -en "$all_keys --recipient_pk $public_key ")
+                    echo $all_keys
+                 else
+                    echo "Public key $public_key not found"
+                    exit 1  
+                 fi 
+                 shift
+                 shift
+             ;;
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+              ;;
+             *)
+                   if [[ $object_def != "" ]]; then
+                      echo "unknown option: $1"  >&2
+                      echo "Object name is: $object" >&2
+                      exit 1
+                   fi
+                   object_def="$1"
+                   shift                       # No more switches
+               ;;
+    esac
+done
+
+
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+This tool is used to encrypt objects, that have already been uploaded to Allas.
+The basic syntax of the command is:
+
+   a-encrypt object_name
+
+a-encryp command streams the object to the local computer where crypt4gh encryption is applied
+to the data stream. The encrypted data is then streamed back to Allas into a new object. 
+By default the object is encrypted with CSC public key only. The encrypted object is located to the
+same bukcet as the original object. Suffix: .c4gh is added to the object name.
+
+The main purpose of this tool is to make a file, uploaded to the Allas service, compatible with the 
+Sensitive data services of csc.
+
+Options:
+
+-r, --replace                    Remove the original un-encrypted object after encryption.
+
+-b, --bucket <bucket_name>       Save the encrypted object to the given bucket in stead of the original bucket.
+
+-p, --public_key <public key>    Additional Public key for crypt4gh encryption. By defalt only CSC public key is used.
+                                 This option allows you to include additional public keys so that data can be used
+                                 outside CSC sensitive data computing environment too.
+
+--s3cmd                          Use S3 protocol and s3cmd command for data retrieval in stead of 
+                                 Swift protocol and rclone.
+
+-s, --suffix <suffix>            Define your own suffix in stead of the default suffix (.c4gh)
+
+-a, --all                        Process all the objects that include the given name in the beginning of 
+                                 object name.
+
+Related commands: a-put, a-find, a-info, a-delete
+
+Examples:
+
+1. Make an encrypted copy of object my_data.csv that locate in bucket project_12345_data
+
+   a-encrypt project_12345_data/my_data.csv
+
+2. Make encrypted copies of all objects in buket  project_12345_data to bucket  project_12345_sd
+
+   a-encrypt project_12345_data --all --bucket project_12345_sd
+   
+
+exit 0
+
+fi 
+
+if [[ $object_def == "" ]]
+then
+  echo "Please give the object to retrieve:"  >&2 
+  read object_def 
+fi
+
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+  #here we check that rclone is available
+  if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""  >&2
+      echo "rclone is not available!" >&2
+      echo "Please install rclone."  >&2
+      exit 1
+  fi
+  #connection test
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then 
+    echo "No connection to Allas!"  >&2
+    echo "Please try setting the connection again."  >&2
+    echo "by running command:" >&2 
+    echo "" >&2
+    echo "   source $allas_conf_path" >&2
+    exit 1
+  fi 
+fi
+
+#Rclone through s3
+if [[ $mode == "s3cmd" ]];then
+   storage_server="s3allas"
+fi
+
+#source /appl/opt/allas_conf
+#input=("$1")
+
+ 
+
+## object list creation depends on if --all
+if [[ $all -eq 1 ]];then
+  object_list=($(a-list $object_def 2> /dev/null))
+else
+  b_check=$(echo $object_def | grep -c "/")
+  if [[ $b_check -eq 1 ]]; then 
+     object_list="$object_def" 
+  else
+    echo "Definition $object_def did not define a single object"
+    echo "Please use option --all if you want to encryp all objects in a bucket"
+    echo "or seveal objecs, whos name sarts with same string"
+    exit 1 
+  fi
+fi
+
+
+#check that object list contains something
+check_os=$(echo  ${object_list[@]} | wc -c)
+echo ${object_list[@]} 
+echo check_os: $check_os
+if [[ $check_os -lt 2 ]]; then
+     echo "Object name: $object_name not found in $storage_server." >&2
+     echo "" >&2
+     exit 1
+fi
+
+## Write CSC public key to a temporary file
+echo "Starting to process ${#object_list[@]} objects"
+echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
+dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
+-----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
+
+
+for i in ${!object_list[@]}
+do
+  object_name="${object_list[$i]}"
+  echo object_name $object_name
+  source_bucket=$(echo $object_name | awk -F "/" '{print $1 }' )
+  echo "source_bucket $source_bucket"
+  object=$(echo $object_name | sed -e s/"$source_bucket\/"/""/ )
+  echo "object: $object"
+  if [[ $bucket != "" ]]; then
+    target_bucket=$bucket
+  else
+    target_bucket="$source_bucket"
+  fi 
+  target_object="${object}${suffix}"
+  echo ""
+  echo "Making encrypted copy of ${source_bucket}/${object}"
+  echo "to ${target_bucket}/$target_object"
+
+  # no re-encryption
+  if [[ ${object_name:(-5):5} == "${suffix}" ]]; then
+    echo "$object_name is already encrypted."
+    if [[ "${bucket}" != "" ]]; then
+       rclone cat "${storage_server}:$object_name" | rclone rcat ${storage_server}:${target_bucket}/${object}
+       check_os=$(rclone ls ${storage_server}:${target_bucket}/${object} 2> /dev/null | wc -l)
+    else    
+       check_os=$(rclone ls ${storage_server}:${target_bucket}/${object} 2> /dev/null | wc -l)
+    fi
+  else
+    rclone cat -P "${storage_server}:$object_name" | crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys | rclone rcat ${storage_server}:${target_bucket}/${target_object}    
+    check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+  fi
+
+  if [[ $check_os -ne 1 ]]; then
+        echo "Error!"
+        echo "Processing of object: $object_name Failed!"
+        echo
+        exit 1
+  fi
+  if [[ $replace -eq 1 ]]; then 
+     # Do not remove already encrypted objects
+     if [[ ${object_name:(-5):5} == "${suffix}" ]]; then
+        if [[ "${bucket}" != "" ]]; then
+             echo "Removing un-encrypted version of $object_name"
+             rclone deletefile "${storage_server}:$object_name"
+        fi
+     else
+       echo "Removing un-encrypted version of $object_name"
+       rclone deletefile "${storage_server}:$object_name"
+     fi
+  fi
+done
+
+rm -f .sdx_key_tmp_$$
+
+exit 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
