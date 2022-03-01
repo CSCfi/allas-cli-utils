@@ -168,21 +168,20 @@ do a local allas-cli-utils installation. You may for example change _tmp_root_ d
 
 A user can define her own default settings for a-commands by making a configuration file named as **.a_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers too. In this file you can set default values for many of the functions that are defined with a-put command options.
 
-For example, if you are working with files that do not benefit from compression, you could skip the compression.
-You can do this by using the _--nc_ option with a-put, but if you want this to be default setting you could create .a_tools_conf file
+For example, if you are uploading files that would benefit from compression, you could use _--compress_ option with a-put. If you want this to be default setting you could create .a_tools_conf file
 that contains setting:
 
 ```text
-compression=0 
+compression=1
 ```
 Now command:
 ```text
 a-put my_data.b
 ```
-Will not compress the data during the upload process. However, you can still use compression with option _--compress_.
+Will compress the data during the upload process. However, you can still skp the compression with option _--nc_.
 
 ```text
-a-put --compress my_data.b
+a-put --nc my_data.b
 ```
 You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and un-comment and define the variables you wish to use.
 
