@@ -28,7 +28,7 @@ or _s3cmd_ to manage data in allas.
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and Allas.
 
-**Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprosessing operation. In the future, use option -c in case you want to compress the data before upload. **
+** Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprosessing operation. In the future, use option -c in case you want to compress the data before upload. **
 
 
 ## Four main tools for using Allas
