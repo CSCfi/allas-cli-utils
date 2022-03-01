@@ -1232,7 +1232,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     if [[ $compression -eq 1 ]]; then
       echo "$num_files files from $input uploaded to bucket $bucket_name in Allas as one compressed file: "
     else
-      echo "$input uploaded to bucket $bucket_name in Allas"
+      if [[ $num_files -gt 1 ]]; then
+         echo "$num_files files from $input uploaded to bucket $bucket_name in Allas as one tar file: "
+      else
+         echo "$input uploaded to bucket $bucket_name in Allas"
+      fi
     fi
   fi
 
