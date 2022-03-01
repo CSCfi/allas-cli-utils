@@ -9,7 +9,7 @@ echo "ccc" > test_$$/c.txt
 #a-put
 
 object=$(a-put -b allastest_$$ test_$$ -s 2> /dev/null | tail -1 | tr -d "\n")
-if [[ $object == "allastest_$$/test_$$.tar.zst" ]]; then
+if [[ $object == "allastest_$$/test_$$.tar" ]]; then
   echo "a-put OK"
 else
   echo "a-put FAILED"
@@ -19,7 +19,7 @@ fi
  
 #a-list
 t1=$(a-list allastest_$$ | tr -d "\n" )
-if [[ $t1 == "allastest_$$/test_$$.tar.zst" ]]; then
+if [[ $t1 == "allastest_$$/test_$$.tar" ]]; then
   echo "a-list OK"
 else
   echo "a-list FAILED"

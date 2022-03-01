@@ -61,13 +61,13 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 
 #local variables
-print_help=(0)
-os_project_name=("none")
-add_read_project=("")
-add_write_project=("")
-remove_read_project=("")
-remove_write_project=("")
-mode=("swift")
+print_help=0
+os_project_name="none"
+add_read_project=""
+add_write_project=""
+remove_read_project=""
+remove_write_project=""
+mode="swift"
 
 #Process command line
 while [[ $# -ge 1 ]]

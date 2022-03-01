@@ -21,7 +21,7 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
     This script sets up the environment variables and the configuration
     files for accessing Allas storage service https://a3s.fi using swift
-    (default) and/or s3cmd APIs.
+    (default) and/or S3 APIs.
 
     The program asks your CSC password before starting the configuration
     process.
@@ -36,9 +36,9 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     OPTIONS
     -------
 
-     -m, --mode s3cmd         Configure s3cmd API (default: swift)
+     -m, --mode S3            Configure S3 API (default: swift)
 
-     -m, --mode both          Configure both swift and s3cmd APIs
+     -m, --mode both          Configure both swift and S3 APIs
 
      -u, --user USER          Storage server username (default: $USER)
 
@@ -58,13 +58,13 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
      -f, --force              Skip check that tries to ensure that this command is
                               sourced correctly. This option needs to ne used in batch jobs.
   
-     --s3remove               Remove s3 access key for an Allas project. 
+     --s3remove               Remove S3 access key for an Allas project. 
 
     DEPENDENCIES
     ------------
 
     This script uses openstack and swift/s3cmd utilities, which in
-    puhti.csc.fi are available using
+    CSC servers are available using
 
         module load allas
 
@@ -138,7 +138,7 @@ if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
 fi
 
 case "$mode" in
-    's3cmd')
+    's3cmd' | 's3' | 'S3' )
         local use_swift=false
         local use_s3cmd=true
         ;;
@@ -463,7 +463,7 @@ if $use_s3cmd; then
    echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
    echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
 
-   echo "rclone remote s3allas: now provides an s3 based connection to project $OS_PROJECT_NAME in $storage_service."
+   echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
    echo ""
 
 
