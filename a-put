@@ -110,7 +110,8 @@ all_keys=""
 include_ameta=1
 sdx=0
 meta_message=""
-
+check_mode=0
+max_files=100000
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -190,10 +191,6 @@ do
               '-x')
                   free_space_check=0
                   shift
-                ;;
-              '--simple-filelist')
-                 filelist_level=1
-                 shift
                 ;;
               '--skip-filelist')
                  filelist_level=2
@@ -408,11 +405,6 @@ a-put command line options:
 -u, --user                  Define username liked to the data to be uploaded
                             (default: current username)
 
---simple-filelist           Only filenames, not owner, size and date, are 
-                            collected to the metadatafile. This feature is 
-                            automatically used for directories that contain 
-                            more than 5000 items.
-
 --skip-filelist             Do not collect information about the files that 
                             the object contains to the metadata file.
                             Using this option speeds up the upload process 
@@ -547,7 +539,7 @@ if [[ $asis_mode -eq 1 ]];then
 fi   
 
 mkdir $tmp_dir
-printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in allas" >> ${tmp_dir}/upload.log
+printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
 
 
 for input in $input_def
@@ -677,14 +669,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #sen perusteella
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
+  # Default bucket for sdx mode
   if [[ $sdx -eq 1 ]]; then
     if [[ $bucket_name == "not_defined" ]]; then
        bucket_name=("${project_label}-SD_CONNECT")
     fi
   fi
 
-  if [ $bucket_name == "not_defined" ]
-  then
+  if [[ $bucket_name == "not_defined" ]]; then
      #default
      bucket_name=("${user}-${project_label}-MISC")
            
@@ -790,57 +782,47 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           fi
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
-     fi
-     partial_path=$(remove_slash_from_ends $partial_path)
+    fi
+    partial_path=$(remove_slash_from_ends $partial_path)
   fi 
+  
+  #the name of the object to be created 
+  if [[ $partial_path == "" ]]; then
+        target_location="${bucket_name}/${tmp_file}"
+  else
+        target_location="${bucket_name}/${partial_path}/$tmp_file"
+  fi
+  
 
-  #Check if stored file already exitst
-  #echo "rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
-  if [[ $mode == "swift" ]] || [[ $mode == "s3cmd" ]]
-  then
-     if [[ $partial_path == "" ]]; then
-      if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
-      then
-        if [[ $override_mode -eq 1 ]]; then
-           # in override mode explicitly delete the old object
-           rclone delete ${storage_server}:${bucket_name}/$tmp_file
-        else
-           echo ""
-           echo "A file/directory with the same name has already been uploaded into"
-           echo "bucket $bucket_name in $storage_server"
-           echo ""
-           echo "   ${bucket_name}/${tmp_file}  " 
-           echo ""
-           echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-           echo "You can add option: --override to your command line, if you want to overwrite the object alrady existing in Allas."
-           echo "Aternatrively, you can define different bucket name using option --bucket "
-           echo "or define different object name with option --object"
-           exit 1
-        fi
-      fi
-    else
-      if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
-      then
-        if [[ $override_mode -eq 1 ]]; then
-           # in override mode explicitly delete the old object
-           rclone delete ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
-        else
-           echo ""
-           echo "A file/directory with the same name has already been uploaded into"
-           echo "bucket $bucket_name in $storage_server"
-           echo ""
-           echo "   ${bucket_name}/${partial_path}/${tmp_file}  " 
-           echo ""
-           echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-           echo "You can add option: --override to your command line to if you want to overwrite the object alrady existing in Allas."
-           echo "Aternatrively, you can define different bucket name using option --bucket "
-           echo "or define different object name with option --object"
-           exit 1
-         fi
+  #Check if the object already exists  
+  target_exists=0
+  #echo "rclone ls ${storage_server}:${target_location}"
+  if [[ $(rclone ls ${storage_server}:${target_location} 2> /dev/null | wc -c) -gt 0 ]]; then
+      target_exists=1
+  fi
+
+
+  if [[ $check_mode -eq 0 ]]; then
+    if [[ $target_exists -eq 1 ]]; then      
+      if [[ $override_mode -eq 1 ]]; then
+         # in override mode explicitly delete the old object
+         rclone delete ${storage_server}:${target_location}
+      else
+         echo ""
+         echo "A file/directory with the same name has already been uploaded into"
+         echo "bucket $bucket_name in $storage_server"
+         echo ""
+         echo "   ${target_location}  " 
+         echo ""
+         echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
+         echo "You can add option: --override to your command line, if you want to overwrite the object alrady existing in Allas."
+         echo "Aternatrively, you can define different bucket name using option --bucket "
+         echo "or define different object name with option --object"
+         exit 1
       fi
     fi
-  fi
-   
+  fi   
+ 
 
   #collect and count metadata
   echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
@@ -874,7 +856,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
   #initial check of file or directory count
   if [[ $filelist_level -lt 2 ]] ; then 
-    num_check=$(find $input | wc -l )
+    num_check=$(find "$input" -type f | wc -l )
     if [[ $num_check -gt $max_files ]]; then
       echo ""
       echo "Refusing to process the data."
@@ -892,56 +874,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       exit 1
     fi
 
-
-    if [[ $num_check -gt 5000 ]]; then
-      echo "$input contains $num_check directories or files."
-      echo "For directories that contain over 5000 files, only simplified file name list will be collected to the metadatafile"
-      # This definition is problematic as num_check contains nu,ber of both files and directories.
-      num_files=$num_check
-      filelist_level=1
-
-    fi
-
-    #Detailed data collection only if there is less than 5000 files
-    if [[ $filelist_level -eq 0 ]]; then
- 
-      ((interval =  $num_check / 100 ))
-      if [[ $interval -lt 1000 ]];then
-         interval=1000
-      fi
-
-      d=0
-
-      #For field separator changed to allow spaces in file names
-      #IFS contains the default field separator
-      #SAVEIFS=$IFS
-      IFS=$(echo -en "\t\n\b") 
-      for f in $(find "$input" |  file -N -f - | awk '{if ( $NF != "directory") print $0}' | awk -F ': ' '{print $1}' )
-      do        
-        ls -l "$f" >>  ${tmp_dir}/${tmp_file}_ameta
-        (( num_files = num_files + 1 ))
-        (( d++ ))
-        if [[ $d -gt $interval ]]; then
-          printf "%s" "."
-          d=0
-        fi 
-      done
-      #IFS=$(echo -en " \n\b") 
-      #IFS=$SAVEIFS
-
-      if [ $num_files -eq 0 ]
-      then
-        echo ""
-        echo "$input contains no files!"
-        echo "This is probably an old directory that has been emptied by the automatic \$WRKDIR cleaning process."
-        rm -f ${tmp_dir}/${tmp_file}_ameta
-        rmdir ${tmp_dir} 
-        exit 1
-      fi
+    #Print file list
+    if [[ $num_check -gt 0 ]]; then
+        #echo "find "$input" -type f -print0 | xargs -0 ls -l"
+        find "$input" -type f -print0 | xargs -0 ls -l >>  ${tmp_dir}/${tmp_file}_ameta    
     else
-      echo "only file names will be collected to the metadata"
+        echo "Empty directory" >>  ${tmp_dir}/${tmp_file}_ameta
     fi
-    
   else
       num_files="unknown_number"
       echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ameta
@@ -1079,11 +1018,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $encrypt == "crypt4gh" ]]; then  
      if [[ $sdx -eq 1 ]]; then
        # encryption for sdx 
-       #if [[ $all_keys == "" ]];then
-       #   crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp  
-       #else
-         crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
-       #fi
+        crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
      else
        echo "normal encryption"
        crypt4gh encrypt $all_keys < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
@@ -1218,7 +1153,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]; then
          if [[ $silent -eq 0 ]] ; then
              #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-             rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+             rclone copy -L --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
          else
              rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          fi 
