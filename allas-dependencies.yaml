@@ -11,3 +11,4 @@ dependencies:
     - python-openstackclient
     - python-swiftclient
     - python-rclone
+    - crypt4gh
