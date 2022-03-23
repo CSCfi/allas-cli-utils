@@ -263,7 +263,7 @@ if [[ ${object_name:(-4):4} == ".tar" ]]; then
   is_compressed=(0)
 fi 
 
-echo Object_name: $object_name
+echo Object_name: $object_name >&2
 
 if [[ $target_name == "" ]];then 
    if [[ $is_tar_file -eq 1 ]]; then
@@ -286,7 +286,8 @@ fi
 
 
 
-echo "Starting to stream data from $storage_server..."
+echo "Starting to stream data from $storage_server..." >&2
+
 
 
 
