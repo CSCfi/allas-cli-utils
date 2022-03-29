@@ -182,12 +182,12 @@ then
     fi
   done
   if [[ $num_buckets -eq 0 ]]; then
-     echo ""
+     echo "" >&2
      echo "Could not find object: $object_name " >&2
      exit 1
   fi
   if [[ $num_buckets -gt 1 ]]; then
-     echo ""
+     echo "" >&2
      echo "Object $object_name was found in several buckets!" >&2
      echo "Please ionclude bucket name in the object name" >&2
      exit 1
@@ -263,8 +263,6 @@ if [[ ${object_name:(-4):4} == ".tar" ]]; then
   is_compressed=(0)
 fi 
 
-echo Object_name: $object_name
-
 if [[ $target_name == "" ]];then 
    if [[ $is_tar_file -eq 1 ]]; then
       if [[ $is_compressed -eq 1 ]]; then
@@ -284,9 +282,7 @@ if [[ -n "$OS_PASSWORD" ]]; then
    source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
 fi
 
-
-
-echo "Starting to stream data from $storage_server..."
+echo "Starting to stream data from $storage_server..." >&2 
 
 
 
