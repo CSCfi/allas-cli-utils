@@ -1,80 +1,27 @@
 # a-check
  
 ```text
-This tool is used to upload data from the disk environment 
-of CSC's supercomputers to Allas storage environmnet. 
-a-put can be used in other environments too.
-
-The basic syntax of the command is:
-
-   a-put directory_or_file
-
-By default this tool performs following operations:
-
-1. Ensures that you have working connection to Allas storage 
-   service.
-
-2. In case of directory, the content of the directory is 
-   collected into a single file (using tar command).
-
-3. By default option --compress (-c), is used. This means that 
-   the data is compressed using zstdmt command. This is the 
-   recommended way if you will be using the data only in 
-   CSC super computers. If you plan to use the uploaded dataset 
-   in other servers, where zstdmt compression may not be available, 
-   you can disable compression with option --nc (-n).
-
-4. By default the  data is uploaded to Allas using rclone command 
-   and swift protocol. S3 protocol is available too.
-
-NOTE! Data was compression with zstdmt command is no longer done by 
-default before the upload.
 
 
-The location were data is stored in Allas can be defined with 
-options --bucket (-b) and --object (-o).
 
-The default option is that data that locates in: 
-  - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
-  - scrarch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
-  - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
-  - projappl in Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
-  - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
-
-In other cases the data uploaded to by default : username-poject_number-MISC
-
-For example for user kkaytaj belonging in project_201234, data 
-locatioing in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
-
-The compressed dataset will be stored as one object. The object 
-name depends on the file name and location. The logic used is that 
-the possible subdirectory path in Mahti or Puhti is included 
-in the object name. 
-
-E.g. a file called test_1.txt in scratch directroy of Puhti can be 
-stored with commands:
-
-   cd /scratch/project_201234
-   a-put test_1.txt
-
-In this case the file is stored to bucket: 201234-puhti-SCRATCH
-as object: test_1.txt.zst
-
-If you have another file called test_1.txt that locates in directory 
-/scratch/project_201234/project2/sample3 you can store it with commands:
-   
-  cd /scratch/project_201234/project2/sample3
-  a-put test_1.txt
-  
-Or commmands
-  cd /scratch/project_201234
-  a-put project2/sample3/test_1.txt
-
-In these cases the file is stored to bucket: 201234-puhti-SCRATCH
-as object:  project2/sample3/test_1.txt.zst
-
-
-a-put command line options:
+This tool is used to check if Allas already includes objects that would matching objects
+that a-put would create. This command can be use check the success of a data upload process
+done with a-put. Alternatively, the results can be used to list objects that need to be removed 
+or renamed, before uploading a new version of a dataset to Allas
+For example, if you have uploaded a directory to Allas using command:
+   a-put datadir/*
+You can use command:
+   a-check datadir/*
+To check if all the directories and files have corresponding objects in Allas.
+If you have defined a bucket with option -b, you must include this option
+in the a-check command too:
+  a-put -b 123_bukcet datadir/*
+Checking:
+  a-check -b 123_bukcet datadir/*   
+ 
+Note that the checking is done only based on the names of files, directories and objects.
+The contents of the files and objects are not checked!
+a-check command line options:
 
 -b, --bucket <bucket_name>  Define a name of the bucket into 
                             which the data is uploaded.

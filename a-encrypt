@@ -118,7 +118,7 @@ By default the object is encrypted with CSC public key only. The encrypted objec
 same bucket as the original object. Suffix: .c4gh is added to the object name.
 
 The main purpose of this tool is to make a file, uploaded to the Allas service, compatible with the 
-Sensitive data services of csc.
+Sensitive data services of CSC.
 
 Options:
 
@@ -146,7 +146,7 @@ Examples:
 
    a-encrypt project_12345_data/my_data.csv
 
-2. Make encrypted copies of all objects in buket  project_12345_data to bucket  project_12345_sd
+2. Make encrypted copies of all objects in bucket  project_12345_data to bucket  project_12345_sd
 
    a-encrypt project_12345_data --all --bucket project_12345_sd
    

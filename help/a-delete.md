@@ -2,7 +2,7 @@
  
 ```text
 This tool is used to remove data that has been uploaded to Allas service using the a-put command.
-The basic syntax of the comand is:
+The basic syntax of the command is:
 
    a-delete object_name
 
@@ -13,7 +13,7 @@ Options:
 
 -b --bucket                  Object name includes bucket name and the command does not try to use the default bucket names.
 
--u, --user <username>        Option allows you to assign a user account that is used to confoirm the object ownership.
+-u, --user <username>        Option allows you to assign a user account that is used to confirm the object ownership.
 
 -f, --force                  Don't ask confirmation when deleting a file
  

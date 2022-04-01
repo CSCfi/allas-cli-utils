@@ -301,7 +301,7 @@ done
 if [[ $print_help -eq 1 ]]; then
 cat <<EOF
 This tool is used to upload data from the disk environment 
-of CSC's supercomputers to Allas storage environmnet. 
+of CSC's supercomputers to Allas storage environment. 
 a-put can be used in other environments too.
 
 The basic syntax of the command is:
@@ -316,14 +316,7 @@ By default this tool performs following operations:
 2. In case of directory, the content of the directory is 
    collected into a single file (using tar command).
 
-3. By default option --compress (-c), is used. This means that 
-   the data is compressed using zstdmt command. This is the 
-   recommended way if you will be using the data only in 
-   CSC super computers. If you plan to use the uploaded dataset 
-   in other servers, where zstdmt compression may not be available, 
-   you can disable compression with option --nc (-n).
-
-4. By default the  data is uploaded to Allas using rclone command 
+3. By default the data is uploaded to Allas using rclone command 
    and swift protocol. S3 protocol is available too.
 
 NOTE! Data was compression with zstdmt command is no longer done by 
@@ -343,14 +336,14 @@ The default option is that data that locates in:
 In other cases the data uploaded to by default : username-poject_number-MISC
 
 For example for user kkaytaj belonging in project_201234, data 
-locatioing in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
+locating in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
 
 The compressed dataset will be stored as one object. The object 
 name depends on the file name and location. The logic used is that 
-the possible subdirectory path in Mahti or Puhti is included 
+the possible sub-directory path in Mahti or Puhti is included 
 in the object name. 
 
-E.g. a file called test_1.txt in scratch directroy of Puhti can be 
+E.g. a file called test_1.txt in scratch directory of Puhti can be 
 stored with commands:
 
    cd /scratch/project_201234
@@ -386,7 +379,7 @@ a-put command line options:
                             created.
 
 -S, --s3cmd                 Use S3 protocol in stead of swift protocol 
-                            for upoload.
+                            for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
                             (This is now the default mode thus this option is 
@@ -397,7 +390,7 @@ a-put command line options:
  
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a direcrory that will be used to store 
+-t, --tmpdir                Define a directory that will be used to store 
                             temporary files of the upload process.
 
 -s, --silent                Less output
@@ -419,20 +412,19 @@ a-put command line options:
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directtories 
-                            to be uploaded to Allas.
-                            Each item will be stored as one object.
+--input-list <list_file>    Give a file that lists the files or directories 
+                            to be uploaded to Allas. Each item will be stored as one object.
 
 -a, --asis                  Copy the given file or content of a directory to Allas
                             without compression and packing so that each file in the 
                             directory will be copied to Allas as an individual object.
-                            The object name contrains the relative path of the file to 
+                            The object name contains the relative path of the file to 
                             be copied. 
 
 --follow-links              When uploading a directory, include linked files as real files
-                            in sead of links.
+                            in stead of links.
 
--e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
+-e, --encrypt <method>      Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 

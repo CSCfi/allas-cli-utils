@@ -1,0 +1,219 @@
+#!/bin/bash 
+
+#function to check that swift works
+check_swift_connection () {
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then 
+       echo "No connection to Allas!"
+       echo "Please try setting the the connection again."
+       exit 1
+  else 
+     echo "swift connection OK" 
+  fi 
+}
+
+#Function to remove the trailing / if it exist
+remove_slash_from_ends(){
+path_string=$1
+if [[ ${path_string:(-1)} == "/" ]]; then
+    path_string=${path_string%/}
+fi
+
+if [[  ${path_string:0:1} == "/" ]]; then
+    tlen=${#path_string}
+    path_string=${path_string:1:tlen}
+fi
+
+echo $path_string
+}
+
+
+
+
+#default user
+user=($USER)
+
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+#inst_root=$(dirname $(readlink -f $0))
+source $inst_root/a_env_conf
+
+#local variables
+print_help=(0)
+os_project_name=("none")
+add_read_project=("")
+add_write_project=("")
+remove_read_project=("")
+remove_write_project=("")
+mode=("swift")
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in           
+             '--bucket' | '-b' )
+                  bucket=($2)             
+                  shift
+                  shift 
+              ;;
+              '-i' | '--id' )
+                  project_id="$2"
+                  shift
+                  shift
+                ;;
+               '--help' | '-h' )
+                  print_help=(1)
+                  shift
+                ;;
+             *)
+                   if [[ $bucket != "" ]]; then
+                      echo "unknown option: $1"
+                      echo "Bucket name to be used is $bucket"
+                      exit 1
+                   fi
+                   bucket=("$1")
+                   shift                       # No more switches
+                ;;
+    esac
+done
+   
+
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+
+By default, only project members can read and write the data in a bucket.
+Members of the project can grant read and write access to the bucket and 
+the objects it contains, for other Allas projects or make the bucket publicly
+accessible to the internet.
+
+allas-share-bucket tool gives the sepcified read and write permissions to
+the bucket defined for both SWIFT and S3 protocols. 
+
+Before running this command you need to setup the allas connenction 
+with commands:
+
+   module load allas
+   allas-conf --mode both -k 
+ 
+
+allas-share-bucket command needs three mandatory arguments:
+
+ -b, --bucket           The buckey to be shared
+
+ -p, --project          Name of the project for wich 
+                        the access will be garnted
+
+ -i, --id               ID of the project for wich
+                        the access will be garnted
+
+Note, that you need to define both the ID and the name of the target project.
+
+For example, to allow members of project: project_2001234 
+(id; 3dsd9wdjjd93kdkd9d4r ) to have read-only access to
+bucket: my_data_bucket you can use command:
+
+  a-access -p project_2001234 -i 3dsd9wdjjd93kdkd9d4r -b my_data_bucket
+
+The access permissions are set similarly to the corresponding _segments 
+bucket too.
+
+Note, that bucket listing tools don't show the bucket names of other projects,
+not even in cases were the project has read and/or write permissions to the bucket.
+
+For example in this case a user, belonging to project project_2001234, 
+don't see the my_data_bucket in the bucket list produced by command:
+  
+  a-list
+
+but the user can still list the contents of this bucket with command: 
+
+  a-list my_data_bucket
+
+
+EOF
+exit 0
+fi 
+
+#Check that bucket exists
+bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
+if [[ $bnrows -eq 0 ]]; then
+   echo "Bucket $bucket was not found in your current Allas project!"
+   echo "Trying to create the bucket"
+   rclone mkdir $bucket
+   bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
+   if [[ $bnrows -eq 0 ]]; then
+      echo "Bucket creation failed"
+      exit 1 
+   fi
+fi  
+
+
+
+#source $HOME/.allas_default
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+
+# check connection
+check_swift_connection 
+
+#set read permissions
+read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${project_id}:\*"/""/g )  
+read_acl="${project_id}:*,$read_acl"
+swift post "$bucket" -r "${read_acl}"
+
+bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
+if [[ $bnrows -eq 0 ]]; then  
+    echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
+    rclone mkdir "${storage_server}:${bucket}_segments"
+fi    
+swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
+
+
+#set write permissions
+write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${project_id}:\*"/""/g )  
+write_acl="${project_id}:*,$write_acl"
+swift post "$bucket" -w "${write_acl}"
+swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
+s3cmd setacl --recursive --acl-grant=all:${project_id} s3://${bucket}
+s3cmd setacl --recursive --acl-grant=all:${project_id} s3://${bucket}_segments
+
+
+echo "----------------------------------------------------------"
+echo "External projects that have read access to bucket $bucket:" 
+swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' | sed -e s/".r:\*"/"Public access"/g | sed -e s/".rlistings,"/""/g | sed -e s/".rlistings"/""/g | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
+echo "----------------------------------------------------------"
+echo "External projects that have write access to bucket $bucket:" 
+swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
+echo "----------------------------------------------------------"
+
+exit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

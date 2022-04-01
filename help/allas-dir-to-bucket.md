@@ -7,12 +7,12 @@ DESCRIPTION
 This tool is used to upload on content of a directory or a file to a bucket in
 Allas. Upload is done with rclone. 
 
-The upoload is done so that the content between the source directory in your local 
+The upload is done so that the content between the source directory in your local 
 computer and the target bucket in Allas is synchronized. This means that in addition to 
 copying data from the local directory to the bucket in Allas, the objects 
 in Allas, that don't match files in the local directory, are removed.
 
-Because of that you should mainly use this tool to upoload data to
+Because of that you should mainly use this tool to upload data to
 a new empty bucket in Allas. If the target bucket does not exist, it will be 
 automatically created.
  
@@ -31,7 +31,7 @@ You can also define source directory and target bucket with
 command line options.
 
 The files will be uploaded to the defined bucket and the object names 
-will include the source direcrtory name. For example if we have a directory
+will include the source directory name. For example if we have a directory
 "data1" containing files sample_1.dat and sample_2.dat, then command:
   
   allas-dir-to-bucket data1  p20001234_backup

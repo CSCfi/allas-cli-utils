@@ -134,9 +134,9 @@ Options:
 
 -d  --dir               List content so that  / -characters on object names are used to define a directory structure.
 
--l, --lh <project_ID>   Print out detaled listing of the bukects or objects in a bucket.
+-l, --lh <project_ID>   Print out detailed listing of the buckets or objects in a bucket.
 
--p, --prefix            List only objects startting with the given prefix
+-p, --prefix            List only objects starting with the given prefix.
 
 Related commands: a-put, a-get, a-delete, a-find
 

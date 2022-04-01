@@ -28,11 +28,13 @@ a-publish options:
 
  -b, --bucket       Use the defined bucket in stead of the default bucket name
  -o, --os_file      Define alternative name for the object that will be created  
- -i, --index        (static/dynamic).  By defaul a-publis creates a static index file that 
-                    includes the objects that are in the target bucket when the command is executed.
-                    With setting --index dynamic the command adds a javascript based index file to the
-                    bucket. With this option the index.html page lists the objects that are 
-                    available in the bucket in the time when this page is accessed. This dynamic indexing tool can list
+ -i, --index        (static/dynamic).  By default a-publish creates a static index 
+                    file that includes the objects that are in the target bucket when 
+                    the command is executed.
+                    With setting --index dynamic the command adds a javascript based 
+                    index file to the bucket. With this option the index.html page 
+                    lists the objects that are available in the bucket in the time when 
+                    this page is accessed. This dynamic indexing tool can list
                     only up to 1000 files.
  --input-list       List of files to be uploaded.    
  

@@ -59,7 +59,6 @@ input=""
 bucket_name=""
 user=$(whoami)
 print_help=0
-check_md5=0
 
 if [[ $# -lt 1 ]]; then
    print_help=1
@@ -84,7 +83,7 @@ do
                   shift
                   shift
               ;;
-              '--stream' | '-s' )
+              '--proc' | '-p' )
                   export MAX_PROCESSES=$2
                   shift
                   shift
@@ -96,10 +95,6 @@ do
                 ;;
                '-h' | '--help' )
                   print_help=1
-                  shift
-                ;;
-                '--md5' | '-m' )
-                   check_md5=1
                   shift
                 ;;
 
@@ -128,22 +123,22 @@ cat <<EOF
 
 DESCRIPTION
 
-This tool is used to upload on content of a directory or a file to a bucket in
+This tool is used to upload on content of a directory to a bucket in
 Allas. Upload is done with rclone. 
 
-The upload is done so that the content between the source directory in your local 
+The upoload is done so that the content detween the source directory in your local 
 computer and the target bucket in Allas is synchronized. This means that in addition to 
 copying data from the local directory to the bucket in Allas, the objects 
-in Allas, that don't match files in the local directory, are removed.
+in Allas, that don't match files in the local dierctory, are removed.
 
-Because of that you should mainly use this tool to upload data to
+Because of that you should mainly use this tool to upoload data to
 a new empty bucket in Allas. If the target bucket does not exist, it will be 
 automatically created.
  
 In Allas, files larger than 5 GiB will be stored as 5GiB segments. 
 This tool utilizes this segmentation to speed up the upload process 
 by uploading several segments of a large file simultaneously.
-Smaller files will be uploaded using normal rclone copy command.
+Smaller files will be uploaded using normal rclone sync command.
 
 USAGE
 
@@ -151,11 +146,11 @@ The basic syntax of the command is:
 
    allas-dir-to-bucket source-directory  target-bucket
 
-You can also define source directory and target bucket with 
+You can also define sourece directory and target bucket with 
 command line options.
 
 The files will be uploaded to the defined bucket and the object names 
-will include the source directory name. For example if we have a directory
+will include the source direcrtory name. For example is we have a directory
 "data1" containing files sample_1.dat and sample_2.dat, then command:
   
   allas-dir-to-bucket data1  p20001234_backup
@@ -174,23 +169,23 @@ COMMAND LINE OPTIONS
 
 allas-dir-to-bucket command line options:
 
--d, --directory' <dir_name> Name of the directory or file to be uploaded to Allas.
+-d, --directory' <dir_name> Name of the directory to be uploaded to Allas.
 
 -b, --bucket <bucket_name>  Define a name of the bucket into 
                             which the data is uploaded.
 
--s, --stream <number>         Number of simultaneous upload streams.
+-p, --proc <number>         Number of simultaneous uploade processes.
                             Default 4.
-
--m, --md5                   Check md5 sums of uploaded segments.
 
 -u, --user <csc-user-name>  Define username liked to the data to be uploaded
                             (default: current username).
 
 -h, --help                  Print this help.
+
+
+
  
 EOF
-
 fi
 
 
@@ -276,7 +271,6 @@ else
               echo ""
               echo "Removing old data"
               rclone delete ${storage_server}:${bucket_name}/${input}
-              rclone delete ${storage_server}:${bucket_name}_segments/${input}
            else
               exit
            fi
@@ -305,7 +299,7 @@ for file in $FILES_LARGE; do
     filesize=$(stat --printf="%s" $file)
     (( filesize_mb = filesize / 1000000 ))
     (( filesize_gb = filesize_mb / 1024 ))
-    start_time=$(date +%s)
+    stat_time=$(date +%s)
     echo ""
     echo "${fn}/${num_large_files} Uploading file $file ${filesize_gb}GiB."
     (( token_age = start_time - token_time ))
@@ -313,46 +307,25 @@ for file in $FILES_LARGE; do
        check_swift_connection 
        token_time=$start_time 
     fi 
-    # echo "start_time $start_time"
     # echo "concurrent_rclone_rcat.sh $file $bucket_name"
-    # Try 3 times to upload a large file
-    i=0
-    success=0
-    while [ $success -ne 1 ]; do  
-       concurrent_rclone_rcat.sh $file $bucket_name $check_md5
-       if [[ $? -ne 0 ]]; then
-         echo "Data upload failed!"
-       fi
-  
-      end_time=$(date +%s)
-      (( duration = end_time - start_time ))
-      (( speed = filesize_mb / duration ))
-      #check size of uploaded file
-      allas_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')     
-      allas_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')    
-      #echo allas_size  $allas_size
-      #echo allas_segments_size    $allas_segments_size
-      #echo filesize $filesize
-
-      if [[ $filesize -eq $allas_size && $allas_size -eq $allas_segments_size ]]; then
-          echo "Upload was done in ${duration}s. ( $speed MB/s )"
-          success=1
-      else
-         echo "Data upload failed!"
-         (( i = i + 1 ))
-         if [[ $i -gt 2 ]]; then
-            echo "Too many failed upload attempts"
-            failed_uploads=(${failed_uploads[@]} "$file")
-            success=1                       
-         else
-            echo "Retrying to upload $file"
-         fi
-         if [[  $file != "" ]]; then
-            rclone delete $RCLONE_DESTINATION:$bucket_name/$file
-            rclone delete $RCLONE_DESTINATION:${bucket_name}_segments/$file 
-         fi  
-      fi
-   done   
+    concurrent_rclone_rcat.sh $file $bucket_name 
+    if [[ $? -ne 0 ]]; then
+       echo "Data upload failed!"
+       exit 1
+    fi
+    end_time=$(date +%s)
+    (( duration = end_time - stat_time ))
+    (( speed = filesize_mb / duration ))
+    #check size of uploaded file
+    allas_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')     
+    allas_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')    
+    if [[ $filesize -eq $allas_size && $allas_size -eq $allas_segments_size ]]; then
+       echo "Upload was done in ${duration}s. ( $speed MB/s )"
+    else
+       echo "ERROR"
+       echo "Upload failed for $file !"
+       exit 1
+    fi   
 done
 
 # Upload the rest
@@ -366,17 +339,9 @@ ftype=$(file $input | awk '{print $NF}')
 if [[ $ftype == "directory" ]] ; then
    rclone --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
 else
+   echo 2
    rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input 
+   echo 3
 fi
  
 echo "DONE uploading ${1}"
-
-if [[ ${#failed_uploads[@]} -gt 0 ]]; then
-  echo "NOTE! Not all files were successfully uploaded!"
-  echo "Upload failed for following files:"
-  for value in "${failed_uploads[@]}"  
-  do
-       echo $value
-  done 
-
-fi
