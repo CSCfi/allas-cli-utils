@@ -1,11 +1,32 @@
 #Common settngs for a_ -tools
-storage_server="allas"
-local_host="$(hostname)"
-allas_log="/dev/null"
+storage_server=("allas")
+local_host=("puhti")
+allas_log=("/dev/udp/195.148.30.172/12201")
 
-#change here your allas_conf location
-allas_conf_path="/home/kkmattil/allas-cli-utils/allas_conf"
-max_size=500000000
+allas_conf_path=("/appl/opt/allas-cli-utils/allas_conf")
+max_size=5000000000
 max_files=100000
-#change here the directory that will be used for temporary files
-tmp_root="/tmp"
+
+
+tmp_root=$(csc-workspaces | grep "/scratch/" | tail -1 | awk '{print $1}')
+
+if [[ $OS_PROJECT_NAME != "" ]]; then
+   if [[ -e "/scratch/$OS_PROJECT_NAME" ]]; then
+       tmp_root="/scratch/$OS_PROJECT_NAME"
+   fi
+fi
+
+if [[ $tmp_root == "" ]];then
+    tmp_root=$(csc-workspaces | grep "/fmi/scratch" | tail -1 | awk '{print $1}')
+    # use tmp of not fmi-project
+    if [[ $tmp_root == "" ]];then
+        tmp_root="/tmp"
+    else
+      #in case of FMI project needs to be added to csc-workspaces result
+      fmiproject=$(groups | awk '{print $NF}')
+      tmp_root="$tmp_root"/"$fmiproject"
+    fi
+fi
+
+
+

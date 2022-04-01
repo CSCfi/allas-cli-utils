@@ -82,6 +82,7 @@ I addition to the above, A_ -tools requre:
 
 *   [rclone](https://rclone.org/) (1.48 or newer)
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
+*   [crypt4gh](https://crypt4gh.readthedocs.io/en/latest/)
 
 
 Example: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
@@ -92,6 +93,7 @@ sudo apt install python-pip python-dev
 sudo apt-get install python-setuptools
 pip install --upgrade pip
 pip install python-openstackclient
+pip install crypt4gh
 
 #install swift client
 sudo apt install python3-swiftclient
@@ -141,7 +143,8 @@ conda activate allas
 conda install -c conda-forge zstd python pip s3cmd
 pip install --upgrade setuptools
 pip install python-openstackclient
-pip install python-swiftclient    
+pip install python-swiftclient
+pip install crypt4gh
 source allas_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
 a-list
 
@@ -160,9 +163,9 @@ You can define the default settings that the a-tools use in two files: a_env_con
 
 ### 1. a_env_conf
 
-The file *a_env_conf*, that locates in the installation directory of _allas-cli-utils_, defines some installation specific settings.
-Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you may want to change if you
-do a local allas-cli-utils installation. You may for example change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
+The file *a_env_conf*, that locates in the installation directory of _allas-cli-utils_, defines some installation specific settings. Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you  want to change if you do a local allas-cli-utils installation. 
+_allas_conf_path_ should define the location of allas_conf script in your system.
+You may also want to change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
 
 ### 2. .a_tools_conf
 

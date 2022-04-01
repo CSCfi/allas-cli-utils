@@ -477,6 +477,7 @@ else
 	   if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:$object_name" | gpg -d >  $target_name
            elif [[  $encrypt == "crypt4gh" ]]; then
+             #echo "rclone cat ${storage_server}:$object_name  crypt4gh decrypt --sk $secret_key"
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
            else
              rclone -P copyto "${storage_server}:$object_name"  $target_name

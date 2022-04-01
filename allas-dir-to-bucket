@@ -366,9 +366,7 @@ ftype=$(file $input | awk '{print $NF}')
 if [[ $ftype == "directory" ]] ; then
    rclone --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
 else
-   echo 2
    rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input 
-   echo 3
 fi
  
 echo "DONE uploading ${1}"

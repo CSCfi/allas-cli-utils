@@ -42,6 +42,7 @@ options=("")
 dir_like=0
 long_listing=0
 silent=1
+all=0
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -70,9 +71,12 @@ do
                 dir_like=(1)
                 shift
              ;;
-
+             '--all' | '-a' )
+                all=1
+                shift
+             ;;
              '--help' | '-h' )
-                  print_help=(1)
+                  print_help=1
                   shift
                 ;;
              *)
@@ -90,7 +94,7 @@ do
                    #split bucket and object if needed
                    if [[ $bucket_name != $full_name ]]; then
                       prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)                      
-                      options=("$options -p $prefix_string ") 
+                      options="$options -p $prefix_string "
                    fi
                    shift                       # No more switches
                 ;;
@@ -105,7 +109,7 @@ if [[ $silent -eq 0 ]]; then
 fi 
 
 if [[ $mode == "s3cmd" ]];then
-    storage_server="s3allas"
+   storage_server="s3allas"
 fi
 
 #chek that we have a bucket only
@@ -132,7 +136,7 @@ Options:
 
 -l, --lh <project_ID>   Print out detaled listing of the bukects or objects in a bucket.
 
--p                      List only objects startting with the given prefix
+-p, --prefix            List only objects startting with the given prefix
 
 Related commands: a-put, a-get, a-delete, a-find
 
@@ -151,7 +155,7 @@ fi
 
 # run list command
 if [[ $dir_like -eq 1 ]]; then
-  #echo rclone lsf ${storage_server}:${full_name}
+  echo rclone lsf ${storage_server}:${full_name}
   rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
   exit 0
 fi
@@ -172,7 +176,11 @@ else
      fi
    else
      # listing in swift mode
-     swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+     if [[ all -eq 0 ]]; then
+        swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+     else
+        swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | awk '{print "'$bucket_name'/" $0}'
+     fi
    fi
 fi 
 exit 0

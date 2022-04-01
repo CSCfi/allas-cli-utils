@@ -7,6 +7,8 @@ dependencies:
   - python
   - pip
   - s3cmd
+  - rclone
+  - restic
   - pip:
     - python-openstackclient
     - python-swiftclient

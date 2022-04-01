@@ -115,7 +115,7 @@ The basic syntax of the command is:
 a-encryp command streams the object to the local computer where crypt4gh encryption is applied
 to the data stream. The encrypted data is then streamed back to Allas into a new object. 
 By default the object is encrypted with CSC public key only. The encrypted object is located to the
-same bukcet as the original object. Suffix: .c4gh is added to the object name.
+same bucket as the original object. Suffix: .c4gh is added to the object name.
 
 The main purpose of this tool is to make a file, uploaded to the Allas service, compatible with the 
 Sensitive data services of csc.
@@ -150,6 +150,7 @@ Examples:
 
    a-encrypt project_12345_data --all --bucket project_12345_sd
    
+EOF
 
 exit 0
 
