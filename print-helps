@@ -9,7 +9,8 @@ do
   echo '```text' >> help/${a}.md   
   $a --help >> help/${a}.md  
   echo '```' >> help/${a}.md 
-  echo "[${a}](./${a})" >>help/index.md
+  echo "[${a}](./${a}.md)" >>help/index.md
+  echo " ">>help/index.md
 done
 for a in $(ls -l allas-* | grep '\-x\.' | awk '{print $NF}'| grep -v "\.md" | grep -v token2token )
 do 
@@ -19,5 +20,6 @@ do
   echo '```text' >> help/${a}.md
   $a --help >> help/${a}.md
   echo '```' >> help/${a}.md
-  echo "[${a}](./${a})" >>help/index.md
+  echo "[${a}](./${a}.md)" >>help/index.md
+  echo " ">>help/index.md
 done
