@@ -1,5 +1,6 @@
 # a-info
  
+```text
 This tool is used to show information about a data object that has been uploaded to Allas service using the a-put command.
 The basic syntax of the comand is:
 

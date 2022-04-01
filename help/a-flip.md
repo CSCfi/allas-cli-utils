@@ -1,5 +1,6 @@
 # a-flip
  
+```text
 a-flip is a tool to make individual files temporaraily available in the internet.
 
 a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 

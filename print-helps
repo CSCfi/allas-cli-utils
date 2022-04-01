@@ -1,0 +1,18 @@
+for a in $(ls a-*)  
+do 
+  echo $a
+  echo '# '$a > help/${a}.md 
+  echo " " >> help/${a}.md 
+  echo '```text' >> help/${a}.md   
+  $a --help >> help/${a}.md  
+  echo '```' >> help/${a}.md 
+done
+for a in $(ls -l allas-* | grep '\-x\.' | awk '{print $NF}'| grep -v "\.md" | grep -v token2token )
+do 
+  echo $a
+  echo '# '$a > help/${a}.md
+  echo " " >> help/${a}.md
+  echo '```text' >> help/${a}.md
+  $a --help >> help/${a}.md
+  echo '```' >> help/${a}.md
+done

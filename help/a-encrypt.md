@@ -1,5 +1,6 @@
 # a-encrypt
  
+```text
 This tool is used to encrypt objects, that have already been uploaded to Allas.
 The basic syntax of the command is:
 

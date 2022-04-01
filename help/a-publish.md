@@ -1,5 +1,6 @@
 # a-publish
  
+```text
 
 a-publish copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
 uploaded data object can read and download the data with a web browser or tools like wget and curl. 
