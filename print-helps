@@ -1,3 +1,6 @@
+echo "# Currently available Allas tools" > help/index.md
+echo " ">>help/index.md
+
 for a in $(ls a-*)  
 do 
   echo $a
@@ -6,6 +9,7 @@ do
   echo '```text' >> help/${a}.md   
   $a --help >> help/${a}.md  
   echo '```' >> help/${a}.md 
+  echo "[${a}](./${a})" >>help/index.md
 done
 for a in $(ls -l allas-* | grep '\-x\.' | awk '{print $NF}'| grep -v "\.md" | grep -v token2token )
 do 
@@ -15,4 +19,5 @@ do
   echo '```text' >> help/${a}.md
   $a --help >> help/${a}.md
   echo '```' >> help/${a}.md
+  echo "[${a}](./${a})" >>help/index.md
 done
