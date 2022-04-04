@@ -6,7 +6,7 @@ The basic syntax of the command is:
 
    a-encrypt object_name
 
-a-encryp command streams the object to the local computer where crypt4gh encryption is applied
+a-encrypt command streams the object to the local computer where crypt4gh encryption is applied
 to the data stream. The encrypted data is then streamed back to Allas into a new object. 
 By default the object is encrypted with CSC public key only. The encrypted object is located to the
 same bucket as the original object. Suffix: .c4gh is added to the object name.
