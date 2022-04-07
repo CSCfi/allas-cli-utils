@@ -164,8 +164,9 @@ You can define the default settings that the a-tools use in two files: a_env_con
 ### 1. a_env_conf
 
 The file *a_env_conf*, that locates in the installation directory of _allas-cli-utils_, defines some installation specific settings. Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you  want to change if you do a local allas-cli-utils installation. 
-_allas_conf_path_ should define the location of allas_conf script in your system.
-You may also want to change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
+
+   * _allas_conf_path_ should define the location of _allas_conf_ script in your system.
+   * You may also want to change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
 
 ### 2. .a_tools_conf
 
