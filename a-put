@@ -279,7 +279,7 @@ do
                     encrypt="crypt4gh"
                     compression=0
                     sdx=1
-                    asis_mode=1
+
                     fnum=0                  
                  shift
                  ;;
@@ -431,10 +431,10 @@ a-put command line options:
 --sdx                       Upload data to Allas in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with 
                             crypt4gh using CSC public key after which the files are inported 
-                            to Allas as individual objects as in --asis format. 
+                            to Allas. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
-                            your-projecyt-number_SD-CONNECT,
+                            your-project-number_SD-CONNECT,
 
 
 Related commands: a-find, a-get, a-delete, a-info
@@ -466,6 +466,13 @@ fi
 #  fi
 #  source $HOME/.allas_default
 #fi
+
+# Check for object name - asis conflict
+if [[ $asis_mode -eq 1 ]] && [[ $tmp_file != "" ]]; then
+  echo "In asis-mode (-a, --asis) you can't use -o or --object to define object name"
+  echo "In asis mode the object name is always based on the original file name"
+  exit 1
+fi
 
 
 #Check if zstdmt is needed and available
