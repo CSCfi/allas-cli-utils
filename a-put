@@ -122,7 +122,7 @@ else
 fi
 
 
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd "$new"; fi;file=`pwd`/$(basename "$1");cd "$old";echo "$file"; }
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -872,7 +872,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       echo "  a-put --skip-filelist * "
       exit 1
     fi
-
+    num_files=$num_check
     #Print file list
     if [[ $num_check -gt 0 ]]; then
         #echo "find "$input" -type f -print0 | xargs -0 ls -l"
@@ -960,7 +960,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        if [[ $(file -b $input | grep -c directory ) -ne 1 ]]
        # Tiedosto hoituu linkillä
        then
-          ln -s ${file_path} ${tmp_dir}/$tmp_file
+          ln -s "${file_path}" "${tmp_dir}/$tmp_file"
        else
          #Hakeisto tar-pakettina      
          if [[ $silent -eq 0 ]] ; then
