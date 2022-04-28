@@ -90,6 +90,7 @@ source $inst_root/a_env_conf
 #local variables
 bucket_name="not_defined"
 fixed_bucket=0
+fixed_object=0
 tmp_file="not_defined"
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
@@ -143,6 +144,7 @@ do
                 ;;
              '--object' | '-o' )
                   tmp_file="$2"
+                  fixed_object=1
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
                      echo "Slash characters (/) are not allowed when object name is defiend with -o option" 
@@ -468,7 +470,7 @@ fi
 #fi
 
 # Check for object name - asis conflict
-if [[ $asis_mode -eq 1 ]] && [[ $tmp_file != "" ]]; then
+if [[ $asis_mode -eq 1 ]] && [[ $fixed_object -eq 1 ]]; then
   echo "In asis-mode (-a, --asis) you can't use -o or --object to define object name"
   echo "In asis mode the object name is always based on the original file name"
   exit 1
