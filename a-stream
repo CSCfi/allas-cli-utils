@@ -263,11 +263,8 @@ if [[ ${object_name:(-4):4} == ".tar" ]]; then
   is_compressed=(0)
 fi 
 
-<<<<<<< HEAD
 echo Object_name: $object_name >&2
 
-=======
->>>>>>> d0eb534418a5600f021f13a71e8fd3de95d83b25
 if [[ $target_name == "" ]];then 
    if [[ $is_tar_file -eq 1 ]]; then
       if [[ $is_compressed -eq 1 ]]; then
@@ -287,15 +284,8 @@ if [[ -n "$OS_PASSWORD" ]]; then
    source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
 fi
 
-<<<<<<< HEAD
-
 
 echo "Starting to stream data from $storage_server..." >&2
-
-=======
-echo "Starting to stream data from $storage_server..." >&2 
->>>>>>> d0eb534418a5600f021f13a71e8fd3de95d83b25
-
 
 
 if [[ $is_tar_file -eq 1 ]]; then
