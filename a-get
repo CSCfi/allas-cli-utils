@@ -176,7 +176,7 @@ then
   if [[ $test -lt 1 ]]
   then 
     echo "No connection to Allas!"
-    echo "Please try setting the the connection again."
+    echo "Please try setting up the connection again"
     echo "by running command:"
     echo ""
     echo "   source $allas_conf_path"

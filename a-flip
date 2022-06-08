@@ -66,7 +66,7 @@ The URL to the uploaded object is:
 
 https://a3s.fi/username-projectNumber-flip/object_name
 
-After uploading the file to the public flip bucket, it checks the the content of the bucket and
+After uploading the file to the public flip bucket, it checks up the content of the bucket and
 removes object that were uploaded more than two days ago. 
 
 EOF
@@ -83,7 +83,7 @@ then
   if [[ $test -lt 1 ]]
   then 
     echo "No connection to Allas!"
-    echo "Please try setting the the connection again."
+    echo "Please try setting up the connection again."
     exit 1
   fi
 else 
