@@ -314,9 +314,9 @@ You can use command:
 To check if all the directories and files have corresponding objects in Allas.
 If you have defined a bucket with option -b, you must include this option
 in the a-check command too:
-  a-put -b 123_bukcet datadir/*
+  a-put -b 123_bucket datadir/*
 Checking:
-  a-check -b 123_bukcet datadir/*   
+  a-check -b 123_bucket datadir/*   
  
 Note that the checking is done only based on the names of files, directories and objects.
 The contents of the files and objects are not checked!
