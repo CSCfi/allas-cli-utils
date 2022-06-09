@@ -289,7 +289,7 @@ echo "Starting to stream data from $storage_server..." >&2
 
 
 if [[ $is_tar_file -eq 1 ]]; then
-  echo "Tar files can't be steramed with a-stream" >&2
+  echo "Tar files can't be streamed with a-stream" >&2
   exit
 fi
      

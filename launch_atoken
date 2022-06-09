@@ -12,9 +12,9 @@ master_process=$1
 test=$(swift stat 2> /dev/null | grep -c "Account:")
 if [[ $test -lt 1 ]]
 then 
-  echo "Unable to launch active token process as there is no athenticated connection to Allas!"
-  echo "Please try setting the the connection again."
-  echo "by running command:"
+  echo "Unable to launch active token process as there is no authenticated connection to Allas!"
+  echo "Please try setting up the connection again"
+  echo "by running the command:"
   echo ""
   echo "   source /appl/opt/allas_conf"
   echo ""

@@ -14,7 +14,7 @@ Please kill your data transfer process (Ctrl-c) and try running the same command
 What you can do is first create a list of objects
 to be downloaded:
 ```text
-a-list your-bukcet | grep "some-regexp" > object_list
+a-list your-bucket | grep "some-regexp" > object_list
 ```
 And then use the list in a for loop
 ```text
