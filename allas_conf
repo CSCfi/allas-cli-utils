@@ -514,7 +514,7 @@ echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
 echo "user=$OS_USERNAME" >>  $HOME/.allas_default
 
 # unset variables unnecessary for token access or user/project info for the user
-# These need to be kept is you want to use openstack
+# These need to be kept if you want to use openstack
 if ! $keep_password; then
  unset OS_AUTH_URL
  unset OS_USER_DOMAIN_NAME

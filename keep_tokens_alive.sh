@@ -1,16 +1,16 @@
-#!/bin/bash 
+#!/bin/bash
 
 #
 # this script keeps allas tokens fresh
-# 
+#
 
 if [[ $1 == "" ]]; then
   echo "Please give encryption password as the first argument"
-fi 
+fi
 
-if [[ $2 == "" ]]; then  
+if [[ $2 == "" ]]; then
   echo "Please give file name for encrypted token as the second argument"
-fi 
+fi
 
 
 
@@ -33,13 +33,13 @@ echo "testing connection"
 #Check that we have a valid token
 test=$(swift stat 2> /dev/null | grep -c "Account:")
 if [[ $test -lt 1 ]]
-then 
+then
   echo "No connection to Allas!"
-  echo "Please try setting the the connection again."
+  echo "Please try setting up the connection again."
   echo "by running command:"
   echo ""
   echo "   source /appl/opr/allas_conf"
-  exit 1 
+  exit 1
 else
   echo "connection OK"
 fi
@@ -49,17 +49,16 @@ old_token=$OS_AUTH_TOKEN
 # refresh current tokens
 while [[ $sofar -lt $limit ]];
 do
-  
 
-  if [ -n "$master_process" ]; then 
+  if [ -n "$master_process" ]; then
     if ps -p $master_process > /dev/null
-    then 
+    then
       echo "master process running"
     else
       rm -f ${fname} ${fname}_proc
       exit 0
     fi
-  fi 
+  fi
 
   new_token=$(allas-token2token $old_token)
   old_token=$new_token
@@ -72,7 +71,6 @@ do
   # echo "OS_AUTH_TOKEN  updated in ${fname}"
 
   sleep $interval
-  
   (( sofar = sofar + $interval ))
 
 done
