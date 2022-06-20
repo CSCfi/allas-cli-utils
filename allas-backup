@@ -34,15 +34,20 @@ fi
 while [[ $# -ge 1 ]]
 do
   case "$1" in
+              '-b' | '-bucket')
+                bucket_name="$2"
+                shift
+                shift
+                ;;
               '-repo')
                 repository=$2
                 shift
                 shift
               ;;
-               '-project')
-                  os_project_name=($2)
-                  shift
-                  shift
+              '-project')
+                os_project_name=($2)
+                shift
+                shift
               ;;
                '-path')
                 options=("$options --path $2")
@@ -135,6 +140,11 @@ allas-backup can be used for following five operations:
 
   allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
 
+  Extra options:
+ 
+  -b, -bucket                        Use specific bucket for your repsotory. Note that this makes
+                                     Allas-backup to use diffrent separate repository in stead of
+                                     the default one.
 
 EOF
 exit 0
@@ -159,9 +169,6 @@ then
    exit 1
 fi
 
-project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
-bucket_name=("${project_label}-BACKUP")
-repository=("swift:${bucket_name}:/backup")
 
 if [[ ! -e $HOME/.backup_passwd_${project_label} ]]
 then
@@ -237,7 +244,7 @@ fi
 if [[ $task == "delete" ]]
 then
   if [[ $input == "" ]]; then
-     echo "No snapshotname defined. Please give the snapshot name as a command line argumnet."
+     echo "No snapshot name defined. Please give the snapshot name as a command line argumnet."
      echo ""
      exit 1
   fi
