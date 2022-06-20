@@ -36,6 +36,7 @@ do
   case "$1" in
               '-b' | '-bucket')
                 bucket_name="$2"
+                repository=("swift:${bucket_name}:/backup")
                 shift
                 shift
                 ;;
