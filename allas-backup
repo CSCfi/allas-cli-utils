@@ -181,8 +181,8 @@ fi
 
 
 #check if restic repository already exists
-#echo "restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots"
-snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots 2> /dev/null | wc -l)
+#snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots 2> /dev/null | wc -l)
+snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} check 2> /dev/null | grep -c "no errors were found")
 if [[ $snum -lt 1 ]]
 then
    restic init --repo $repository -p $HOME/.backup_passwd_${project_label} $options
