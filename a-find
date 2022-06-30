@@ -87,7 +87,7 @@ done
 # note about customization
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
-     echo "Customer settings red from $HOME/.a_tools_conf"
+     echo "Customer settings read from $HOME/.a_tools_conf"
    fi
 fi
 

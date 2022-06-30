@@ -1,7 +1,7 @@
 # a-flip
  
 ```text
-a-flip is a tool to make individual files temporary available in the internet.
+a-flip is a tool to make individual files temporary available to the internet.
 
 a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
 uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*. 
@@ -18,7 +18,7 @@ The URL to the uploaded object is:
 
 https://a3s.fi/username-projectNumber-flip/object_name
 
-After uploading the file to the public flip bucket, it checks the the content of the bucket and
+After uploading the file to the public flip bucket, it checks the content of the bucket and
 removes object that were uploaded more than two days ago. 
 
 ```

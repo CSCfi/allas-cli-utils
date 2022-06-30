@@ -55,7 +55,7 @@ Some segments are missing?"
            echo $m
          fi
          if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
-local m="ERROR. Total size of segments ${segsizes[0]} is more that original file size ${segsizes[1]}.
+local m="ERROR. Total size of segments ${segsizes[0]} is more than original file size ${segsizes[1]}.
 Check the segments bucket ${segments_bucket} for object ${check_object}."
            echo $m
          fi
@@ -449,7 +449,7 @@ fi
 # note about customization 
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
-     echo "Customer settings red from $HOME/.a_tools_conf"
+     echo "Customer settings read from $HOME/.a_tools_conf"
    fi
 fi 
 
@@ -817,8 +817,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          echo ""
          echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
          echo "You can add option: --override to your command line, if you want to overwrite the object alrady existing in Allas."
-         echo "Aternatrively, you can define different bucket name using option --bucket "
-         echo "or define different object name with option --object"
+         echo "Alternatively, you can define a different bucket name using the option --bucket "
+         echo "or define different object name with the option --object"
          exit 1
       fi
     fi

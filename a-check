@@ -55,7 +55,7 @@ Some segments are missing?"
            echo $m
          fi
          if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
-local m="ERROR. Total size of segments ${segsizes[0]} is more that original file size ${segsizes[1]}.
+local m="ERROR. Total size of segments ${segsizes[0]} is more than original file size ${segsizes[1]}.
 Check the segments bucket ${segments_bucket} for object ${check_object}."
            echo $m
          fi
@@ -333,7 +333,7 @@ a-check command line options:
                             created.
 
 -S, --s3cmd                 Use S3 protocol in stead of swift protocol
-                            for upoload.
+                            for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
                             (This is now the default mode thus this option is
@@ -402,7 +402,7 @@ fi
 # note about customization
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
-     echo "Customer settings red from $HOME/.a_tools_conf"
+     echo "Customer settings read from $HOME/.a_tools_conf"
    fi
 fi
 

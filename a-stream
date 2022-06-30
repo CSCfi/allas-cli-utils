@@ -189,7 +189,7 @@ then
   if [[ $num_buckets -gt 1 ]]; then
      echo "" >&2
      echo "Object $object_name was found in several buckets!" >&2
-     echo "Please ionclude bucket name in the object name" >&2
+     echo "Please include bucket name in the object name" >&2
      exit 1
   fi
   
@@ -241,7 +241,7 @@ if [[ ${object_name:(-4):4} == ".zst" ]]; then
   #check if zstdmt is available
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
       echo ""  >&2     
-      echo "The data object you are trying to retrteve is compressed" >&2
+      echo "The data object you are trying to retrieve is compressed" >&2
       echo "with program: zstdmt that is not found in this server!" >&2
       echo "" >&2
       echo "Please install and add zstdmt to your command path." >&2
