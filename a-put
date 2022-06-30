@@ -14,7 +14,7 @@ check_swift_connection () {
   
     if [[ $test -lt 1 ]]
     then 
-        echo "No connection to Allas!"
+        Echo "No connection to Allas!"
         echo "Please try setting up the connection again."
         exit 1
     else 

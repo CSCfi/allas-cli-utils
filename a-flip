@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 
 #default user
@@ -51,9 +51,9 @@ if [ $print_help -eq 1 ]; then
 cat <<EOF
 a-flip is a tool to make individual files temporary available in the internet.
 
-a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
-uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*. 
-a-flip works mostly like a-publish but there are some differences: 
+a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the
+uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*.
+a-flip works mostly like a-publish but there are some differences:
 1) only the pre-defined bucket name ( _username-projectNumber_-flip ) can be used
 2) When the command is executed it automatically deletes objects that are oldes than two days
 
@@ -67,13 +67,13 @@ The URL to the uploaded object is:
 https://a3s.fi/username-projectNumber-flip/object_name
 
 After uploading the file to the public flip bucket, it checks up the content of the bucket and
-removes object that were uploaded more than two days ago. 
+removes object that were uploaded more than two days ago.
 
 EOF
 
-exit 
+exit
 
-fi 
+fi
 
 #Check if connection works
 if [[ $mode == "swift" ]]
@@ -81,12 +81,12 @@ then
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
-  then 
+  then
     echo "No connection to Allas!"
     echo "Please try setting up the connection again."
     exit 1
   fi
-else 
+else
   echo "a-flip is available only in swift mode"
 fi
 
@@ -109,19 +109,19 @@ bucket_name=("${user}-${project_label}-flip")
 mkdir $tmp_dir
 
 for input in $input_def
-do 
+do
   echo "Processing: $input"
   if [ ! -e $input ] ; then
     echo "File: $input does not exist!"
     exit 1
   fi
-  
+
   if [[ $(file -b $input | grep -c directory ) -eq 1 ]]
   then
     echo "This command can only be used to publish files, not directories."
     exit 1
   fi
- 
+
   #check that file name does not end with _ameta
   if [[ ${input:(-5):5} == "_ameta" ]]; then
     echo "Found a file/directoryname which ends with _ameta"
@@ -144,7 +144,7 @@ do
   fi
 
 
-  #Check if stored file already exitst 
+  #Check if stored file already exitst
   #echo "rclone ls ${storage_server}:${bucket_name}/$tmp_file"
 
   if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
@@ -153,7 +153,7 @@ do
     echo "A file/directory with the same name has already been uploaded into"
     echo "bucket $bucket_name in $storage_server"
     echo ""
-    rclone lsl ${storage_server}:${bucket_name}/$tmp_file  
+    rclone lsl ${storage_server}:${bucket_name}/$tmp_file
     echo ""
     echo "Do you wish to overwrite the existing old object? [y/n]"
     read overwrite_old
@@ -170,19 +170,19 @@ do
   echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
   echo ""
   ls -l $input >>  ${tmp_dir}/${tmp_file}_ameta
-  
+
   if [[ $tot_size -gt $max_size ]]
-  then 
+  then
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir} 
+    rmdir ${tmp_dir}
     exit 1
-  fi 
+  fi
 
 #  if [[ $tot_size -gt $free_space ]]
-#  then 
+#  then
 #    echo "There is not enough space for the temporary files."
 #    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
 #    echo "Available free space is ${free_space}K"
@@ -201,7 +201,7 @@ do
   if [ $mode == "swift" ]
   then
     # For less than 5GB files rclone is used for uploading
-    
+
     echo "Uploading data to allas."
     # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
     rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}
@@ -209,9 +209,9 @@ do
     if [ $exitcode -ne 0 ]; then
        echo ""
        echo "File upload for $infile failed"
-     
+
        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
-       rm -f ${tmp_dir}/$tmp_file 
+       rm -f ${tmp_dir}/$tmp_file
        rm -f ${tmp_dir}/${tmp_file}_ameta
        rmdir ${tmp_dir}
        exit 1
@@ -221,17 +221,17 @@ do
     if [[ $tot_size -lt 5000000 ]]
     then
        echo "Confirming upload..."
-       #checksums for local and allas files 
+       #checksums for local and allas files
        sum1=($(md5sum ${tmp_dir}/$tmp_file))
        sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
- 
-       #check is cheksums match 
+
+       #check is cheksums match
        if [[ ${sum1[0]} !=  ${sum2[0]} ]]
-       then 
+       then
          echo "Upload of $input was not successfull!"
          echo "Cleaning the failed upload"
          rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
-         rm -f ${tmp_dir}/$tmp_file 
+         rm -f ${tmp_dir}/$tmp_file
          rm -f ${tmp_dir}/${tmp_file}_ameta
          rmdir ${tmp_dir}
          exit 1
@@ -247,14 +247,14 @@ do
   #update metadata
   echo ""
   echo "Adding metadata for uploaded $input"
-  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}" 
+  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
   rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
-  
+
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
   echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
- 
+
   tmp_file=("not_defined")
 
 done
@@ -262,7 +262,7 @@ done
 #Clean old files from flip bucket
 
 for ameta_name in $(rclone lsl ${storage_server}:${bucket_name} | grep "_ameta$" | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
-do 
+do
   #  echo "removing: ${object_name}."
   #remove ameta file
   rclone deletefile ${storage_server}:${bucket_name}/${ameta_name}
@@ -274,7 +274,7 @@ done
 
 echo '<html>' >  ${tmp_dir}/index.html
 for i in $(swift list $bucket_name | grep -v '_ameta$' )
-do 
+do
 echo '<li><a href="'$i'">'$i'</a></li>' >> ${tmp_dir}/index.html
 done
 echo '</html>' >>  ${tmp_dir}/index.html

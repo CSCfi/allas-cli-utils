@@ -10,6 +10,7 @@
 
 # $1 is the location to be copied, $2 is the destination container
 
+# TODO: Check if 500k file limit in bucket is exceeded 
 
 #function to check that swift works
 check_swift_connection () {

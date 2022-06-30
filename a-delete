@@ -1,31 +1,31 @@
-#!/bin/bash 
+#!/bin/bash
 
 #function to check that swift works
 check_swift_connection () {
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
-    
+
     if [[ $test -lt 1 ]]
-    then 
-      if [[ -n "$OS_PASSWORD" ]]; then 
-        if  [[ $silent -eq 0 ]] ; then     
+    then
+      if [[ -n "$OS_PASSWORD" ]]; then
+        if  [[ $silent -eq 0 ]] ; then
           echo "Updating token"
         fi
-        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f 
+        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f
       fi
       #test=$(swift stat 2> /dev/null | grep -c "Account:")
-      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l) 
+      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
       if [[ $test -lt 1 ]]
-      then 
+      then
          echo "No connection to Allas!"
          echo "Please try setting up the connection again."
          exit 1
       else
          echo "swift connection updated"
     fi
-  else 
-     echo "swift connection OK" 
-  fi 
+  else
+     echo "swift connection OK"
+  fi
 }
 
 
@@ -136,15 +136,15 @@ The basic syntax of the command is:
 
 Options:
 
--p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project.
 
 -b --bucket                  Object name includes bucket name and the command does not try to use the default bucket names.
 
 -u, --user <username>        Option allows you to assign a user account that is used to confirm the object ownership.
 
 -f, --force                  Don't ask confirmation when deleting a file
- 
---rmb                        Remove empty bucket. 
+
+--rmb                        Remove empty bucket.
 
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
@@ -152,7 +152,7 @@ Options:
 Related commands: a-put, a-get, a-find, a-info
 EOF
 exit
-fi 
+fi
 
 #
 if [[ $defined_user != "x" ]]; then
@@ -184,7 +184,7 @@ if [[ $remove_bucket -eq 1 ]]; then
      if [[ $force -eq 1 ]]; then
         if [[ $object_name != "" ]]; then
            rclone rmdir ${storage_server}:"$object_name"
-           #swift delete "$object_name"  
+           #swift delete "$object_name"
         fi
      fi
      if [[ $force -eq 0 ]]; then
@@ -192,9 +192,9 @@ if [[ $remove_bucket -eq 1 ]]; then
         echo "Are you sure want to remove bucket:"
         echo $object_name
         echo "[y/n]"
-        read ansver
-        if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
-           rclone rmdir ${storage_server}:"$object_name" 
+        read answer
+        if [[ $answer == "y" ]] || [[ $answer == "yes" ]]; then
+           rclone rmdir ${storage_server}:"$object_name"
            #swift delete ${object_name}
            echo "${object_name} was deleted."
         else
@@ -215,10 +215,10 @@ if [ $check_os -ne 1 ]; then
   #  echo "Did you mean this object:"
   #  echo "  $objects"
   #fi
-  #if  [ ${#objects[@]} -gt 1 ]; then   
+  #if  [ ${#objects[@]} -gt 1 ]; then
   #  echo "Did you mean some of these objects:"
   #  for on in ${objects[@]}
-  #  do 
+  #  do
   #      echo "  $on"
   #  done
   #fi
@@ -227,7 +227,7 @@ if [ $check_os -ne 1 ]; then
     echo "   a-find $object_name"
   fi
   exit 1
-else 
+else
   object_with_bucket=(1)
 fi
 
@@ -236,21 +236,21 @@ fi
 # check if object name contains bucket (if not defined with bucket)
 if [[ $object_with_bucket == 0 ]]; then
   if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-MISC")
   fi
   if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-HOME")
   fi
   if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-HOME")
   fi
-fi 
+fi
 
 # check all buckets if the bucket is not deifned
 if [ $object_with_bucket == 0 ]
@@ -260,7 +260,7 @@ then
 
   # go through the buckets
   for bn in $buckets
-  do 
+  do
     bucket_found=$(rclone ls ${storage_server}:$bn/$object_name 2> /dev/null | wc -l)
     if [ $bucket_found -eq 1 ]; then
        echo "Bucket: $bn contains object:$object_name"
@@ -268,7 +268,7 @@ then
       bucket=("$bn")
     fi
   done
-  
+
   if [[ $num_buckets -eq 0 ]]; then
      echo ""
      echo "Could not find object: $object_name "
@@ -277,10 +277,10 @@ then
   if [[ $num_buckets -gt 1 ]]; then
      echo ""
      echo "Object $object_name was found in several buckets!"
-     echo "Please ionclude bucket name in the object name"
+     echo "Please include bucket name in the object name"
      exit 1
   fi
-  
+
   #add bucket to the object name
   object_name=("$bucket/$object_name")
 else
@@ -293,8 +293,8 @@ else
      echo "You can list all the available objects with command:"
      echo "   a-find"
   fi
-fi 
-   
+fi
+
 ameta_found=$(rclone ls ${storage_server}:/"${object_name}_ameta" 2> /dev/null | wc -l)
 if [ $ameta_found -eq 1 ]; then
    object_owner=$(rclone cat ${storage_server}:/"${object_name}_ameta" |grep "^user:" | awk '{print $2}')
@@ -302,10 +302,10 @@ if [ $ameta_found -eq 1 ]; then
    if [[ $user != $object_owner ]]; then
      echo ""
      echo "Your username ($user) is not matching to the username assigned to the object ($object_owner)"
-     echo "You can use option -user to enforce the deteltion tool to use aspecific user name" 
+     echo "You can use option -user to enforce the deletion tool to use a specific user name"
      echo "${object_name} was not deleted"
      exit 1
-   fi  
+   fi
 fi
 
 #remove object
@@ -319,8 +319,8 @@ else
   echo "Are you sure want to remove object:"
   echo $object_name
   echo "[y/n]"
-  read ansver
-  if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then 
+  read answer
+  if [[ $answer == "y" ]] || [[ $answer == "yes" ]]; then
      rclone deletefile ${storage_server}:/"${object_name}"
      if [ $ameta_found -eq 1 ]; then
        rclone deletefile ${storage_server}:/"${object_name}_ameta"
@@ -332,29 +332,4 @@ else
 fi
 
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

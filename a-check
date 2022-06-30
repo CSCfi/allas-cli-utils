@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 #function to check that swift works
 check_swift_connection () {
@@ -11,15 +11,15 @@ check_swift_connection () {
     fi
 
     test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  
+
     if [[ $test -lt 1 ]]
-    then 
+    then
         echo "No connection to Allas!"
         echo "Please try setting up the connection again."
         exit 1
-    else 
-       echo "swift connection OK" 
-    fi 
+    else
+       echo "swift connection OK"
+    fi
 }
 
 #Function to remove the trailing / if it exist
@@ -117,7 +117,7 @@ max_files=100000
 if [[ -e $HOME/.a_tools_conf ]]; then
    customized=1
    source $HOME/.a_tools_conf
-else 
+else
    customized=0
 fi
 
@@ -145,7 +145,7 @@ do
                   tmp_file="$2"
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
-                     echo "Slash characters (/) are not allowed when object name is defiend with -o option" 
+                     echo "Slash characters (/) are not allowed when object name is defiend with -o option"
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
@@ -163,7 +163,7 @@ do
              '--compress' | '-c')
                   compression=1
                   shift
-                ;;              
+                ;;
              '--nc' | '-n' )
                   compression=0
                   free_space_check=0
@@ -184,7 +184,7 @@ do
                 ;;
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
-                  tmp_dir=("${tmp_root}/a_put_$$_tmp")  
+                  tmp_dir=("${tmp_root}/a_put_$$_tmp")
                   shift
                   shift
                 ;;
@@ -203,15 +203,15 @@ do
                '--input-list')
                   list_file=$2
                   if [[ -e $list_file ]];then
-                    input_def=("$(cat $list_file)")                
-                  else  
+                    input_def=("$(cat $list_file)")
+                  else
                     echo "Import file list $list_file not found"
-                    exit 1  
-                  fi 
+                    exit 1
+                  fi
                   shift
                   shift
                 ;;
-                '--asis' | '-a' )               
+                '--asis' | '-a' )
                    compression=0
                    free_space_check=0
                    asis_mode=1
@@ -222,16 +222,16 @@ do
                    meta_message=$2
                   shift
                   shift
-                ;;        
-                 
+                ;;
+
                  '--no-ameta')
                     include_ameta=0
                     shift
-                 ;;                 
+                 ;;
                  '--follow-links' )
                  tar_extra_options="-h"
                  shift
-                 ;;               
+                 ;;
                  '-e' | '--encrypt' )
                  if [[ $2 == "c4gh" || $2 == "crypt4gh" ]];then
                     if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -241,7 +241,7 @@ do
 		       exit 1
 		    fi
                     encrypt="crypt4gh"
-                 fi         
+                 fi
                  if [[ $2 == "gpg" ]];then
                     if [[ $(which  gpg 2> /dev/null | wc -l ) -ne 1 ]];then
 	         	 echo ""
@@ -251,20 +251,20 @@ do
 		    fi
                     encrypt="gpg"
                  fi
-                 shift                          
+                 shift
                  shift
                  ;;
                  '--pk' | '--public-key' )
                  # query file
                  public_key=$(abspath "$2")
-                 if [[ -e $public_key ]];then 
+                 if [[ -e $public_key ]];then
                     echo Public key: "$public_key"
                     all_keys=$(echo -en  "$all_keys\t--recipient_pk\t$public_key\t")
                     echo $all_keys
                  else
                     echo "Public key $public_key not found"
-                    exit 1  
-                 fi 
+                    exit 1
+                 fi
                  shift
                  shift
                  ;;
@@ -280,7 +280,7 @@ do
                     compression=0
                     sdx=1
                     asis_mode=1
-                    fnum=0                  
+                    fnum=0
                  shift
                  ;;
 
@@ -305,7 +305,7 @@ cat <<EOF
 
 This tool is used to check if Allas already includes objects that would matching objects
 that a-put would create. This command can be use check the success of a data upload process
-done with a-put. Alternatively, the results can be used to list objects that need to be removed 
+done with a-put. Alternatively, the results can be used to list objects that need to be removed
 or renamed, before uploading a new version of a dataset to Allas
 For example, if you have uploaded a directory to Allas using command:
    a-put datadir/*
@@ -316,35 +316,35 @@ If you have defined a bucket with option -b, you must include this option
 in the a-check command too:
   a-put -b 123_bucket datadir/*
 Checking:
-  a-check -b 123_bucket datadir/*   
- 
+  a-check -b 123_bucket datadir/*
+
 Note that the checking is done only based on the names of files, directories and objects.
 The contents of the files and objects are not checked!
 a-check command line options:
 
--b, --bucket <bucket_name>  Define a name of the bucket into 
+-b, --bucket <bucket_name>  Define a name of the bucket into
                             which the data is uploaded.
 
--p, --project <project_ID>  Upload data into buckets of the defined 
-                            project in stead of the currently 
+-p, --project <project_ID>  Upload data into buckets of the defined
+                            project in stead of the currently
                             configured project.
 
--o, --object <object_name>  Define a name for the new object to be 
+-o, --object <object_name>  Define a name for the new object to be
                             created.
 
--S, --s3cmd                 Use S3 protocol in stead of swift protocol 
+-S, --s3cmd                 Use S3 protocol in stead of swift protocol
                             for upoload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
-                            (This is now the default mode thus this option is 
+                            (This is now the default mode thus this option is
                             no longer needed).
 
 -c, --compress              The data is compressed using zstdmt command before
-                            upload. 
- 
+                            upload.
+
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a direcrory that will be used to store 
+-t, --tmpdir                Define a direcrory that will be used to store
                             temporary files of the upload process.
 
 -s, --silent                Less output
@@ -352,29 +352,29 @@ a-check command line options:
 -u, --user                  Define username liked to the data to be uploaded
                             (default: current username)
 
---skip-filelist             Do not collect information about the files that 
+--skip-filelist             Do not collect information about the files that
                             the object contains to the metadata file.
-                            Using this option speeds up the upload process 
-                            significantly if the directory to be uploaded 
-                            contains large amount of files. However, a-find 
+                            Using this option speeds up the upload process
+                            significantly if the directory to be uploaded
+                            contains large amount of files. However, a-find
                             can't be used to locate objects uploaded this way.
 
---no-ameta                  Don't create metadata objects ( _ameta ) for the 
+--no-ameta                  Don't create metadata objects ( _ameta ) for the
                             stored data objects.
 
 -m, --message "your notes"  Add a one line text note to the metadata object.
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directtories 
+--input-list <list_file>    Give a file that lists the files or directtories
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 
 -a, --asis                  Copy the given file or content of a directory to Allas
-                            without compression and packing so that each file in the 
+                            without compression and packing so that each file in the
                             directory will be copied to Allas as an individual object.
-                            The object name contrains the relative path of the file to 
-                            be copied. 
+                            The object name contrains the relative path of the file to
+                            be copied.
 
 --follow-links              When uploading a directory, include linked files as real files
                             in sead of links.
@@ -384,9 +384,9 @@ a-check command line options:
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
-                            the CSC Sensitive data services: The files are encrypted with 
-                            crypt4gh using CSC public key after which the files are inported 
-                            to Allas as individual objects as in --asis format. 
+                            the CSC Sensitive data services: The files are encrypted with
+                            crypt4gh using CSC public key after which the files are inported
+                            to Allas as individual objects as in --asis format.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-projecyt-number_SD-CONNECT,
@@ -395,18 +395,18 @@ a-check command line options:
 Related commands: a-find, a-get, a-delete, a-info
 EOF
 
-exit 
+exit
 
-fi 
+fi
 
-# note about customization 
+# note about customization
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
      echo "Customer settings red from $HOME/.a_tools_conf"
    fi
-fi 
+fi
 
-##Assign project to be used if not defined 
+##Assign project to be used if not defined
 #if [[ $os_project_name == "" ]]
 #then
 #  if [ -e $HOME/.allas_default ]
@@ -441,7 +441,7 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
 fi
 
 # s3cmd mode
-if [[ $mode == "s3cmd" ]]; then 
+if [[ $mode == "s3cmd" ]]; then
    storage_server="s3allas"
 fi
 
@@ -469,7 +469,7 @@ if [[ $asis_mode -eq 1 ]];then
       exit 1
    fi
    #For field separator changed to allow spaces in file names
-   #IFS contains the default field separator  
+   #IFS contains the default field separator
    SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
    IFS=$(echo -en "\t\n\b")
@@ -482,8 +482,8 @@ if [[ $asis_mode -eq 1 ]];then
           echo "Input definiton: $one_input_def"
           echo "dot't return any files to input"
           exit 1
-   fi   
-fi   
+   fi
+fi
 
 mkdir $tmp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
@@ -494,9 +494,9 @@ do
   ##Check if connection works and update if needed and possible
   # if [[ $mode == "swift" ]]
   #then
-  #  if [[ $silent -eq 0 ]] ; then 
-  #    check_swift_connection 
-  #  else 
+  #  if [[ $silent -eq 0 ]] ; then
+  #    check_swift_connection
+  #  else
   #    check_swift_connection > /dev/null
   #  fi
   #fi
@@ -508,7 +508,7 @@ do
   if [[ ! -e $input ]] ; then
     echo "File or directory $input does not exist!"
     exit 1
-  fi 
+  fi
 
   #Remove the trailing / if it exist
   if [ $(echo -n $input | tail -c 1) == "/" ]
@@ -516,7 +516,7 @@ do
     sl=$(expr ${#input} - 1)
     input=$(echo $input | cut -c 1-$sl)
   fi
- 
+
   #check that file name does not end with _ameta
   if [[ ${input:(-6):6} == "_ameta" ]]; then
     echo "Found a file/directory name which ends with _ameta"
@@ -541,7 +541,7 @@ do
     then
        if [[ $compression -eq 1 ]]; then
           tmp_file=($(basename "$input" | tr " " "_" )".zst")
-       else 
+       else
           tmp_file=($(basename "$input" | tr " " "_" ))
        fi
     else
@@ -558,22 +558,22 @@ do
        if [[ $compression -eq 1 ]]; then
           if [[ ${tmp_file: -4} != ".zst" ]]; then
                tmp_file="${tmp_file}.zst"
-          fi 
+          fi
        fi
     else
        if [[ $compression -eq 1 ]]; then
-         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then 
+         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then
            tmp_file="${tmp_file}.tar.zst"
          fi
        else
-         if [[ ${tmp_file: -4} != ".tar" ]]; then     
+         if [[ ${tmp_file: -4} != ".tar" ]]; then
             tmp_file="${tmp_file}.tar"
          fi
        fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
    fi
   fi
-  
+
   # encryption name includes gpg
   if [[ $encrypt == "gpg" ]];then
      tmp_file="${tmp_file}.gpg"
@@ -596,7 +596,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
      fi
   fi
- 
+
 
   #In case of asis-upload, partial_path is the relative path
   if [[ $asis_mode -eq 1 ]]; then
@@ -626,7 +626,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $bucket_name == "not_defined" ]]; then
      #default
      bucket_name=("${user}-${project_label}-MISC")
-           
+
      ## Puhti and Mahti
      # In Puhti and Mahti we check if puhti-project and Allas project match
      #Puhti scratch
@@ -689,7 +689,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
-     
+
      #Puhti FMI-projappl
      if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
      then
@@ -731,17 +731,17 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
     fi
     partial_path=$(remove_slash_from_ends $partial_path)
-  fi 
-  
-  #the name of the object to be created 
+  fi
+
+  #the name of the object to be created
   if [[ $partial_path == "" ]]; then
         target_location="${bucket_name}/${tmp_file}"
   else
         target_location="${bucket_name}/${partial_path}/$tmp_file"
   fi
-  
 
-  #Check if the object already exists  
+
+  #Check if the object already exists
   is_uploaded=0
   if [[ $mode == "swift" ]];then
     if [[ $partial_path == "" ]]; then

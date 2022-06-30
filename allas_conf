@@ -441,12 +441,12 @@ if $use_s3cmd; then
    echo ""
 
    #aws.s3 conf   
-   mkdir -p $HOME/.aws
+   mkdir -m 0700 -p $HOME/.aws
    echo '[default]' > $HOME/.aws/credentials
+   chmod go-rwx $HOME/.aws/credentials
    echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
    echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
    echo AWS_DEFAULT_REGION =" regionOne " >> $HOME/.aws/credentials
-   chmod go-rwx $HOME/.aws/credentials
 
    export PYTHONPATH=$activePythonPath
 
@@ -454,6 +454,7 @@ if $use_s3cmd; then
    rclone config delete s3allas
    mkdir -p  $HOME/.config/rclone/
    echo "" >> $HOME/.config/rclone/rclone.conf
+   chmod go-rwx $HOME/.config/rclone/rclone.conf
    echo '[s3allas]' >>  $HOME/.config/rclone/rclone.conf
    echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
    echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf

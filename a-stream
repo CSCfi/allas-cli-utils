@@ -164,10 +164,10 @@ else
 fi
 
 
-# check all buckets if the bucket is not deifned
+# check all buckets if the bucket is not defined
 if [[ $object_with_bucket -eq 0 ]]
 then
-  #define standatrd buckests 
+  #define standard buckets 
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
   num_buckets=(0)
 
@@ -225,7 +225,7 @@ if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
   encrypt="crypt4gh"
   echo "Crypt4gh encrypted object"  >&2
   if [[ $secret_key == "" && $asis_mode -eq 0 ]]; then
-        echo "The secret key for decopression is not defined"  >&2 
+        echo "The secret key for decompression is not defined"  >&2 
         echo "Define the key file with option: --sk " >&2
         exit
   fi
@@ -316,29 +316,4 @@ fi
 
 
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
