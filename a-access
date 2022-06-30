@@ -1,36 +1,36 @@
-#!/bin/bash 
+#!/bin/bash
 
 #function to check that swift works
 check_swift_connection () {
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
-    
+
     if [[ $test -lt 1 ]]
-    then 
+    then
       #if [ -n "$ACTIVE_TOKEN" ]; then
       #   unset OS_AUTH_TOKEN
       #   export OS_AUTH_TOKEN=$(check_atoken)
       #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
       #fi
-      
-    if [[ -n "$OS_PASSWORD" ]]; then 
-      if  [[ $silent -eq 0 ]] ; then     
+
+    if [[ -n "$OS_PASSWORD" ]]; then
+      if  [[ $silent -eq 0 ]] ; then
           echo "Updating token"
       fi
-      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
+      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f
     fi
     test=$(swift stat 2> /dev/null | grep -c "Account:")
     if [[ $test -lt 1 ]]
-    then 
+    then
        echo "No connection to Allas!"
        echo "Please try setting up the connection again."
        exit 1
     else
       echo "swift connection updated"
     fi
-  else 
-     echo "swift connection OK" 
-  fi 
+  else
+     echo "swift connection OK"
+  fi
 }
 
 #Function to remove the trailing / if it exist
@@ -72,44 +72,44 @@ mode="swift"
 #Process command line
 while [[ $# -ge 1 ]]
 do
-  case "$1" in           
+  case "$1" in
              '--bucket' | '-b' )
-                  bucket=($2)             
+                  bucket=($2)
                   shift
-                  shift 
+                  shift
               ;;
               '+r' | '+read' )
                   add_read_project="$2"
                   shift
-                  shift 
+                  shift
                ;;
               '+w' | '+write' )
                   add_write_project="$2"
-                  
+
                   shift
-                  shift 
+                  shift
                ;;
                '+rw' |'+wr' | '+read-write' )
                   add_read_project="$2"
                   add_write_project="$2"
                   shift
-                  shift 
+                  shift
                ;;
                '-r' | '-read' )
                   remove_read_project="$2"
                   shift
-                  shift 
+                  shift
                ;;
                '-w' | '-write' )
                   remove_write_project="$2"
                   shift
-                  shift 
+                  shift
                ;;
                '-rw' |'-wr' | '-read-write' )
                   remove_read_project="$2"
                   remove_write_project="$2"
                   shift
-                  shift 
+                  shift
                ;;
                '+p' | '+public' )
                   public=1
@@ -134,20 +134,20 @@ do
                 ;;
     esac
 done
-   
+
 
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
 
 By default, only project members can read and write the data in a bucket.
-Members of the project can grant read and write access to the bucket and 
+Members of the project can grant read and write access to the bucket and
 the objects it contains, for other Allas projects or make the bucket publicly
 accessible to the internet.
 
 a-access is a tool to control access permissions of a bucket in Allas.
 
-In cases where access permissions are given or removed to a spcific project the syntax is: 
+In cases where access permissions are given or removed to a spcific project the syntax is:
 
    a-access +/-type project_id bucket
 
@@ -167,7 +167,7 @@ a-access options:
   -p,  -public                     Remove public read-only access to the bucket.
 
 
-For example, to allow members of project: project_2001234 to have read-only access to bucket: my_data_bucket, you 
+For example, to allow members of project: project_2001234 to have read-only access to bucket: my_data_bucket, you
 can use command:
 
   a-access +r project_2001234  my_data_bucket
@@ -177,12 +177,12 @@ The access permissions are set similarly to the corresponding _segments bucket t
 Note, that bucket listing tools don't show the bucket names of other projects,
 not even in cases were the project has read and/or write permissions to the bucket.
 
-For example in this case a user, belonging to project project_2001234, 
+For example in this case a user, belonging to project project_2001234,
 don't see the my_data_bucket in the bucket list produced by command:
-  
+
   a-list
 
-but the user can still list the contents of this bucket with command:  
+but the user can still list the contents of this bucket with command:
 
   a-list my_data_bucket
 
@@ -197,14 +197,14 @@ Related commands: a-put, a-get, a-list
 
 EOF
 exit 0
-fi 
+fi
 
 #Check that bucket exists
 bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
 if [[ $bnrows -eq 0 ]]; then
    echo "Bucket $bucket was not found in your current Allas project!"
-   exit 1 
-fi  
+   exit 1
+fi
 
 
 
@@ -213,26 +213,26 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 
 # check connection
-check_swift_connection 
+check_swift_connection
 
 ## Make sure that user project has read and write permissions
 if [[  $add_read_project != "" || $add_write_project != "" ]]; then
   user_read=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}'| grep -c "${OS_PROJECT_NAME}")
   if [[ $user_read -lt 1 ]];then
-    read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )  
+    read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )
     read_acl="${OS_PROJECT_NAME}:*,$read_acl"
     swift post "$bucket" -r "${read_acl}"
     bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
-    if [[ $bnrows -eq 0 ]]; then  
+    if [[ $bnrows -eq 0 ]]; then
         echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
         rclone mkdir "${storage_server}:${bucket}_segments"
-    fi    
+    fi
     swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
   fi
 
   user_write=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}'| grep -c "${OS_PROJECT_NAME}")
   if [[ $user_write -lt 1 ]]; then
-     write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )  
+     write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${OS_PROJECT_NAME}:\*"/""/g )
      write_acl="${OS_PROJECT_NAME}:*,$write_acl"
      echo "swift post $bucket -w ${write_acl}"
      swift post "$bucket" -w "${write_acl}"
@@ -240,44 +240,44 @@ if [[  $add_read_project != "" || $add_write_project != "" ]]; then
      if [[ $bnrows -eq 0 ]]; then
          echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
          rclone mkdir "${storage_server}:${bucket}_segments"
-     fi  
+     fi
      swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
   fi
 fi
 
 ### Add new settings
 if  [[ $add_read_project != "" ]] ; then
-   read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${add_read_project}:\*"/""/g )  
+   read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${add_read_project}:\*"/""/g )
    read_acl="${add_read_project}:*,$read_acl"
    swift post "$bucket" -r "${read_acl}"
    bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
-   if [[ $bnrows -eq 0 ]]; then  
+   if [[ $bnrows -eq 0 ]]; then
        echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
        rclone mkdir "${storage_server}:${bucket}_segments"
-   fi    
+   fi
    swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
 fi
 
 if  [[ $add_write_project != "" ]] ; then
-   write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${add_read_project}:\*"/""/g )  
+   write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${add_read_project}:\*"/""/g )
    write_acl="${add_write_project}:*,$write_acl"
    swift post "$bucket" -w "${write_acl}"
    bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
    if [[ $bnrows -eq 0 ]]; then
        echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
        rclone mkdir "${storage_server}:${bucket}_segments"
-   fi  
+   fi
    swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
 fi
 
 if  [[ $remove_read_project != "" ]] ; then
-   read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${remove_read_project}:\*"/""/g )  
+   read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' |  sed -e s/"${remove_read_project}:\*"/""/g )
    swift post "$bucket" -r "${read_acl}"
    swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
 fi
 
 if  [[ $remove_write_project != "" ]] ; then
-   write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${remove_write_project}:\*"/""/g )  
+   write_acl=$(swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' |  sed -e s/"${remove_write_project}:\*"/""/g )
    swift post "$bucket" -w "${write_acl}"
    swift post "${bucket}_segments" -w "${write_acl}" 2> /dev/null
 fi
@@ -291,52 +291,26 @@ if [[ $public -gt 0 ]];then
     fi
     swift post "$bucket" -r "${read_acl}"
     bnrows=$(swift stat "${bucket}_segments" | wc -l 2> /dev/null )
-    if [[ $bnrows -eq 0 ]]; then  
+    if [[ $bnrows -eq 0 ]]; then
        echo "Creating bucket: ${bucket}_segments in case over 5 GB files will be uploaded to the bucket."
        rclone mkdir "${storage_server}:${bucket}_segments"
-    fi    
+    fi
     swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
 fi
 if [[ $public -lt 0 ]];then
     read_acl=$(swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' | sed -e s/".rlistings"/""/g| sed -e s/".r:\*"/""/g )
     echo $read_acl
-    swift post "$bucket" -r "${read_acl}" 
+    swift post "$bucket" -r "${read_acl}"
     swift post "${bucket}_segments" -r "${read_acl}" 2> /dev/null
 fi
 
 
 echo "----------------------------------------------------------"
-echo "Projects that have read access to bucket $bucket:" 
+echo "Projects that have read access to bucket $bucket:"
 swift stat $bucket | awk '{ if ($1=="Read") if ($2=="ACL:") print $3}' | sed -e s/".r:\*"/"Public access"/g | sed -e s/".rlistings,"/""/g | sed -e s/".rlistings"/""/g | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
 echo "----------------------------------------------------------"
-echo "Projects that have write access to bucket $bucket:" 
+echo "Projects that have write access to bucket $bucket:"
 swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
 echo "----------------------------------------------------------"
 
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

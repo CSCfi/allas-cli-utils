@@ -85,9 +85,9 @@ upload_segment_md5() {
          rclone delete  $RCLONE_DESTINATION:$2_segments/$1/$4/$5/$(printf "%08d" $3)
          ((ite = ite + 1 ))
          if [[ $ite -lt 3 ]]; then
-            echo "Retrying faled segment upload."
+            echo "Retrying failed segment upload."
          else
-            echo "Too many failed upoload attempts."
+            echo "Too many failed upload attempts."
             do_upload=0
          fi
       fi
