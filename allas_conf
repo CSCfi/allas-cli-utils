@@ -224,7 +224,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    echo "Checking projects available for your account."
    echo "Please wait."
 
-   #unset pythonpaath temporarily
+   #unset pythonpath temporarily
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
  

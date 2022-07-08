@@ -13,6 +13,7 @@ fi
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 user=($USER)
@@ -22,7 +23,7 @@ print_help=(0)
 os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
 mode=("swift")
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
+#tmp_dir=("${tmp_root}/a_put_$$_tmp")
 show_filelist=(0)
 query=("")
 all_buckets=(0)
@@ -64,7 +65,7 @@ do
                   show_filelist=(1)
                   shift
                 ;;
-            '--all_bukets' | '-a' )
+            '--all_bukets' | '-a' | '--all_buckets' )
                   bucket_name=("$(swift list| tr  '\n' ' ')")
                   shift
                 ;;
@@ -149,9 +150,9 @@ exit
 fi
 
 #Assign project to be used if not defined
-if [ $os_project_name == "" ]
+if [ "$os_project_name" == "" ]
 then
-  if [ -e $HOME/.allas_default ]
+  if [ -f $HOME/.allas_default ]
   then
      source $HOME/.allas_default
   else

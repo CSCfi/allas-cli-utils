@@ -9,6 +9,7 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root="/appl/opt/allas-cli-utils"
 #inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 if [[ $# -lt 1 ]]
 then
@@ -24,7 +25,7 @@ print_help=(0)
 os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
 mode=("swift")
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
+#tmp_dir=("${tmp_root}/a_put_$$_tmp")
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -106,7 +107,7 @@ echo "Files to be uploaded: $input_def"
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 bucket_name=("${user}-${project_label}-flip")
 
-mkdir $tmp_dir
+make_temp_dir
 
 for input in $input_def
 do
@@ -177,7 +178,7 @@ do
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir}
+    clean_temp_dir
     exit 1
   fi
 
@@ -213,7 +214,7 @@ do
        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file
        rm -f ${tmp_dir}/${tmp_file}_ameta
-       rmdir ${tmp_dir}
+       clean_temp_dir
        exit 1
     fi
 
@@ -233,7 +234,7 @@ do
          rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
          rm -f ${tmp_dir}/$tmp_file
          rm -f ${tmp_dir}/${tmp_file}_ameta
-         rmdir ${tmp_dir}
+	 clean_temp_dir
          exit 1
        fi
        echo "$input OK"
@@ -286,7 +287,7 @@ rm -f   ${tmp_dir}/index.html
 swift post ${bucket_name} --read-acl ".r:*,.rlistings"
 swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
 
-rmdir  ${tmp_dir}
+clean_temp_dir
 echo ""
 echo "Upload ready."
 echo "The public link will be valid for at least one day."

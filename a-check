@@ -86,6 +86,7 @@ user="$USER"
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 bucket_name="not_defined"
@@ -96,8 +97,8 @@ os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
 silent=0
-tmp_dir="${tmp_root}/a_put_$$_tmp"
-vastaus="x"
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+user_answer="x"
 free_space_check=1
 filelist_level=0
 cumulative_size=0
@@ -184,7 +185,6 @@ do
                 ;;
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
-                  tmp_dir=("${tmp_root}/a_put_$$_tmp")
                   shift
                   shift
                 ;;
@@ -399,6 +399,8 @@ exit
 
 fi
 
+make_temp_dir
+
 # note about customization
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
@@ -485,7 +487,6 @@ if [[ $asis_mode -eq 1 ]];then
    fi
 fi
 
-mkdir $tmp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
 
 
@@ -634,15 +635,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -654,15 +655,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -675,14 +676,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -695,14 +696,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -716,14 +717,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     then
         puhti_project=$SLURM_JOB_ACCOUNT
         bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -800,7 +801,7 @@ fi
 
 rm -f ${tmp_dir}/missing_files.txt
 rm -f ${tmp_dir}/upload.log
-rmdir  ${tmp_dir}
+clean_temp_dir
 
 exit 0
 

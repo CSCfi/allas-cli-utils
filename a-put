@@ -86,6 +86,7 @@ user="$USER"
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 bucket_name="not_defined"
@@ -97,8 +98,8 @@ os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
 silent=0
-tmp_dir="${tmp_root}/a_put_$$_tmp"
-vastaus="x"
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+user_answer="x"
 free_space_check=1
 filelist_level=0
 cumulative_size=0
@@ -186,7 +187,6 @@ do
                 ;;
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
-                  tmp_dir=("${tmp_root}/a_put_$$_tmp")  
                   shift
                   shift
                 ;;
@@ -539,7 +539,7 @@ if [[ $asis_mode -eq 1 ]];then
    fi   
 fi   
 
-mkdir $tmp_dir
+make_temp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
 
 
@@ -688,15 +688,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -708,15 +708,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -729,14 +729,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -749,14 +749,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -770,14 +770,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     then
         puhti_project=$SLURM_JOB_ACCOUNT
         bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -894,7 +894,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      echo "Total size: ${tot_size}K"
      echo "Please use swift or rclone command to upload the data to allas"
      rm -f ${tmp_dir}/${tmp_file}_ameta
-     rmdir ${tmp_dir} 
+     clean_temp_dir
      exit 1
   fi 
   echo ""
@@ -906,14 +906,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     echo "Available free space is ${free_space}K"
     echo ""
     echo "a-put often fails when it tries to check the available free space in WRKDIR or scratch directories."
-    echo "If you are sure that you have enough space in  WRKDIR or scratch, you can skip this check by adding"
+    echo "If you are sure that you have enough space in WRKDIR or scratch, you can skip this check by adding"
     echo "option -x to your a-put command"
     echo ""
-    echo "If you don't have enough free space, upload some data from WRKDIR/scratc with using option --nc."
+    echo "If you don't have enough free space, upload some data from WRKDIR/scratch with using option --nc."
     echo "With --nc option, data is not compressed and thus temporary storage space is not needed." 
 
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir}
+    clean_temp_dir
     exit 1
   fi
 
@@ -1071,7 +1071,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        rm -f ${tmp_dir}/${tmp_file}_ameta
        rm -f ${tmp_dir}/upload.log
        ls -l ${tmp_dir}
-       rmdir ${tmp_dir}
+       clean_temp_dir
        exit 1
   else
        printf  "%18s %25s %6s %8s %25s\n" "$(date +"%d.%m.%y %H:%m:%S")" $input $num_files $tot_size "${bucket_name}/${partial_path}" >> ${tmp_dir}/upload.log
@@ -1106,7 +1106,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
          rm -f ${tmp_dir}/upload.log
-         rmdir ${tmp_dir}
+	 clean_temp_dir
          exit 1
      fi
       
@@ -1131,7 +1131,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   fi
   
  
-  #echo "Remopving temporary file"
+  #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
   #update metadata
@@ -1201,7 +1201,7 @@ fi
 rm -f .sdx_key_tmp_$$
 rm -f ${tmp_dir}/tar_list
 rm -f ${tmp_dir}/upload.log 
-rmdir  ${tmp_dir}
+clean_temp_dir
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
 (( nopeus = cumulative_size / kesto ))

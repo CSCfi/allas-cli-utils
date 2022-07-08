@@ -8,6 +8,7 @@ user=($USER)
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 if [[ $# -lt 1 ]]
 then
@@ -25,7 +26,8 @@ print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
-tmp_dir="${tmp_root}/a_put_$$_tmp"
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+make_temp_dir
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
@@ -202,8 +204,6 @@ fi
 echo "Bucket: $bucket_name"
 
 
-mkdir $tmp_dir
-
 for input in $input_def
 do 
   echo "Processing: $input"
@@ -273,7 +273,7 @@ do
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir} 
+    clean_temp_dir
     exit 1
   fi 
 
@@ -314,7 +314,7 @@ do
        if [[ $include_ameta -eq 1  ]]; then
          rm -f ${tmp_dir}/${tmp_file}_ameta
        fi
-       rmdir ${tmp_dir}
+       clean_temp_dir
        exit 1
     fi
 
@@ -342,7 +342,7 @@ do
          fi
          rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
-         rmdir ${tmp_dir}
+	 clean_temp_dir
          exit 1
        fi
        echo "$input OK"
@@ -365,9 +365,9 @@ do
 
   echo "$input uploaded to ${bucket_name}"
   if [[ $partial_path == "" ]]; then 
-     echo "Publick link: https://a3s.fi/${bucket_name}/$tmp_file"
+     echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
   else 
-     echo "Publick link: https://a3s.fi/${buket_name}/${partial_path}/$tmp_file"
+     echo "Public link: https://a3s.fi/${bucket_name}/${partial_path}/$tmp_file"
   fi
   tmp_file=("not_defined")
 
@@ -395,7 +395,7 @@ rm -f   ${tmp_dir}/index.html
 swift post ${bucket_name} --read-acl ".r:*,.rlistings"
 swift post "${bucket_name}_segments" --read-acl ".r:*,.rlistings"
 
-rmdir  ${tmp_dir}
+clean_temp_dir
 echo ""
 echo "Upload ready"
 exit 0

@@ -210,7 +210,7 @@ then
   #echo "rclone lsf ${storage_server}: | grep -v segments | tr -d '/' "
   #rclone lsf ${storage_server}: | grep -v segments | tr -d "/" |  tr "\n" " "
   all_buckets=($(rclone lsf ${storage_server}: | grep -v segments | tr -d "/" | tr "\n" " "))
-  echo "Please choose a buket by giving an item number form the list above: "
+  echo "Please choose a bucket by giving an item number form the list above: "
   case ${#all_buckets[@]} in
     0)
            echo "Error: No buckets found!" >&2

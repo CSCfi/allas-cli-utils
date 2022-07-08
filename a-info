@@ -59,6 +59,7 @@ user=($USER)
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 object_name=("")
@@ -66,7 +67,7 @@ print_help=(0)
 os_project_name=("none")
 input_def=("")
 mode=("swift")
-tmp_dir=("${tmp_root}/a_get_$$_tmp")
+#tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 object_with_bucket=(0)

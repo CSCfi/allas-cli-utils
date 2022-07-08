@@ -1,0 +1,15 @@
+
+# make secure temp dir and set tmp_dir to it
+function make_temp_dir {
+	tmp_dir=$(mktemp -d -p ${tmp_root} allas-cli-tools-XXXXXX)
+}
+
+# remove tmp_dir if it exists
+function clean_temp_dir {
+	if [ -n "${tmp_dir}" -a -d "${tmp_dir}" ]; then
+		rm -rf ${tmp_dir}
+	fi	
+
+}
+
+
