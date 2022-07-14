@@ -61,7 +61,7 @@ all_projects=$(openstack project list --my-projects -c Name -f value)
 
 if [ $buk -eq 1 ]; then
    echo ""
-   echo "Listing all buckects in all projects."
+   echo "Listing all buckets in all projects."
    echo ""
 else
    echo ""
