@@ -21,14 +21,14 @@ and for S3 protocol:
    source allas_conf --mode s3cmd --user your-CSC-user-account
 ```
 
-After successfull connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
+After successful connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
 or _s3cmd_ to manage data in allas.
 
 ## A_ -tools for easy access to Allas
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and Allas.
 
-**Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprosessing operation. In the future, use option -c in case you want to compress the data before upload.**
+**Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprocessing operation. In the future, use option -c in case you want to compress the data before upload.**
 
 
 ## Four main tools for using Allas
@@ -56,21 +56,21 @@ The available tools are:
 
 
    
-In addition to the above commands, there is saparate tool to create incremental backups:
+In addition to the above commands, there is separate tool to create incremental backups:
 
 *    `allas-backup` : create a backup copy of a local dataset into a backup repository in Allas
 
-And a tool for mounting Allas buckets as directores to a local computer (not yet in production)
+And a tool for mounting Allas buckets as directories to a local computer (not yet in production)
 
 *    `allas-mount`
 
 ## Installing allas-cli-utils
 
-Allas-cli-utils is mainly designed to be used in the HPC computing environmemt of CSC.
+Allas-cli-utils is mainly designed to be used in the HPC computing environment of CSC.
 In CSC computers (Puhti, Mahti ) these tools are installed and maintained by CSC.
 
 You can install these tools in your local Linux and Mac environment too, but in order to use
-these tools you should have several software componets available:
+these tools you should have several software components available:
 
 __allas_conf__ script requires:
 
@@ -78,7 +78,7 @@ __allas_conf__ script requires:
 *   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer, not mandatory if you use swift and know the project name.)
 *   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
 
-I addition to the above, A_ -tools requre:
+I addition to the above, A_ -tools require:
 
 *   [rclone](https://rclone.org/) (1.48 or newer)
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
@@ -122,7 +122,7 @@ conda activate allas
 source allas_conf -u csc-useraccount
 a-list 
 ```
-Example: Installing allas-cli-utils to Centos 7 based virtual machine in cPouta
+Example: Installing allas-cli-utils to CentOS 7 based virtual machine in cPouta
 
 ```text
 sudo yum update                          # update everything first
@@ -134,7 +134,7 @@ sudo yum install restic
 # install miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
-bash                                      #new sesion to enable miniconda
+bash                                      #new session to enable miniconda
 git clone https://github.com/CSCfi/allas-cli-utils       #download allas tools
 cd allas-cli-utils/
 export PATH=${PATH}:$(pwd)
@@ -151,7 +151,7 @@ a-list
 ```
 
 
-In MacOSX systems md5sum command may be missing. To fix that, there is simple replacement script (md5sum.macosx) that
+In MacOS X systems md5sum command may be missing. To fix that, there is simple replacement script (md5sum.macosx) that
 you can take in use in macs by giving following in the command in the allas-cli-utils directory:
 ```
 mv md5sum.macosx md5sum
@@ -166,7 +166,7 @@ You can define the default settings that the a-tools use in two files: a_env_con
 The file *a_env_conf*, that locates in the installation directory of _allas-cli-utils_, defines some installation specific settings. Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you  want to change if you do a local allas-cli-utils installation. 
 
    * _allas_conf_path_ should define the location of _allas_conf_ script in your system.
-   * You may also want to change _tmp_root_ definion if you want use some other location than /tmp for temporary tiles.
+   * You may also want to change _tmp_root_ definition if you want use some other location than /tmp for temporary tiles.
 
 ### 2. .a_tools_conf
 
@@ -182,12 +182,12 @@ Now command:
 ```text
 a-put my_data.b
 ```
-Will compress the data during the upload process. However, you can still skp the compression with option _--nc_.
+Will compress the data during the upload process. However, you can still skip the compression with option _--nc_.
 
 ```text
 a-put --nc my_data.b
 ```
-You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and un-comment and define the variables you wish to use.
+You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and uncomment and define the variables you wish to use.
 
 
 
