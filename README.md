@@ -45,7 +45,7 @@ The available tools are:
   
 |a-command | Function |
 | :--- | :--- |
-| [a-access](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-access)| Manage access permissions of your bucktes in Allas || [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
+| [a-access](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-access)| Manage access permissions of your buckets in Allas || [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
 | [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
 | [a-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services | 
 | [a-find](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-find)| Search and locate data that has been uploaded with a-put |
