@@ -90,10 +90,10 @@ Members of the project can grant read and write access to the bucket and
 the objects it contains, for other Allas projects or make the bucket publicly
 accessible to the internet.
 
-allas-share-bucket tool gives the sepcified read and write permissions to
+allas-share-bucket tool gives the specified read and write permissions to
 the bucket defined for both SWIFT and S3 protocols. 
 
-Before running this command you need to setup the allas connenction 
+Before running this command you need to setup the allas connection
 with commands:
 
    module load allas
@@ -102,13 +102,13 @@ with commands:
 
 allas-share-bucket command needs three mandatory arguments:
 
- -b, --bucket           The buckey to be shared
+ -b, --bucket           The bucket to be shared
 
- -p, --project          Name of the project for wich 
-                        the access will be garnted
+ -p, --project          Name of the project for which 
+                        the access will be granted
 
- -i, --id               ID of the project for wich
-                        the access will be garnted
+ -i, --id               ID of the project for which
+                        the access will be granted
 
 Note, that you need to define both the ID and the name of the target project.
 

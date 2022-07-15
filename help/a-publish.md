@@ -31,7 +31,7 @@ a-publish options:
  -i, --index        (static/dynamic).  By default a-publish creates a static index 
                     file that includes the objects that are in the target bucket when 
                     the command is executed.
-                    With setting --index dynamic the command adds a javascript based 
+                    With setting --index dynamic the command adds a JavaScript based 
                     index file to the bucket. With this option the index.html page 
                     lists the objects that are available in the bucket in the time when 
                     this page is accessed. This dynamic indexing tool can list

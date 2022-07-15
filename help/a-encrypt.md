@@ -20,7 +20,7 @@ Options:
 
 -b, --bucket <bucket_name>       Save the encrypted object to the given bucket in stead of the original bucket.
 
--p, --public_key <public key>    Additional Public key for crypt4gh encryption. By defalt only CSC public key is used.
+-p, --public_key <public key>    Additional Public key for crypt4gh encryption. By default only CSC public key is used.
                                  This option allows you to include additional public keys so that data can be used
                                  outside CSC sensitive data computing environment too.
 

@@ -344,7 +344,7 @@ a-check command line options:
 
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a direcrory that will be used to store
+-t, --tmpdir                Define a directory that will be used to store
                             temporary files of the upload process.
 
 -s, --silent                Less output
@@ -366,30 +366,30 @@ a-check command line options:
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directtories
+--input-list <list_file>    Give a file that lists the files or directories 
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 
 -a, --asis                  Copy the given file or content of a directory to Allas
                             without compression and packing so that each file in the
                             directory will be copied to Allas as an individual object.
-                            The object name contrains the relative path of the file to
+                            The object name contains the relative path of the file to
                             be copied.
 
 --follow-links              When uploading a directory, include linked files as real files
-                            in sead of links.
+                            in stead of links.
 
--e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
+-e, --encrypt <method>     Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with
-                            crypt4gh using CSC public key after which the files are inported
+                            crypt4gh using CSC public key after which the files are imported
                             to Allas as individual objects as in --asis format.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
-                            your-projecyt-number_SD-CONNECT,
+                            your-project-number_SD-CONNECT,
 
 
 Related commands: a-find, a-get, a-delete, a-info

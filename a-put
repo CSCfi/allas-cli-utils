@@ -330,12 +330,12 @@ options --bucket (-b) and --object (-o).
 
 The default option is that data that locates in: 
   - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
-  - scrarch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
+  - scratch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
   - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
   - projappl in Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
   - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
 
-In other cases the data uploaded to by default : username-poject_number-MISC
+In other cases the data uploaded to by default : username-project_number-MISC
 
 For example for user kkaytaj belonging in project_201234, data 
 locating in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
@@ -360,7 +360,7 @@ If you have another file called test_1.txt that locates in directory
   cd /scratch/project_201234/project2/sample3
   a-put test_1.txt
   
-Or commmands
+Or commands
   cd /scratch/project_201234
   a-put project2/sample3/test_1.txt
 
@@ -426,13 +426,13 @@ a-put command line options:
 --follow-links              When uploading a directory, include linked files as real files
                             in stead of links.
 
--e, --encrypt <method>      Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
+-e, --encrypt <method>      Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with 
-                            crypt4gh using CSC public key after which the files are inported 
+                            crypt4gh using CSC public key after which the files are imported 
                             to Allas. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:

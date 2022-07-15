@@ -1,56 +1,5 @@
 #!/bin/bash
 
-#function to check that swift works
-check_swift_connection () {
-  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  #test=$(swift stat 2> /dev/null | grep -c "Account:")
-
-    if [[ $test -lt 1 ]]
-    then
-      #if [ -n "$ACTIVE_TOKEN" ]; then
-      #   unset OS_AUTH_TOKEN
-      #   export OS_AUTH_TOKEN=$(check_atoken)
-      #   #echo "New  OS_AUTH_TOKEN = $OS_AUTH_TOKEN"
-      #fi
-
-    if [[ -n "$OS_PASSWORD" ]]; then
-      if  [[ $silent -eq 0 ]] ; then
-          echo "Updating token"
-      fi
-      source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f
-    fi
-    test=$(swift stat 2> /dev/null | grep -c "Account:")
-    if [[ $test -lt 1 ]]
-    then
-       echo "No connection to Allas!"
-       echo "Please try setting up the connection again."
-       exit 1
-    else
-      echo "swift connection updated"
-    fi
-  else
-     echo "swift connection OK"
-  fi
-}
-
-#Function to remove the trailing / if it exist
-remove_slash_from_ends(){
-path_string=$1
-if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string=${path_string%/}
-fi
-
-if [[  ${path_string:0:1} == "/" ]]; then
-    tlen=${#path_string}
-    path_string=${path_string:1:tlen}
-fi
-
-echo $path_string
-}
-
-
-
-
 #default user
 user=($USER)
 
@@ -59,6 +8,7 @@ user=($USER)
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 print_help=0
@@ -147,7 +97,7 @@ accessible to the internet.
 
 a-access is a tool to control access permissions of a bucket in Allas.
 
-In cases where access permissions are given or removed to a spcific project the syntax is:
+In cases where access permissions are given or removed to a specific project the syntax is:
 
    a-access +/-type project_id bucket
 

@@ -196,7 +196,7 @@ fi
 
 
 if [[ -z "$OS_PASSWORD" ]]; then
-   echo "OS_PASSWORD not defned!"
+   echo "OS_PASSWORD not defined!"
    echo "allas-dir-to-bucket needs to have your Allas password stored in an environment variable."
    echo "Please setup you Allas connection with a command that sets this variable."
    echo ""
