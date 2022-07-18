@@ -22,22 +22,6 @@ check_swift_connection () {
     fi
 }
 
-#Function to remove the trailing / if it exist
-remove_slash_from_ends(){
-path_string=$1
-if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string=${path_string%/}
-fi
-
-if [[  ${path_string:0:1} == "/" ]]; then
-    tlen=${#path_string}
-    path_string=${path_string:1:tlen}
-fi
-
-echo $path_string
-}
-
-
 check_segment_sizes(){
   local segment_server="$1"
   local segments_bucket="${2}_segments"

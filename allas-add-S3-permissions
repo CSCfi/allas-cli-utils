@@ -21,27 +21,14 @@ check_swift_connection () {
     fi 
 }
 
-#Function to remove the trailing / if it exist
-remove_slash_from_ends(){
-path_string=$1
-if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string=${path_string%/}
-fi
-
-if [[  ${path_string:0:1} == "/" ]]; then
-    tlen=${#path_string}
-    path_string=${path_string:1:tlen}
-fi
-
-echo $path_string
-}
-
-
-
-
 help=0
 obj_path=0
 id=0
+
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/allas-lib
+
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
