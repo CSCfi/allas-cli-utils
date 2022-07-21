@@ -56,7 +56,7 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
      -s, --silent             Less output
 
      -f, --force              Skip check that tries to ensure that this command is
-                              sourced correctly. This option needs to ne used in batch jobs.
+                              sourced correctly. This option needs to be used in batch jobs.
   
      --s3remove               Remove S3 access key for an Allas project. 
 

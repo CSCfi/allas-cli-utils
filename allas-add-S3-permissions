@@ -1,25 +1,4 @@
 #!/bin/bash 
-#function to check that swift works
-check_swift_connection () {
-    if [[ -n "$OS_PASSWORD" ]]; then
-         if  [[ $silent -eq 0 ]] ; then
-          echo "Updating token"
-         fi
-         source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f
-         echo "swift connection updated"
-    fi
-
-    test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  
-    if [[ $test -lt 1 ]]
-    then 
-        echo "No connection to Allas!"
-        echo "Please try setting up the connection again."
-        exit 1
-    else 
-       echo "swift connection OK" 
-    fi 
-}
 
 help=0
 obj_path=0

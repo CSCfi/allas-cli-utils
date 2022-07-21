@@ -12,28 +12,6 @@
 
 # TODO: Check if 500k file limit in bucket is exceeded 
 
-#function to check that swift works
-check_swift_connection () {
-    if [[ -n "$OS_PASSWORD" ]]; then
-         #if  [[ $silent -eq 0 ]] ; then
-         # echo "Updating token"
-         #fi
-         source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f > /dev/null
-         #echo "swift connection updated"
-    fi
-
-    test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  
-    if [[ $test -lt 1 ]]
-    then 
-        echo "No connection to Allas!"
-        echo "Please try setting up the connection again."
-        exit 1
-    else 
-       echo "swift connection OK" 
-    fi 
-}
-
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
