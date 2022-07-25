@@ -1,35 +1,5 @@
 #!/bin/bash 
 
-check_segment_sizes(){
-  local segment_server="$1"
-  local segments_bucket="${2}_segments"
-  local check_object=$3
-  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
-
-  if [[ ${#segsizes[@]} -eq 2 ]]; then
-     if [[ ${segsizes[0]} -eq  ${segsizes[1]} ]]; then
-         echo "OK"
-     else
-         if [[ ${segsizes[0]} -lt  ${segsizes[1]} ]]; then
-           local m="ERROR.
-Total size of segments ${segsizes[0]} is less that original file size ${segsizes[1]}.
-Some segments are missing?"
-           echo $m
-         fi
-         if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
-local m="ERROR. Total size of segments ${segsizes[0]} is more than original file size ${segsizes[1]}.
-Check the segments bucket ${segments_bucket} for object ${check_object}."
-           echo $m
-         fi
-
-     fi
-  else
-     #No segements found. Assuming OK
-      echo "OK"
-  fi
-}
-
-
 if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
