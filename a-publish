@@ -28,7 +28,6 @@ input_def=""
 mode="swift"
 #tmp_dir="${tmp_root}/a_put_$$_tmp"
 make_temp_dir
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 #Process command line
 while [[ $# -ge 1 ]]

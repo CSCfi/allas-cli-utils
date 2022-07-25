@@ -82,3 +82,7 @@ Check the segments bucket ${segments_bucket} for object ${check_object}."
       echo "OK"
   fi
 }
+
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+
+

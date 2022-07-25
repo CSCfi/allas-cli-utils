@@ -55,8 +55,6 @@ else
 fi
 
 
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
-
 #Process command line
 while [[ $# -ge 1 ]]
 do

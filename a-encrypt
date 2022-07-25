@@ -1,6 +1,3 @@
-#!/bin/bash
-
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 
 #default user
