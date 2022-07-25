@@ -1,8 +1,6 @@
 #!/bin/bash 
 
 
-#function to check that swift works
-
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root=$(dirname $(readlink -f $0))
