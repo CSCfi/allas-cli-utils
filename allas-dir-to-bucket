@@ -259,7 +259,7 @@ echo "Uploading data from directory: $input to bucket: $bucket_name"
 # Get files that are larger than 5GiB
 FILES_LARGE=$(find $input -type f -size +5368709120c)
 num_large_files=$(echo $FILES_LARGE | wc -w )
-echo "Dircetory $input contains $num_large_files files that are larger than 5 GiB"
+echo "Directory $input contains $num_large_files files that are larger than 5 GiB"
 
 
 # Upload large files – the speed benefit varies, but seems consistently faster

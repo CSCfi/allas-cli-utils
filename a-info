@@ -171,7 +171,7 @@ if [[ $object_with_bucket == 0 ]]; then
   fi
 fi 
 
-# check all buckets if the bucket is not deifned
+# check all buckets if the bucket is not defined
 if [ $object_with_bucket == 0 ]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")
@@ -217,7 +217,7 @@ fi
 rclone lsl ${storage_server}:/${object_name}
 rclone cat ${storage_server}:/${object_name}_ameta
 
-#Use curl to check is the pucket is public
+#Use curl to check is the bucket is public
 buc2=$(echo ${object_name} | awk -F "/" '{print $1}')
 if [[ $(curl https://a3s.fi/$buc2 2>/dev/null | grep -c '</Name>') -gt 0 ]]
 then

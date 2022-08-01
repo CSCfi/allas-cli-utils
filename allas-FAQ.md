@@ -1,9 +1,9 @@
 # Frequently asked questions about using Allas and A-tools
 
-**Q: Data transfer seems to continue forerver
+**Q: Data transfer seems to continue forever
 and the output shows that well over 100% of the data has been transported. Is this normal?**
 
-**A:** This is not normal. This kind of error has accurred several times, but sofar we don't know what is causing this
+**A:** This is not normal. This kind of error has occurred several times, but so far we don't know what is causing this
 Please kill your data transfer process (Ctrl-c) and try running the same command again.
 
 

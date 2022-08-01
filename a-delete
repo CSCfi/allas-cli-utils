@@ -222,7 +222,7 @@ if [[ $object_with_bucket == 0 ]]; then
   fi
 fi
 
-# check all buckets if the bucket is not deifned
+# check all buckets if the bucket is not defined
 if [ $object_with_bucket == 0 ]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")

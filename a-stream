@@ -213,7 +213,7 @@ fi
 
 #assign name for output file if not defined 
 is_compressed=0
-#if encrypted, remove .gpg temorarily from the object name to make zst and tar detection work
+#if encrypted, remove .gpg temporarily from the object name to make zst and tar detection work
 if [[ ${object_name:(-4):4} == ".gpg" ]]; then
   encrypt="gpg"
   echo "GPG encrypted object" >&2
@@ -293,7 +293,7 @@ if [[ $is_tar_file -eq 1 ]]; then
   exit
 fi
      
-# uncompress if needed
+# decompress if needed
 if [[ $is_compressed -eq 1 ]]; then 
    if [[ $encrypt == "gpg" ]]; then
       rclone cat "${storage_server}:$object_name" | gpg -d | zstdmt  -d --stdout 

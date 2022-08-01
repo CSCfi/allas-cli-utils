@@ -86,7 +86,7 @@ if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
 fi
 
-#chek that we have a bucket only
+#check that we have a bucket only
 if [ $(echo $bucket_name | grep -o "/" | wc -l) -gt 0 ]; then
   echo ""
   echo "Please give a bucket name, not object name, as an argument for a-list."

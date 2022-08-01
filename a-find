@@ -184,10 +184,10 @@ then
 fi
 
 
-#define standatrd buckests
+#define standard buckets
 std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
 
-#check all buckerts if a specific bucket is not defined
+#check all buckets if a specific bucket is not defined
 if [[ "$bucket_name" == "not_defined" ]]
 then
   buckets=$std_buckets
@@ -238,7 +238,7 @@ for bn in $buckets
 do
   if [ $silent -eq 0 ]; then
     echo "----------------------------------------------"
-    echo "Cheking bucket: $bn"
+    echo "Checking bucket: $bn"
   fi
   rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep -v "_ameta$" | grep "$query" > ./$$_find_tmp
   object_hits=$(cat ./$$_find_tmp | wc -l)
@@ -298,7 +298,7 @@ done
 if [ $silent -eq 0 ]; then
   echo "------------------------------------------------ "
   echo "Query: $query"
-  echo "Nuber of object names matching: $total_object_hits"
+  echo "Number of object names matching: $total_object_hits"
   echo ""
   echo "Total of $total_hits matching file names were found"
   echo "in $total_objects objects uploaded with a-put"

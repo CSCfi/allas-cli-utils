@@ -78,7 +78,7 @@ do
                   fixed_object=1
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
-                     echo "Slash characters (/) are not allowed when object name is defiend with -o option" 
+                     echo "Slash characters (/) are not allowed when object name is defined with -o option" 
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
@@ -457,14 +457,14 @@ if [[ $asis_mode -eq 1 ]];then
    SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
    IFS=$(echo -en "\t\n\b")
-   #parse the file names from the targer directory
+   #parse the file names from the target directory
    input_def=("$(find $input_def -type f)")
    #IFS=$SAVEFS
    num_to_import=($(echo "$input_def" | wc -l ))
    #IFS=$(echo -en " \n\b")
    if [[ $num_to_import -lt 1 ]]; then
-          echo "Input definiton: $one_input_def"
-          echo "dot't return any files to input"
+          echo "Input definition: $one_input_def"
+          echo "don't return any files to input"
           exit 1
    fi   
 fi   
@@ -574,7 +574,7 @@ do
           exit
        fi
      else
-       # Create key for sdx enryption
+       # Create key for sdx encryption
        echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
 dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
@@ -746,7 +746,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          echo "   ${target_location}  " 
          echo ""
          echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
-         echo "You can add option: --override to your command line, if you want to overwrite the object alrady existing in Allas."
+         echo "You can add option: --override to your command line, if you want to overwrite the object already existing in Allas."
          echo "Alternatively, you can define a different bucket name using the option --bucket "
          echo "or define different object name with the option --object"
          exit 1
@@ -920,7 +920,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       exit 1
   else
      if [[ $silent -eq 0 ]] ; then
-      echo "Packing successfull."
+      echo "Packing successful."
      fi
   fi  
 
@@ -964,7 +964,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      echo "Uploading data to allas."
   fi
     
-  #S3 protocol reaqures that directory exist before copyinmg
+  #S3 protocol requires that directory exist before copying
   if [[ $mode == "s3cmd" ]]; then
      rclone mkdir  ${storage_server}:${bucket_name}
   fi
@@ -1025,10 +1025,10 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       
      sum2=$(rclone md5sum "$allas_path" | awk '{print $1}')
        
-     #check is cheksums match 
+     #check is checksums match 
      if [[ "$sum1" != "$sum2" ]]
      then 
-         echo "Upload of $input was not successfull!"
+         echo "Upload of $input was not successful!"
          echo "Cleaning the failed upload"
          echo "Upload summary:"
          cat ${tmp_dir}/upload.log

@@ -241,7 +241,7 @@ if [[ $check_bucket -eq 0 ]]; then
   exit 1
 fi
 
-#Test if the target file already axists
+#Test if the target file already exists
 #echo "Target: ${target_dir}/${target_name}"
 if [[ -e ${mount_point} ]]; then
     if [[ $( find $mount_point | wc -l ) -gt 1 ]];then
@@ -256,7 +256,7 @@ fi
 if [[ $read_or_write == "" ]]; then
    echo ""
    echo "You are mounting bucket $bucket_name with write access included."
-   echo "The default read-only mounting is recomended."
+   echo "The default read-only mounting is recommended."
    echo "Note that if objects in this bucket are modified by other processes"
    echo "while the bucket is mounted with write access, you may end up to problems."
    echo ""

@@ -14,7 +14,7 @@ export OS_REGION_NAME="regionOne"
 export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
 
-#store swift autentication if it is done
+#store swift authentication if it is done
 if [ -n "$OS_AUTH_TOKEN" ]
 then
    ORIG_OS_AUTH_TOKEN=("$OS_AUTH_TOKEN")
@@ -111,7 +111,7 @@ do
 done
 
 
-#store swift autentication if it is done
+#store swift authentication if it is done
 if [ -n "$ORIG_OS_AUTH_TOKEN" ]
 then
    export OS_AUTH_TOKEN=("$ORIG_OS_AUTH_TOKEN")

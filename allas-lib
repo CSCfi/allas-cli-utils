@@ -78,7 +78,7 @@ Check the segments bucket ${segments_bucket} for object ${check_object}."
 
      fi
   else
-     #No segements found. Assuming OK
+     #No segments found. Assuming OK
       echo "OK"
   fi
 }

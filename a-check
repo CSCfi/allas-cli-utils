@@ -76,7 +76,7 @@ do
                   tmp_file="$2"
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
-                     echo "Slash characters (/) are not allowed when object name is defiend with -o option"
+                     echo "Slash characters (/) are not allowed when object name is defined with -o option"
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
@@ -405,14 +405,14 @@ if [[ $asis_mode -eq 1 ]];then
    SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
    IFS=$(echo -en "\t\n\b")
-   #parse the file names from the targer directory
+   #parse the file names from the target directory
    input_def=("$(find $input_def -type f)")
    #IFS=$SAVEFS
    num_to_import=($(echo "$input_def" | wc -l ))
    #IFS=$(echo -en " \n\b")
    if [[ $num_to_import -lt 1 ]]; then
-          echo "Input definiton: $one_input_def"
-          echo "dot't return any files to input"
+          echo "Input definition: $one_input_def"
+          echo "don't return any files to input"
           exit 1
    fi
 fi
@@ -521,7 +521,7 @@ do
           exit
        fi
      else
-       # Create key for sdx enryption
+       # Create key for sdx encryption
        echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
 dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$

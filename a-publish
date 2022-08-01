@@ -60,7 +60,7 @@ do
                      echo "creating $index_mode index"
                   else
                      echo "Unknown index mode: $index_mode"
-                     echo "Sould be: static or dynamic" 
+                     echo "Should be: static or dynamic" 
                      exit 1
                   fi
                   shift
@@ -231,14 +231,14 @@ do
   tot_size=$(du -s $input | cut -f1)
   #echo $tot_size
 
-  #tmp file name. Depens on compression and is file is a directory
+  #tmp file name. Depends on compression and is file is a directory
   if [  $tmp_file == "not_defined" ]
   then
      tmp_file=($(basename $input | tr " " "_" ))
   fi
 
 
-  #Check if stored file already exitst
+  #Check if stored file already exists
   if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
   then
     echo ""
@@ -328,10 +328,10 @@ do
        else  
           sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
        fi
-       #check if cheksums match 
+       #check if checksums match 
        if [[ ${sum1[0]} !=  ${sum2[0]} ]]
        then 
-         echo "Upload of $input was not successfull!"
+         echo "Upload of $input was not successful!"
          echo "Cleaning the failed upload"
          if [[ $partial_path == "" ]]; then
       	    rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
@@ -348,7 +348,7 @@ do
   fi
 
 
-  #echo "Remopving temporary file"
+  #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
   if [[ $include_ameta -eq 1 ]]; then
