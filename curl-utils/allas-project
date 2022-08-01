@@ -6,7 +6,7 @@
 # OS_PROJECT_NAME and OS_USERNAME are also saved
 
 # This script requires curl
-# This script needs to be sourced instead of runnig it
+# This script needs to be sourced instead of running it
  
 # constants
 OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth/tokens'
@@ -16,7 +16,7 @@ STORAGE_URL_INTERFACE_RE='"interface": "public"'
 STORAGE_URL_SED='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
 
 if [ "$0" != "bash" -a "$0" != "-bash" ]; then
-    echo "In odred to be useful this script needs to be sourced instead of runnig it" >&2
+    echo "In order to be useful this script needs to be sourced instead of running it" >&2
     exit 1
 fi
  
