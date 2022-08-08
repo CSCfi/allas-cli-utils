@@ -256,13 +256,13 @@ a-check command line options:
                             which the data is uploaded.
 
 -p, --project <project_ID>  Upload data into buckets of the defined
-                            project in stead of the currently
+                            project instead of the currently
                             configured project.
 
 -o, --object <object_name>  Define a name for the new object to be
                             created.
 
--S, --s3cmd                 Use S3 protocol in stead of swift protocol
+-S, --s3cmd                 Use S3 protocol instead of swift protocol
                             for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
@@ -307,7 +307,7 @@ a-check command line options:
                             be copied.
 
 --follow-links              When uploading a directory, include linked files as real files
-                            in stead of links.
+                            instead of links.
 
 -e, --encrypt <method>     Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
 

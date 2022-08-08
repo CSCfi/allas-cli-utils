@@ -121,16 +121,16 @@ Options:
 
 -r, --replace                    Remove the original un-encrypted object after encryption.
 
--b, --bucket <bucket_name>       Save the encrypted object to the given bucket in stead of the original bucket.
+-b, --bucket <bucket_name>       Save the encrypted object to the given bucket instead of the original bucket.
 
 -p, --public_key <public key>    Additional Public key for crypt4gh encryption. By default only CSC public key is used.
                                  This option allows you to include additional public keys so that data can be used
                                  outside CSC sensitive data computing environment too.
 
---s3cmd                          Use S3 protocol and s3cmd command for data retrieval in stead of
+--s3cmd                          Use S3 protocol and s3cmd command for data retrieval instead of
                                  Swift protocol and rclone.
 
--s, --suffix <suffix>            Define your own suffix in stead of the default suffix (.c4gh)
+-s, --suffix <suffix>            Define your own suffix instead of the default suffix (.c4gh)
 
 -a, --all                        Process all the objects that include the given name in the beginning of
                                  object name.
