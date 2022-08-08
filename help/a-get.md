@@ -10,7 +10,7 @@ By default the object is retrieved and uncompressed
 
 Options:
 
--p, --project <project_ID>    Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>    Search matches form the buckets of the defined project instead of the currently configured project. 
 
 
 -f, --file <file_name>        Retrieve just a specific file or directory from the stored dataset. Note that you need to define
@@ -26,7 +26,7 @@ Options:
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---s3cmd                       Use S3 protocol and s3cmd command for data retrieval in stead of Swift protocol and rclone.
+--s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
 
 Related commands: a-put, a-find, a-info, a-delete
 

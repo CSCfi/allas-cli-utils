@@ -31,7 +31,7 @@ Options:
 
 -f, --files                  Lists the names of the matching files inside the objects in addition to the object name.
 
--p, --project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Search matches form the buckets of the defined project instead of the currently configured project. 
 
 -b, --bucket <bucket_name>   By default all the standard buckets, used by a-put, are searched. Option --bucket allows you to specify a 
                         single bucket that will be used for the search.

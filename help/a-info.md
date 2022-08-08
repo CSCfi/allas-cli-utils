@@ -9,7 +9,7 @@ The basic syntax of the command is:
 
 Options:
 
--p, --project <project_ID>   Get information about objects form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>   Get information about objects form the buckets of the defined project instead of the currently configured project. 
 
 -b, --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 

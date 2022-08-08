@@ -26,7 +26,7 @@ An object uploaded with a-publish can be removed from Allas with command a-delet
 
 a-publish options:
 
- -b, --bucket       Use the defined bucket in stead of the default bucket name
+ -b, --bucket       Use the defined bucket instead of the default bucket name
  -o, --os_file      Define alternative name for the object that will be created  
  -i, --index        (static/dynamic).  By default a-publish creates a static index 
                     file that includes the objects that are in the target bucket when 

@@ -144,7 +144,7 @@ allas-backup can be used for following five operations:
   Extra options:
  
   -b, -bucket                        Use specific bucket for your repository. Note that this makes
-                                     Allas-backup to use different separate repository in stead of
+                                     Allas-backup to use different separate repository instead of
                                      the default one.
 
 EOF
