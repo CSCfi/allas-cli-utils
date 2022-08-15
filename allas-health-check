@@ -135,7 +135,7 @@ do
                (( fail_pro = fail_pro + 1 ))
            else
               #echo "check_segment_sizes ${storage_server} ${bucket} ${fobject}"
-              seg_stat=$(check_segment_sizes ${storage_server} ${bucket} ${fobject})
+              seg_stat=$(check_segments ${storage_server} ${bucket} ${fobject})
               if [[ $seg_stat -lt 0 ]]; then
                   (( num_fail = num_fail + 1 )) 
                   (( fail_pro = fail_pro + 1 ))
