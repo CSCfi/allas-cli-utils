@@ -54,8 +54,8 @@ echo $path_string
 }
 
 
-# This function returns the differeence between the sum of segment sizes and 
-# and the expectesd size. This is needed for allas-health-check
+# This function returns the difference between the sum of segment sizes and 
+# and the expected size. This is needed for allas-health-check
 check_segments(){
   local segment_server="$1"
   local segments_bucket="${2}_segments"
@@ -67,7 +67,7 @@ check_segments(){
      (( check_value = ssizesum - ssizeval ))
      echo $check_value
   else
-     #No segements found. Assuming OK
+     #No segments found. Assuming OK
       echo 0
   fi
 }
