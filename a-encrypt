@@ -1,6 +1,3 @@
-#!/bin/bash
-
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 
 #default user
@@ -8,8 +5,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # local variable
 object_name=""              #object to retrieve
@@ -112,7 +109,7 @@ The basic syntax of the command is:
 
    a-encrypt object_name
 
-a-encryp command streams the object to the local computer where crypt4gh encryption is applied
+a-encrypt command streams the object to the local computer where crypt4gh encryption is applied
 to the data stream. The encrypted data is then streamed back to Allas into a new object.
 By default the object is encrypted with CSC public key only. The encrypted object is located to the
 same bucket as the original object. Suffix: .c4gh is added to the object name.
@@ -124,16 +121,16 @@ Options:
 
 -r, --replace                    Remove the original un-encrypted object after encryption.
 
--b, --bucket <bucket_name>       Save the encrypted object to the given bucket in stead of the original bucket.
+-b, --bucket <bucket_name>       Save the encrypted object to the given bucket instead of the original bucket.
 
--p, --public_key <public key>    Additional Public key for crypt4gh encryption. By defalt only CSC public key is used.
+-p, --public_key <public key>    Additional Public key for crypt4gh encryption. By default only CSC public key is used.
                                  This option allows you to include additional public keys so that data can be used
                                  outside CSC sensitive data computing environment too.
 
---s3cmd                          Use S3 protocol and s3cmd command for data retrieval in stead of
+--s3cmd                          Use S3 protocol and s3cmd command for data retrieval instead of
                                  Swift protocol and rclone.
 
--s, --suffix <suffix>            Define your own suffix in stead of the default suffix (.c4gh)
+-s, --suffix <suffix>            Define your own suffix instead of the default suffix (.c4gh)
 
 -a, --all                        Process all the objects that include the given name in the beginning of
                                  object name.
@@ -207,8 +204,8 @@ else
      object_list="$object_def"
   else
     echo "Definition $object_def did not define a single object"
-    echo "Please use option --all if you want to encryp all objects in a bucket"
-    echo "or seveal objecs, whos name sarts with same string"
+    echo "Please use option --all if you want to encrypt all objects in a bucket"
+    echo "or several objects, whose name starts with same string"
     exit 1
   fi
 fi

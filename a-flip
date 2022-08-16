@@ -6,9 +6,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root="/appl/opt/allas-cli-utils"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 if [[ $# -lt 1 ]]
 then
@@ -24,8 +23,7 @@ print_help=(0)
 os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
 mode=("swift")
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+#tmp_dir=("${tmp_root}/a_put_$$_tmp")
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -55,7 +53,7 @@ a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus,
 uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*.
 a-flip works mostly like a-publish but there are some differences:
 1) only the pre-defined bucket name ( _username-projectNumber_-flip ) can be used
-2) When the command is executed it automatically deletes objects that are oldes than two days
+2) When the command is executed it automatically deletes objects that are older than two days
 
 The basic syntax of the command is:
 
@@ -106,7 +104,7 @@ echo "Files to be uploaded: $input_def"
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 bucket_name=("${user}-${project_label}-flip")
 
-mkdir $tmp_dir
+make_temp_dir
 
 for input in $input_def
 do
@@ -137,14 +135,14 @@ do
   tot_size=$(du -s $input | cut -f1)
   #echo $tot_size
 
-  #tmp file name. Depens on compression and is file is a directory
+  #tmp file name. Depends on compression and is file is a directory
   if [  $tmp_file == "not_defined" ]
   then
      tmp_file=($(basename $input | tr " " "_" ))
   fi
 
 
-  #Check if stored file already exitst
+  #Check if stored file already exist
   #echo "rclone ls ${storage_server}:${bucket_name}/$tmp_file"
 
   if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
@@ -177,7 +175,7 @@ do
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir}
+    clean_temp_dir
     exit 1
   fi
 
@@ -213,7 +211,7 @@ do
        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file
        rm -f ${tmp_dir}/${tmp_file}_ameta
-       rmdir ${tmp_dir}
+       clean_temp_dir
        exit 1
     fi
 
@@ -225,15 +223,15 @@ do
        sum1=($(md5sum ${tmp_dir}/$tmp_file))
        sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
 
-       #check is cheksums match
+       #check is checksums match
        if [[ ${sum1[0]} !=  ${sum2[0]} ]]
        then
-         echo "Upload of $input was not successfull!"
+         echo "Upload of $input was not successful!"
          echo "Cleaning the failed upload"
          rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
          rm -f ${tmp_dir}/$tmp_file
          rm -f ${tmp_dir}/${tmp_file}_ameta
-         rmdir ${tmp_dir}
+	 clean_temp_dir
          exit 1
        fi
        echo "$input OK"
@@ -241,7 +239,7 @@ do
   fi
 
 
-  #echo "Remopving temporary file"
+  #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
   #update metadata
@@ -286,7 +284,7 @@ rm -f   ${tmp_dir}/index.html
 swift post ${bucket_name} --read-acl ".r:*,.rlistings"
 swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
 
-rmdir  ${tmp_dir}
+clean_temp_dir
 echo ""
 echo "Upload ready."
 echo "The public link will be valid for at least one day."

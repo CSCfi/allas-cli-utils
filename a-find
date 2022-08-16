@@ -11,8 +11,8 @@ fi
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 user=($USER)
@@ -22,7 +22,7 @@ print_help=(0)
 os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
 mode=("swift")
-tmp_dir=("${tmp_root}/a_put_$$_tmp")
+#tmp_dir=("${tmp_root}/a_put_$$_tmp")
 show_filelist=(0)
 query=("")
 all_buckets=(0)
@@ -64,7 +64,7 @@ do
                   show_filelist=(1)
                   shift
                 ;;
-            '--all_bukets' | '-a' )
+            '--all_bukets' | '-a' | '--all_buckets' )
                   bucket_name=("$(swift list| tr  '\n' ' ')")
                   shift
                 ;;
@@ -129,7 +129,7 @@ Options:
 
 -f, --files                  Lists the names of the matching files inside the objects in addition to the object name.
 
--p, --project <project_ID>   Search matches form the buckets of the defined project in stead of the currently configured project.
+-p, --project <project_ID>   Search matches form the buckets of the defined project instead of the currently configured project.
 
 -b, --bucket <bucket_name>   By default all the standard buckets, used by a-put, are searched. Option --bucket allows you to specify a
                         single bucket that will be used for the search.
@@ -149,9 +149,9 @@ exit
 fi
 
 #Assign project to be used if not defined
-if [ $os_project_name == "" ]
+if [ "$os_project_name" == "" ]
 then
-  if [ -e $HOME/.allas_default ]
+  if [ -f $HOME/.allas_default ]
   then
      source $HOME/.allas_default
   else
@@ -184,10 +184,10 @@ then
 fi
 
 
-#define standatrd buckests
+#define standard buckets
 std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
 
-#check all buckerts if a specific bucket is not defined
+#check all buckets if a specific bucket is not defined
 if [[ "$bucket_name" == "not_defined" ]]
 then
   buckets=$std_buckets
@@ -238,7 +238,7 @@ for bn in $buckets
 do
   if [ $silent -eq 0 ]; then
     echo "----------------------------------------------"
-    echo "Cheking bucket: $bn"
+    echo "Checking bucket: $bn"
   fi
   rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep -v "_ameta$" | grep "$query" > ./$$_find_tmp
   object_hits=$(cat ./$$_find_tmp | wc -l)
@@ -298,7 +298,7 @@ done
 if [ $silent -eq 0 ]; then
   echo "------------------------------------------------ "
   echo "Query: $query"
-  echo "Nuber of object names matching: $total_object_hits"
+  echo "Number of object names matching: $total_object_hits"
   echo ""
   echo "Total of $total_hits matching file names were found"
   echo "in $total_objects objects uploaded with a-put"

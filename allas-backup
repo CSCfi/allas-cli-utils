@@ -143,8 +143,8 @@ allas-backup can be used for following five operations:
 
   Extra options:
  
-  -b, -bucket                        Use specific bucket for your repsotory. Note that this makes
-                                     Allas-backup to use diffrent separate repository in stead of
+  -b, -bucket                        Use specific bucket for your repository. Note that this makes
+                                     Allas-backup to use different separate repository instead of
                                      the default one.
 
 EOF
@@ -205,7 +205,7 @@ then
   if [[ $input == "" ]]; then
      echo ""
      echo "No snapshot name defined for command: allas-backup files."
-     echo "Please give the snapshot name as a command line argumnet."
+     echo "Please give the snapshot name as a command line argument."
      echo ""
      exit 1
   fi
@@ -218,7 +218,7 @@ then
   echo "-------------------------------------------------------"
   if [[ $input == "" ]]; then
      echo "No query term defined for command: allas-backup find"
-     echo " Please give the query term as a command line argumnet."
+     echo " Please give the query term as a command line argument."
      echo ""
      exit 1
   fi
@@ -228,14 +228,14 @@ then
   numsn=$(grep "Found matching entries" .find_list_$$ | grep . | wc -l)
   cat  .find_list_$$
   echo ""
-  echo "$numhits hits in $numsn snapshots found for queryterm: $input"
+  echo "$numhits hits in $numsn snapshots found for query term: $input"
   rm -f  .find_lits_$$
 fi
 
 if [[ $task == "restore" ]]
 then
   if [[ $input == "" ]] ; then
-     echo "No snapshotname defined. Please give the snapshot name as a command line argumnet."
+     echo "No snapshot name defined. Please give the snapshot name as a command line argument."
      echo ""
      exit 1
   fi
@@ -245,7 +245,7 @@ fi
 if [[ $task == "delete" ]]
 then
   if [[ $input == "" ]]; then
-     echo "No snapshot name defined. Please give the snapshot name as a command line argumnet."
+     echo "No snapshot name defined. Please give the snapshot name as a command line argument."
      echo ""
      exit 1
   fi

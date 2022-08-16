@@ -5,8 +5,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # local variable
 object_name=""              #object to retrieve
@@ -17,7 +17,7 @@ new_target_file=0
 print_help=0
 os_project_name="$OS_PROJECT_NAME"     
 mode="swift"
-tmp_dir="${tmp_root}/a_get_$$_tmp"
+#tmp_dir="${tmp_root}/a_get_$$_tmp"
 show_filelist=0
 query=""
 object_with_bucket=0
@@ -120,11 +120,11 @@ The basic syntax of the command is:
 
    a-get object_name
 
-By default the object is retrieved and uncompressed 
+By default the object is retrieved and decompressed 
 
 Options:
 
--p, --project <project_ID>    Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>    Search matches form the buckets of the defined project instead of the currently configured project. 
 
 
 -f, --file <file_name>        Retrieve just a specific file or directory from the stored dataset. Note that you need to define
@@ -136,11 +136,11 @@ Options:
 
 -l, --original_location       Retrieve the data to the original location in the directory structure.
 
---asis                        Download the object without unpacking tar files and uncompressing zst compressed data.
+--asis                        Download the object without unpacking tar files and decompressing zst compressed data.
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---s3cmd                       Use S3 protocol and s3cmd command for data retrieval in stead of Swift protocol and rclone.
+--s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
 
 Related commands: a-put, a-find, a-info, a-delete
 
@@ -221,10 +221,10 @@ else
 fi
 
 
-# check all buckets if the bucket is not deifned
+# check all buckets if the bucket is not defined
 if [[ $object_with_bucket -eq 0 ]]
 then
-  #define standatrd buckests 
+  #define standard buckets 
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
   num_buckets=(0)
 
@@ -270,7 +270,7 @@ fi
 
 #assign name for output file if not defined 
 
-#if encrypted, remove .gpg temorarily from the object name to make zst and tar detection work
+#if encrypted, remove .gpg temporarily from the object name to make zst and tar detection work
 if [[ ${object_name:(-4):4} == ".gpg" ]]; then
   encrypt="gpg"
   object_name=${object_name:0:-4}
@@ -353,7 +353,7 @@ if [[ $asis_mode -eq 1 ]]; then
 fi
 
 
-#Test if the target file already axists
+#Test if the target file already exists
 #echo "Target: ${target_dir}/${target_name}"
 if [[ ${target_dir} == "" ]]; then
   if [[ -e ${target_name} ]]; then
@@ -399,7 +399,7 @@ if [[ $is_tar_file -eq 1 ]]; then
        cd $target_dir
      fi
      #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
-     echo "Dowloading compressed object from Allas"
+     echo "Downloading compressed object from Allas"
      
      #if [[ $mode == "swift" ]]; then
         rclone copyto -P "${storage_server}:$object_name" a-get_download_$$_tmp.zst
@@ -409,7 +409,7 @@ if [[ $is_tar_file -eq 1 ]]; then
      #fi
 
      if [[ $exitcode -ne 0 ]]; then
-        echo "Donload failed!"
+        echo "Download failed!"
         rm -f  a-get_download_$$_tmp.zst
         exit 1
      fi
@@ -436,7 +436,7 @@ if [[ $is_tar_file -eq 1 ]]; then
      fi
 
      if [[ $exitcode -ne 0 ]]; then
-        echo "Uncompression failed!"
+        echo "Decompression failed!"
         rm -f  a-get_download_$$_tmp.zst
         exit 1
      fi
@@ -453,12 +453,12 @@ else
           mkdir -p $target_dir
        fi
        if [[ $(file -b $target_dir | awk '{print $NF}' ) != "directory" ]]; then
-            echo "Unable to create diretory: $target_dir"
+            echo "Unable to create directory: $target_dir"
             exit 1
        fi
        cd $target_dir
     fi
-    # uncompress if needed
+    # decompress if needed
     if [[ $is_compressed -eq 1 ]]; then 
        #if [[ $mode == "swift" ]]; then 
            if [[ $encrypt == "gpg" ]]; then
@@ -484,14 +484,14 @@ else
            fi
        #else
        #    s3cmd get "s3://${object_name}"  $target_dir/$target_name
-       #    if [[ $enrypted == "gpg" ]]; then
-       #       echo "Based on the object name, thae object has been encrypted with gpg."
+       #    if [[ $encrypted == "gpg" ]]; then
+       #       echo "Based on the object name, that object has been encrypted with gpg."
        #       gpg -d $target_dir/$target_name >  $target_dir/${target_name}.tmp       
        #       rm $target_dir/$target_name
        #       mv $target_dir/${target_name}.tmp $target_dir/$target_name
        #    fi 
-       #    if [[ $enrypted == "crypt4gh" ]]; then
-       #       echo "Based on the object name, thae object has been encrypted with crypt4gh."
+       #    if [[ $encrypted == "crypt4gh" ]]; then
+       #       echo "Based on the object name, that object has been encrypted with crypt4gh."
        #       crypt4gh decrypt --sk "$secret_key" < $target_dir/$target_name >  $target_dir/${target_name}.tmp       
        #       rm $target_dir/$target_name
        #       mv $target_dir/${target_name}.tmp $target_dir/$target_name

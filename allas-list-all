@@ -3,6 +3,7 @@
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 
@@ -13,7 +14,7 @@ export OS_REGION_NAME="regionOne"
 export OS_INTERFACE=public
 export OS_IDENTITY_API_VERSION=3
 
-#store swift autentication if it is done
+#store swift authentication if it is done
 if [ -n "$OS_AUTH_TOKEN" ]
 then
    ORIG_OS_AUTH_TOKEN=("$OS_AUTH_TOKEN")
@@ -82,7 +83,7 @@ all_projects=$(openstack project list --my-projects -c Name -f value)
 
 if [ $buk -eq 1 ]; then
    echo ""
-   echo "Listing all buckects in all projects."
+   echo "Listing all buckets in all projects."
    echo ""
 else
    echo ""
@@ -110,7 +111,7 @@ do
 done
 
 
-#store swift autentication if it is done
+#store swift authentication if it is done
 if [ -n "$ORIG_OS_AUTH_TOKEN" ]
 then
    export OS_AUTH_TOKEN=("$ORIG_OS_AUTH_TOKEN")

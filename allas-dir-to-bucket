@@ -12,47 +12,11 @@
 
 # TODO: Check if 500k file limit in bucket is exceeded 
 
-#function to check that swift works
-check_swift_connection () {
-    if [[ -n "$OS_PASSWORD" ]]; then
-         #if  [[ $silent -eq 0 ]] ; then
-         # echo "Updating token"
-         #fi
-         source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f > /dev/null
-         #echo "swift connection updated"
-    fi
-
-    test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  
-    if [[ $test -lt 1 ]]
-    then 
-        echo "No connection to Allas!"
-        echo "Please try setting up the connection again."
-        exit 1
-    else 
-       echo "swift connection OK" 
-    fi 
-}
-
-#Function to remove the trailing / if it exist
-remove_slash_from_ends(){
-path_string=$1
-if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string=${path_string%/}
-fi
-
-if [[  ${path_string:0:1} == "/" ]]; then
-    tlen=${#path_string}
-    path_string=${path_string:1:tlen}
-fi
-
-echo $path_string
-}
-
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 RCLONE_DESTINATION=${storage_server}
 MAX_PROCESSES=4
@@ -196,7 +160,7 @@ fi
 
 
 if [[ -z "$OS_PASSWORD" ]]; then
-   echo "OS_PASSWORD not defned!"
+   echo "OS_PASSWORD not defined!"
    echo "allas-dir-to-bucket needs to have your Allas password stored in an environment variable."
    echo "Please setup you Allas connection with a command that sets this variable."
    echo ""
@@ -295,7 +259,7 @@ echo "Uploading data from directory: $input to bucket: $bucket_name"
 # Get files that are larger than 5GiB
 FILES_LARGE=$(find $input -type f -size +5368709120c)
 num_large_files=$(echo $FILES_LARGE | wc -w )
-echo "Dircetory $input contains $num_large_files files that are larger than 5 GiB"
+echo "Directory $input contains $num_large_files files that are larger than 5 GiB"
 
 
 # Upload large files – the speed benefit varies, but seems consistently faster

@@ -1,4 +1,4 @@
-#Common settngs for a_ -tools
+#Common settings for a_ -tools
 storage_server="allas"
 local_host="$(hostname)"
 allas_log="/dev/null"

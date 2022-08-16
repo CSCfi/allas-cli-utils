@@ -5,8 +5,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # local variable
 object_name=""              #object to retrieve
@@ -95,13 +95,13 @@ By default the object is retrieved and uncompressed
 
 Options:
 
--p, --project <project_ID>    Search matches form the buckets of the defined project in stead of the currently configured project. 
+-p, --project <project_ID>    Search matches form the buckets of the defined project instead of the currently configured project. 
 
 --asis                        Download the object without unpacking tar files and uncompressing zst compressed data.
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---s3cmd                       Use S3 protocol and s3cmd command for data retrieval in stead of Swift protocol and rclone.
+--s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
 
 Related commands: a-put, a-find, a-info, a-delete
 
@@ -213,7 +213,7 @@ fi
 
 #assign name for output file if not defined 
 is_compressed=0
-#if encrypted, remove .gpg temorarily from the object name to make zst and tar detection work
+#if encrypted, remove .gpg temporarily from the object name to make zst and tar detection work
 if [[ ${object_name:(-4):4} == ".gpg" ]]; then
   encrypt="gpg"
   echo "GPG encrypted object" >&2
@@ -293,7 +293,7 @@ if [[ $is_tar_file -eq 1 ]]; then
   exit
 fi
      
-# uncompress if needed
+# decompress if needed
 if [[ $is_compressed -eq 1 ]]; then 
    if [[ $encrypt == "gpg" ]]; then
       rclone cat "${storage_server}:$object_name" | gpg -d | zstdmt  -d --stdout 

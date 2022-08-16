@@ -1,36 +1,10 @@
 #!/bin/bash 
 
 
-#function to check that swift works
-check_swift_connection () {
-  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  #test=$(swift stat 2> /dev/null | grep -c "Account:")
-    
-  if [[ $test -lt 1 ]]; then 
-      if [[ -n "$OS_PASSWORD" ]]; then 
-        if  [[ $silent -eq 0 ]] ; then     
-          echo "Updating token"
-        fi
-        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f 
-      fi
-      #test=$(swift stat 2> /dev/null | grep -c "Account:")
-      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l) 
-      if [[ $test -lt 1 ]]
-      then 
-         echo "No connection to Allas!"
-         echo "Please try setting up the connection again."
-         exit 1
-      else
-         echo "swift connection updated"
-      fi 
-  fi 
-}
-
-
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 
 #local variables
@@ -112,7 +86,7 @@ if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
 fi
 
-#chek that we have a bucket only
+#check that we have a bucket only
 if [ $(echo $bucket_name | grep -o "/" | wc -l) -gt 0 ]; then
   echo ""
   echo "Please give a bucket name, not object name, as an argument for a-list."

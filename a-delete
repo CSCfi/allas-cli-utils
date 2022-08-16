@@ -1,36 +1,5 @@
 #!/bin/bash
 
-#function to check that swift works
-check_swift_connection () {
-  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-  #test=$(swift stat 2> /dev/null | grep -c "Account:")
-
-    if [[ $test -lt 1 ]]
-    then
-      if [[ -n "$OS_PASSWORD" ]]; then
-        if  [[ $silent -eq 0 ]] ; then
-          echo "Updating token"
-        fi
-        source $allas_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f
-      fi
-      #test=$(swift stat 2> /dev/null | grep -c "Account:")
-      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-      if [[ $test -lt 1 ]]
-      then
-         echo "No connection to Allas!"
-         echo "Please try setting up the connection again."
-         exit 1
-      else
-         echo "swift connection updated"
-    fi
-  else
-     echo "swift connection OK"
-  fi
-}
-
-
-
-
 #default user
 user=($USER)
 
@@ -39,6 +8,7 @@ user=($USER)
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 object_name=""
@@ -136,7 +106,7 @@ The basic syntax of the command is:
 
 Options:
 
--p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project.
+-p, --project <project_ID>   Delete objects form the buckets of the defined project instead of the currently configured project.
 
 -b --bucket                  Object name includes bucket name and the command does not try to use the default bucket names.
 
@@ -252,7 +222,7 @@ if [[ $object_with_bucket == 0 ]]; then
   fi
 fi
 
-# check all buckets if the bucket is not deifned
+# check all buckets if the bucket is not defined
 if [ $object_with_bucket == 0 ]
 then
   buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${user}-${project_label}-SCRATCH")

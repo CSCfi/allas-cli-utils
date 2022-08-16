@@ -6,8 +6,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 if [[ $# -lt 1 ]]
 then
@@ -25,8 +25,8 @@ print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
-tmp_dir="${tmp_root}/a_put_$$_tmp"
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+make_temp_dir
 
 #Process command line
 while [[ $# -ge 1 ]]
@@ -60,7 +60,7 @@ do
                      echo "creating $index_mode index"
                   else
                      echo "Unknown index mode: $index_mode"
-                     echo "Sould be: static or dynamic" 
+                     echo "Should be: static or dynamic" 
                      exit 1
                   fi
                   shift
@@ -115,12 +115,12 @@ An object uploaded with a-publish can be removed from Allas with command a-delet
 
 a-publish options:
 
- -b, --bucket       Use the defined bucket in stead of the default bucket name
+ -b, --bucket       Use the defined bucket instead of the default bucket name
  -o, --os_file      Define alternative name for the object that will be created  
  -i, --index        (static/dynamic).  By default a-publish creates a static index 
                     file that includes the objects that are in the target bucket when 
                     the command is executed.
-                    With setting --index dynamic the command adds a javascript based 
+                    With setting --index dynamic the command adds a JavaScript based 
                     index file to the bucket. With this option the index.html page 
                     lists the objects that are available in the bucket in the time when 
                     this page is accessed. This dynamic indexing tool can list
@@ -202,8 +202,6 @@ fi
 echo "Bucket: $bucket_name"
 
 
-mkdir $tmp_dir
-
 for input in $input_def
 do 
   echo "Processing: $input"
@@ -233,14 +231,14 @@ do
   tot_size=$(du -s $input | cut -f1)
   #echo $tot_size
 
-  #tmp file name. Depens on compression and is file is a directory
+  #tmp file name. Depends on compression and is file is a directory
   if [  $tmp_file == "not_defined" ]
   then
      tmp_file=($(basename $input | tr " " "_" ))
   fi
 
 
-  #Check if stored file already exitst
+  #Check if stored file already exists
   if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 2 ]]
   then
     echo ""
@@ -273,7 +271,7 @@ do
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to allas"
     rm -f ${tmp_dir}/${tmp_file}_ameta
-    rmdir ${tmp_dir} 
+    clean_temp_dir
     exit 1
   fi 
 
@@ -314,7 +312,7 @@ do
        if [[ $include_ameta -eq 1  ]]; then
          rm -f ${tmp_dir}/${tmp_file}_ameta
        fi
-       rmdir ${tmp_dir}
+       clean_temp_dir
        exit 1
     fi
 
@@ -330,10 +328,10 @@ do
        else  
           sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
        fi
-       #check if cheksums match 
+       #check if checksums match 
        if [[ ${sum1[0]} !=  ${sum2[0]} ]]
        then 
-         echo "Upload of $input was not successfull!"
+         echo "Upload of $input was not successful!"
          echo "Cleaning the failed upload"
          if [[ $partial_path == "" ]]; then
       	    rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
@@ -342,7 +340,7 @@ do
          fi
          rm -f ${tmp_dir}/$tmp_file 
          rm -f ${tmp_dir}/${tmp_file}_ameta
-         rmdir ${tmp_dir}
+	 clean_temp_dir
          exit 1
        fi
        echo "$input OK"
@@ -350,7 +348,7 @@ do
   fi
 
 
-  #echo "Remopving temporary file"
+  #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
   if [[ $include_ameta -eq 1 ]]; then
@@ -365,9 +363,9 @@ do
 
   echo "$input uploaded to ${bucket_name}"
   if [[ $partial_path == "" ]]; then 
-     echo "Publick link: https://a3s.fi/${bucket_name}/$tmp_file"
+     echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
   else 
-     echo "Publick link: https://a3s.fi/${buket_name}/${partial_path}/$tmp_file"
+     echo "Public link: https://a3s.fi/${bucket_name}/${partial_path}/$tmp_file"
   fi
   tmp_file=("not_defined")
 
@@ -395,7 +393,7 @@ rm -f   ${tmp_dir}/index.html
 swift post ${bucket_name} --read-acl ".r:*,.rlistings"
 swift post "${bucket_name}_segments" --read-acl ".r:*,.rlistings"
 
-rmdir  ${tmp_dir}
+clean_temp_dir
 echo ""
 echo "Upload ready"
 exit 0

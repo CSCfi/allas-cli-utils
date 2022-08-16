@@ -1,73 +1,5 @@
 #!/bin/bash
 
-#function to check that swift works
-check_swift_connection () {
-    if [[ -n "$OS_PASSWORD" ]]; then
-         if  [[ $silent -eq 0 ]] ; then
-          echo "Updating token"
-         fi
-         source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f
-         echo "swift connection updated"
-    fi
-
-    test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-
-    if [[ $test -lt 1 ]]
-    then
-        echo "No connection to Allas!"
-        echo "Please try setting up the connection again."
-        exit 1
-    else
-       echo "swift connection OK"
-    fi
-}
-
-#Function to remove the trailing / if it exist
-remove_slash_from_ends(){
-path_string=$1
-if [[ ${path_string:(-1)} == "/" ]]; then
-    path_string=${path_string%/}
-fi
-
-if [[  ${path_string:0:1} == "/" ]]; then
-    tlen=${#path_string}
-    path_string=${path_string:1:tlen}
-fi
-
-echo $path_string
-}
-
-
-check_segment_sizes(){
-  local segment_server="$1"
-  local segments_bucket="${2}_segments"
-  local check_object=$3
-  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
-
-  if [[ ${#segsizes[@]} -eq 2 ]]; then
-     if [[ ${segsizes[0]} -eq  ${segsizes[1]} ]]; then
-         echo "OK"
-     else
-         if [[ ${segsizes[0]} -lt  ${segsizes[1]} ]]; then
-           local m="ERROR.
-Total size of segments ${segsizes[0]} is less that original file size ${segsizes[1]}.
-Some segments are missing?"
-           echo $m
-         fi
-         if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
-local m="ERROR. Total size of segments ${segsizes[0]} is more than original file size ${segsizes[1]}.
-Check the segments bucket ${segments_bucket} for object ${check_object}."
-           echo $m
-         fi
-
-     fi
-  else
-     #No segements found. Assuming OK
-      echo "OK"
-  fi
-}
-
-
 if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
@@ -86,6 +18,7 @@ user="$USER"
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 #local variables
 bucket_name="not_defined"
@@ -96,8 +29,8 @@ os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="swift"
 silent=0
-tmp_dir="${tmp_root}/a_put_$$_tmp"
-vastaus="x"
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+user_answer="x"
 free_space_check=1
 filelist_level=0
 cumulative_size=0
@@ -122,8 +55,6 @@ else
 fi
 
 
-abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
-
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -145,7 +76,7 @@ do
                   tmp_file="$2"
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
-                     echo "Slash characters (/) are not allowed when object name is defiend with -o option"
+                     echo "Slash characters (/) are not allowed when object name is defined with -o option"
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
@@ -184,7 +115,6 @@ do
                 ;;
              '--tmpdir' | '-t' )
                   tmp_root=("$2")
-                  tmp_dir=("${tmp_root}/a_put_$$_tmp")
                   shift
                   shift
                 ;;
@@ -326,13 +256,13 @@ a-check command line options:
                             which the data is uploaded.
 
 -p, --project <project_ID>  Upload data into buckets of the defined
-                            project in stead of the currently
+                            project instead of the currently
                             configured project.
 
 -o, --object <object_name>  Define a name for the new object to be
                             created.
 
--S, --s3cmd                 Use S3 protocol in stead of swift protocol
+-S, --s3cmd                 Use S3 protocol instead of swift protocol
                             for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
@@ -344,7 +274,7 @@ a-check command line options:
 
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a direcrory that will be used to store
+-t, --tmpdir                Define a directory that will be used to store
                             temporary files of the upload process.
 
 -s, --silent                Less output
@@ -366,30 +296,30 @@ a-check command line options:
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directtories
+--input-list <list_file>    Give a file that lists the files or directories 
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 
 -a, --asis                  Copy the given file or content of a directory to Allas
                             without compression and packing so that each file in the
                             directory will be copied to Allas as an individual object.
-                            The object name contrains the relative path of the file to
+                            The object name contains the relative path of the file to
                             be copied.
 
 --follow-links              When uploading a directory, include linked files as real files
-                            in sead of links.
+                            instead of links.
 
--e, --encrypt <methiod>     Options: gpg and c4gh. Encrypt data with pgp or crypt4gh.
+-e, --encrypt <method>     Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with
-                            crypt4gh using CSC public key after which the files are inported
+                            crypt4gh using CSC public key after which the files are imported
                             to Allas as individual objects as in --asis format.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
-                            your-projecyt-number_SD-CONNECT,
+                            your-project-number_SD-CONNECT,
 
 
 Related commands: a-find, a-get, a-delete, a-info
@@ -398,6 +328,8 @@ EOF
 exit
 
 fi
+
+make_temp_dir
 
 # note about customization
 if [[ $silent -eq 0 ]]; then
@@ -473,19 +405,18 @@ if [[ $asis_mode -eq 1 ]];then
    SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
    IFS=$(echo -en "\t\n\b")
-   #parse the file names from the targer directory
+   #parse the file names from the target directory
    input_def=("$(find $input_def -type f)")
    #IFS=$SAVEFS
    num_to_import=($(echo "$input_def" | wc -l ))
    #IFS=$(echo -en " \n\b")
    if [[ $num_to_import -lt 1 ]]; then
-          echo "Input definiton: $one_input_def"
-          echo "dot't return any files to input"
+          echo "Input definition: $one_input_def"
+          echo "don't return any files to input"
           exit 1
    fi
 fi
 
-mkdir $tmp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
 
 
@@ -590,7 +521,7 @@ do
           exit
        fi
      else
-       # Create key for sdx enryption
+       # Create key for sdx encryption
        echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
 dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
@@ -634,15 +565,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -654,15 +585,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -675,14 +606,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -695,14 +626,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
         bucket_name=("${project_label}-${local_host}-PROJAPPL")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -716,14 +647,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     then
         puhti_project=$SLURM_JOB_ACCOUNT
         bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
-        if [[  $os_project_name  != $puhti_project ]] && [[ $vastaus != "y" ]] ; then
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
           echo "But it will be stored to Allas under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
-          read vastaus
-          if [[ $vastaus != "y" ]]; then
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
              echo "Exiting, data not uploaded."
              exit 0
           fi
@@ -800,7 +731,7 @@ fi
 
 rm -f ${tmp_dir}/missing_files.txt
 rm -f ${tmp_dir}/upload.log
-rmdir  ${tmp_dir}
+clean_temp_dir
 
 exit 0
 
