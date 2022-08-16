@@ -1,5 +1,5 @@
 # a-delete
-
+ 
 ```text
 This tool is used to remove data that has been uploaded to Allas service using the a-put command.
 The basic syntax of the command is:
@@ -9,7 +9,7 @@ The basic syntax of the command is:
 
 Options:
 
--p, --project <project_ID>   Delete objects form the buckets of the defined project in stead of the currently configured project.
+-p, --project <project_ID>   Delete objects form the buckets of the defined project instead of the currently configured project.
 
 -b --bucket                  Object name includes bucket name and the command does not try to use the default bucket names.
 

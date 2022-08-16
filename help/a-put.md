@@ -73,13 +73,13 @@ a-put command line options:
                             which the data is uploaded.
 
 -p, --project <project_ID>  Upload data into buckets of the defined 
-                            project in stead of the currently 
+                            project instead of the currently 
                             configured project.
 
 -o, --object <object_name>  Define a name for the new object to be 
                             created.
 
--S, --s3cmd                 Use S3 protocol in stead of swift protocol 
+-S, --s3cmd                 Use S3 protocol instead of swift protocol 
                             for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
@@ -123,7 +123,7 @@ a-put command line options:
                             be copied. 
 
 --follow-links              When uploading a directory, include linked files as real files
-                            in stead of links.
+                            instead of links.
 
 -e, --encrypt <method>      Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
 
@@ -132,7 +132,7 @@ a-put command line options:
 --sdx                       Upload data to Allas in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with 
                             crypt4gh using CSC public key after which the files are imported 
-                            to Allas as individual objects as in --asis format. 
+                            to Allas. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-project-number_SD-CONNECT,

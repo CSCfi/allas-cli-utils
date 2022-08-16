@@ -6,7 +6,7 @@ The basic syntax of the command is:
 
    a-get object_name
 
-By default the object is retrieved and uncompressed 
+By default the object is retrieved and decompressed 
 
 Options:
 
@@ -22,7 +22,7 @@ Options:
 
 -l, --original_location       Retrieve the data to the original location in the directory structure.
 
---asis                        Download the object without unpacking tar files and uncompressing zst compressed data.
+--asis                        Download the object without unpacking tar files and decompressing zst compressed data.
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 

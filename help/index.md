@@ -22,6 +22,8 @@
  
 [a-put](./a-put.md)
  
+[a-put-batch](./a-put-batch.md)
+ 
 [a-stream](./a-stream.md)
  
 [allas-add-S3-permissions](./allas-add-S3-permissions.md)

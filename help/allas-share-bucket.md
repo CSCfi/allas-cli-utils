@@ -10,7 +10,7 @@ accessible to the internet.
 allas-share-bucket tool gives the specified read and write permissions to
 the bucket defined for both SWIFT and S3 protocols. 
 
-Before running this command you need to setup the allas connection 
+Before running this command you need to setup the allas connection
 with commands:
 
    module load allas

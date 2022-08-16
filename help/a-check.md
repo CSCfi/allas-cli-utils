@@ -1,5 +1,5 @@
 # a-check
-
+ 
 ```text
 
 
@@ -67,7 +67,7 @@ a-check command line options:
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directories
+--input-list <list_file>    Give a file that lists the files or directories 
                             to be uploaded to Allas.
                             Each item will be stored as one object.
 

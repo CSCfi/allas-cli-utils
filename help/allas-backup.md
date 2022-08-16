@@ -10,7 +10,7 @@ repository to the Allas storage service at CSC and uses that for making cumulati
 
 In order to use this tool, you must first open connection to Allas storage service with
 command:
-   source /appl/opt/allas-cli-utils/allas_conf
+   source /some/path/allas-cli-utils/allas_conf
 
 The connection remains open for eight hours.
 
@@ -36,5 +36,10 @@ allas-backup can be used for following five operations:
 
   allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
 
+  Extra options:
+ 
+  -b, -bucket                        Use specific bucket for your repository. Note that this makes
+                                     Allas-backup to use different separate repository instead of
+                                     the default one.
 
 ```
