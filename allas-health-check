@@ -155,7 +155,7 @@ do
                   else
                      (( num_fail = num_fail + 1 )) 
                      (( fail_pro = fail_pro + 1 ))
-                     echo  "Object $fobject has segment some objects missing."           
+                     echo  "Object $fobject has some segment objects missing!"           
                      echo  "     Object $bucket/$fobject has some segment objects missing."  >> /tmp/allas-health-tmp-$$
                   fi
               fi
