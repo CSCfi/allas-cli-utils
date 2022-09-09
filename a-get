@@ -415,14 +415,21 @@ if [[ $is_tar_file -eq 1 ]]; then
      fi
      if [[ $encrypt == "gpg" ]]; then
         echo "Based on the object name, the object has been encrypted with gpg."
-        gpg -d a-get_download_$$_tmp.zst >   a-get_download_$$_tmp.zst.tmp          
+        gpg -d a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
+        exitcode=$?          
         rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
      fi
      if [[ $encrypt == "crypt4gh" ]]; then
         crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
+        exitcode=$?
         rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+     fi
+     if [[ $exitcode -ne 0 ]]; then
+        echo "Decryption failed!"
+        rm -f  a-get_download_$$_tmp.zst
+        exit 1
      fi
 
 
@@ -463,10 +470,13 @@ else
        #if [[ $mode == "swift" ]]; then 
            if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:$object_name" | gpg -d | zstdmt -d >  $target_name
+             exitcode=$?
            elif [[  $encrypt == "crypt4gh" ]]; then
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" | zstdmt -d >  $target_name
+             exitcode=$?
            else
              rclone cat "${storage_server}:$object_name" | zstdmt -d >  $target_name
+             exitcode=$?
            fi
     else 
        if [[ $target_dir == "" ]]; then 
@@ -479,16 +489,20 @@ else
            elif [[  $encrypt == "crypt4gh" ]]; then
              #echo "rclone cat ${storage_server}:$object_name  crypt4gh decrypt --sk $secret_key"
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
+             exitcode=$?
            else
              echo "eka ${target_name:0:1}"
              if [[ ${target_name:0:1} != "/" ]]; then
                 #this is needed to cope with file names containing :
                 rclone -P copyto "${storage_server}:$object_name"  "./$target_name"
+                exitcode=$?
                 fix_target_name=1
              else
                 rclone -P copyto "${storage_server}:$object_name"  $target_name
+                exitcode=$?
              fi
            fi
+
        #else
        #    s3cmd get "s3://${object_name}"  $target_dir/$target_name
        #    if [[ $encrypted == "gpg" ]]; then
@@ -506,6 +520,11 @@ else
        #fi
     fi
 
+    if [[ $exitcode -ne 0 ]]; then
+        echo "Download failed!"
+        rm -f  $target_name
+        exit 1
+     fi
 
     if [[ $new_target -eq 1 ]];then
        cd -   

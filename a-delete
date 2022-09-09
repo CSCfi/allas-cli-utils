@@ -148,6 +148,7 @@ if [[ $remove_bucket -eq 1 ]]; then
      if [[ $force -eq 2 ]]; then
         if [[ $object_name != "" ]]; then
             rclone delete ${storage_server}:"$object_name"
+            rclone rmdir ${storage_server}:"$object_name"
             echo "$object_name deleted"
         fi
      fi

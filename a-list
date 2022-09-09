@@ -3,6 +3,7 @@
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+mode=swift
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
