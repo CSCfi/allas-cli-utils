@@ -470,15 +470,6 @@ if [[ $asis_mode -eq 1 ]];then
 fi   
 
 
-if [[ $mode == "swift" ]]
-  then
-    if [[ $silent -eq 0 ]] ; then 
-      check_swift_connection 
-    else 
-      check_swift_connection > /dev/null
-    fi
-fi
-
 
 make_temp_dir
 printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log

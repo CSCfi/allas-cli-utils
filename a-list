@@ -121,12 +121,6 @@ fi
 
 
 
-#Check if connection works
-if [[ $mode == "swift" ]]
-then
- check_swift_connection
-fi
-
 
 # run list command
 if [[ $dir_like -eq 1 ]]; then
