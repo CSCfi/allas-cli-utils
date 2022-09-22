@@ -45,7 +45,7 @@ include_ameta=1
 sdx=0
 meta_message=""
 check_mode=0
-max_files=100000
+max_files=1000000
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
