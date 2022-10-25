@@ -19,7 +19,7 @@ local usage="
 
 Usage: source allas_conf [OPTIONS] [PROJECT]
 
-    This script sets up the environment variables and the configuration
+    This bash script sets up the environment variables and the configuration
     files for accessing Allas storage service https://a3s.fi using swift
     (default) and/or S3 APIs.
 
@@ -129,8 +129,16 @@ while [[ $# -ge 1 ]]; do
         *) export OS_PROJECT_NAME="$1";                  shift;;
     esac
 done
-
+f
 # check if this is executed as sourced command
+
+if [[ $(ps -hp $$|awk '{print $5}') != "bash"  -a "$force" == "false" ]]; then
+   echo "NOTE!"
+   echo "allas_conf has been written for bash shell"
+   echo "but you are using  $(ps -hp $$|awk '{print $5}') "
+   echo "You can try to source allas_conf with --force option, but it will likely fail"
+   exit 1
+fi
 
 if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
     echo "Error: allas_conf should not be executed directly. $usage" >&2

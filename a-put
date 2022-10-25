@@ -579,7 +579,7 @@ do
        # Create key for sdx encryption
        echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
 dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
------END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
+-----END CRYPT4GH PUBLIC KEY-----" > $tmp_dir/.sdx_key_tmp_$$
      fi
   fi
  
@@ -951,7 +951,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $encrypt == "crypt4gh" ]]; then  
      if [[ $sdx -eq 1 ]]; then
        # encryption for sdx 
-        crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
+        crypt4gh encrypt --recipient_pk ${tmp_dir}/.sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
      else
        echo "normal encryption"
        crypt4gh encrypt $all_keys < ${tmp_dir}/$tmp_file >  ${tmp_dir}/${tmp_file}.tmp
