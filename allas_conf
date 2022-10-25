@@ -1,5 +1,16 @@
 #!/bin/bash
 
+
+# check if this is executed as sourced command
+shell_check=`ps -hp $$|awk '{print $5}' `
+
+
+if [[ $shell_check != "bash" ]]; then
+   echo " This tool is written for bash shell."
+   echo " You are using $shell_check shell."
+fi
+
+
 export OS_PROJECT_NAME=""
 export OS_PROJECT_ID=""
 export OS_STORAGE_URL=""
@@ -129,14 +140,14 @@ while [[ $# -ge 1 ]]; do
         *) export OS_PROJECT_NAME="$1";                  shift;;
     esac
 done
-f
+
 # check if this is executed as sourced command
 
-if [[ $(ps -hp $$|awk '{print $5}') != "bash"  -a "$force" == "false" ]]; then
+if [[ $shell_check != "bash" && "$force" == "false" ]]; then
    echo "NOTE!"
    echo "allas_conf has been written for bash shell"
-   echo "but you are using  $(ps -hp $$|awk '{print $5}') "
-   echo "You can try to source allas_conf with --force option, but it will likely fail"
+   echo "but you are using {$shell_check}. "
+   echo "You can try to source allas_conf with --force option, but it will likely fail."
    exit 1
 fi
 
