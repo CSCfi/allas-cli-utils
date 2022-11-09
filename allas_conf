@@ -146,7 +146,7 @@ done
 if [[ $shell_check != "bash" && "$force" == "false" ]]; then
    echo "NOTE!"
    echo "allas_conf has been written for bash shell"
-   echo "but you are using {$shell_check}. "
+   echo "but you are using ${shell_check}. "
    sleep 10
 fi
 
