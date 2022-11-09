@@ -147,8 +147,7 @@ if [[ $shell_check != "bash" && "$force" == "false" ]]; then
    echo "NOTE!"
    echo "allas_conf has been written for bash shell"
    echo "but you are using {$shell_check}. "
-   echo "You can try to source allas_conf with --force option, but it will likely fail."
-   exit 1
+   sleep 10
 fi
 
 if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
