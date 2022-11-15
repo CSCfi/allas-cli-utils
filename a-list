@@ -3,7 +3,7 @@
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-mode=swift
+mode="swift"
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
@@ -18,6 +18,7 @@ dir_like=0
 long_listing=0
 silent=1
 all=0
+show_shared=1
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -49,6 +50,10 @@ do
              '--all' | '-a' )
                 all=1
                 shift
+             ;;
+             '--shared' | '-s')
+                show_shared=1
+                shift     
              ;;
              '--help' | '-h' )
                   print_help=1
@@ -100,7 +105,10 @@ fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to list buckets and objects in Allas. If bucket name is not defined, all buckets are listed. If bucket name is defined, then objects inside the bucket are listed.
+This tool is used to list buckets and objects in Allas. If bucket name is not defined, all buckets are listed. 
+If bucket name is defined, then objects inside the bucket are listed.
+
+
 
    a-list <bucket_name>
 
@@ -113,16 +121,87 @@ Options:
 
 -p, --prefix            List only objects starting with the given prefix.
 
+
+Working with shared buckets:
+
+                        When you list a contents of a bucket with a-list, the command checks if the bucket used 
+                        belongs to the current project. If it does not belong to the project, the name of the shared 
+                        bucket is stored to Allas ( into object project-number-a-tools/buckets_shared_to).
+                        When you check the available buckets with command a-list, the command shows also the names of
+                        the shared buckets stored to Allas. NOTE that this option shows information about only about 
+                        shared buckets that have previously been used by a-list. Thus you can't use a-list check if some
+                        new buckets has been shared to you.
+
+
+                    
+
 Related commands: a-put, a-get, a-delete, a-find
 
 EOF
 exit 0
 fi 
 
+# check is this is a shared  bucket
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+a_tools_bucket=${project_label}-a-tools
+shared_list="buckets_shared_to"
 
 
+if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then   
+   #my_auth=$( echo $OS_STORAGE_URL | awk -F "/" '{print $NF}' )
+   bucket_readable=$(rclone ls ${storage_server}:$bucket_name 2> /dev/null | wc -l)
+   own_bucket=$(rclone lsd allas: | awk '{ print $NF}' | grep -c -w $bucket_name )
+   #bucket_auth=$(swift stat $bucket_name 2>/dev/null | grep "Account:" | awk '{print $2}')
+   #echo my: $my_auth bucket $bucket_auth
+   # case: bucket reable but not owned
+   if [[ $bucket_readable -gt 0 ]] && [[ $own_bucket -eq 0 ]]; then
+   #if [[ $my_auth != $bucket_auth ]] && [[ $bucket_auth != "" ]]; then
+       # do we already have a list of shared buckets
+       check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
+       if [[ $check_os -eq 1 ]]; then
+          echo B1
+          known_shared=$(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -w -c $bucket_name)
+          if [[ $known_shared -eq 0 ]]; then
+            rclone cat ${storage_server}:${a_tools_bucket}/$shared_list > .$$_a_shared_tmp
+            echo "$bucket_name" >> .$$_a_shared_tmp
+            rclone copyto .$$_a_shared_tmp  ${storage_server}:${a_tools_bucket}/$shared_list
+            echo "Adding bucket $bucket_name to the list of buckets shared to this project"
+            #rm .$$_a_shared_tmp
+          fi
+       else
+          echo " rclone mkdir ${storage_server}:${a_tools_bucket} "
+          rclone mkdir ${storage_server}:${a_tools_bucket}  
+          echo "$bucket_name" | rclone rcat ${storage_server}:${a_tools_bucket}/$shared_list 
+          echo "Adding bucket $bucket_name to the list of buckets shared to this project" 
+       fi
+   fi
+   # case: bucket not readable
+   #echo bucket_readable $bucket_readable
+   if [[  $bucket_readable -eq 0 ]]; then  
+      check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
+      #echo check_os $check_os
+       if [[ $check_os -gt 0 ]]; then
+          known_shared=$(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -w -c $bucket_name)
+          if [[ $known_shared -eq 1 ]]; then
+             rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -v -w "$bucket_name" > .$$_a_shared_tmp
+             rmaining_shares=$(cat .$$_a_shared_tmp | wc -l ) 
+             if [[ $rmaining_shares -gt 0 ]];then
+                cat .$$_a_shared_tmp | rclone copyto .$$_a_shared_tmp  ${storage_server}:${a_tools_bucket}/$shared_list
+             else
+                rclone delete  ${storage_server}:${a_tools_bucket}/$shared_list
+             fi
+             #rm .$$_a_shared_tmp
+             echo "Bucket $bucket_name is no longe accessible. Removing it form the list of shared buckets"
+          fi
+       fi
+   fi
+ 
 
+fi
 # run list command
+
+
+
 if [[ $dir_like -eq 1 ]]; then
   echo rclone lsf ${storage_server}:${full_name}
   rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
@@ -131,10 +210,18 @@ fi
 
 if [[ $bucket_name == "" ]]; then
    if [[ $long_listing -eq 0 ]]; then
-      rclone lsd ${storage_server}: | awk '{print $NF}'
+      rclone lsd ${storage_server}: | awk '{print $NF}'         
    else
       rclone lsd ${storage_server}:
    fi
+   check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
+   if [[ $check_os -eq 1 ]] && [[ $show_shared -eq q ]]; then
+      echo ""
+      echo "Previously used buckets shared from other projects:"
+      echo "NOTE: The list below is not necessarily up to date."
+      rclone cat ${storage_server}:${a_tools_bucket}/$shared_list
+   fi
+
    # swift list $options
 else
    if [[ $mode == "s3cmd"  ]]; then
