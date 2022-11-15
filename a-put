@@ -1130,7 +1130,7 @@ if [[ $silent -eq 0 ]] ; then
   echo "-----------------------------------------------------------------"
   echo OK
 fi
-rm -f .sdx_key_tmp_$$
+rm -f ${tmp_dir}/.sdx_key_tmp_$$
 rm -f ${tmp_dir}/tar_list
 rm -f ${tmp_dir}/upload.log 
 clean_temp_dir
