@@ -2,12 +2,15 @@
 
 
 # check if this is executed as sourced command
-shell_check=`ps -hp $$|awk '{print $5}' `
+shell_check=`ps -hp $$|awk '{print $5}'| grep -c bash `
 
 
-if [[ $shell_check != "bash" ]]; then
-   echo " This tool is written for bash shell."
-   echo " You are using $shell_check shell."
+if [[ $shell_check -ne 1 ]]; then
+   echo " allas_conf is written for bash shell."
+   my_shell=`ps -hp $$|awk '{print $5}'`
+   echo " You are using $my_shell shell."
+   echo " This may cause this command to fail."
+   sleep 3
 fi
 
 
@@ -141,14 +144,6 @@ while [[ $# -ge 1 ]]; do
     esac
 done
 
-# check if this is executed as sourced command
-
-if [[ $shell_check != "bash" && "$force" == "false" ]]; then
-   echo "NOTE!"
-   echo "allas_conf has been written for bash shell"
-   echo "but you are using ${shell_check}. "
-   sleep 10
-fi
 
 if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
     echo "Error: allas_conf should not be executed directly. $usage" >&2
