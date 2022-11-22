@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# CEPH swift bucket listing is paginated. Default is 10000 objects per page.
+# This script lists all objects i.e. all pages of a bucket listing.
+# The script uses OS_AUTH_TOKEN and OS_STORAGE_URL environment variables.
+#
+# Usage: $0 bucket_name
+
+if [ $# -ne 1 ]; then
+	echo "Usage: $0 bucket_name" >&2
+	exit 1
+fi
+
+BUCKET="$1"
+
+MARKER=""
+
+while true
+do
+	# get the next listing page
+	if [ -z "$OS_AUTH_TOKEN" ]; then
+		OUT=$(curl -sS -X GET "$OS_STORAGE_URL/$BUCKET/$MARKER" -w "\n%{http_code}")
+		CURL_EXIT="$?"
+		if [ "$CURL_EXIT" != "0" ]; then echo "curl return value $CURL_EXIT" >&2; exit 1; fi
+	else
+		OUT=$(curl -sS -X GET -H "X-Auth-Token: $OS_AUTH_TOKEN" "$OS_STORAGE_URL/$BUCKET/$MARKER" -w "\n%{http_code}")
+		CURL_EXIT="$?"
+		if [ "$CURL_EXIT" != "0" ]; then echo "curl return value $CURL_EXIT" >&2; exit 1; fi
+	fi
+
+	HTTP_RET=$(echo "$OUT" | tail -1 | tr -d '\n')
+
+	# http return value not ok, exit
+	if [ "$HTTP_RET" != "204" -a "$HTTP_RET" != "200" ]; then echo "HTTP return value $HTTP_RET" >&2; exit 1; fi
+
+	# output the list
+	echo "$OUT" | sed '$d;/^$/d' 
+
+	# http return value 204 means the end of listing
+	if [ "$HTTP_RET" == "204" ]; then exit 0; fi
+
+	# marker key for the next listing page is the last line of the listing
+	LAST_LINE=$(echo "$OUT" | sed '$d' | tail -1)
+	MARKER="?marker=$LAST_LINE"
+done
+
+
