@@ -158,8 +158,7 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
    #if [[ $my_auth != $bucket_auth ]] && [[ $bucket_auth != "" ]]; then
        # do we already have a list of shared buckets
        check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
-       if [[ $check_os -eq 1 ]]; then
-          echo B1
+       if [[ $check_os -eq 1 ]]; then        
           known_shared=$(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -w -c $bucket_name)
           if [[ $known_shared -eq 0 ]]; then
             rclone cat ${storage_server}:${a_tools_bucket}/$shared_list > .$$_a_shared_tmp
@@ -169,7 +168,7 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
             #rm .$$_a_shared_tmp
           fi
        else
-          echo " rclone mkdir ${storage_server}:${a_tools_bucket} "
+          #echo " rclone mkdir ${storage_server}:${a_tools_bucket} "
           rclone mkdir ${storage_server}:${a_tools_bucket}  
           echo "$bucket_name" | rclone rcat ${storage_server}:${a_tools_bucket}/$shared_list 
           echo "Adding bucket $bucket_name to the list of buckets shared to this project" 
