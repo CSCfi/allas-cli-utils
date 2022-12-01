@@ -214,7 +214,7 @@ if [[ $bucket_name == "" ]]; then
       rclone lsd ${storage_server}:
    fi
    check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
-   if [[ $check_os -eq 1 ]] && [[ $show_shared -eq q ]]; then
+   if [[ $check_os -eq 1 ]] && [[ $show_shared -eq 1 ]]; then
       echo ""
       echo "Previously used buckets shared from other projects:"
       echo "NOTE: The list below is not necessarily up to date."
