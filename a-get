@@ -175,7 +175,7 @@ then
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
-    echo "No connection to Allas!"
+    echo "No connection to $storage_server!"
     echo "Please try setting up the connection again"
     echo "by running command:"
     echo ""
@@ -188,6 +188,14 @@ fi
 if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
 fi
+
+#lumi
+if [[ $mode == "lumi" ]];then
+   storage_server="lumi-o"
+fi
+
+
+
 
 #source /appl/opt/allas_conf
 #input=("$1")
@@ -491,7 +499,6 @@ else
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
              exitcode=$?
            else
-             echo "eka ${target_name:0:1}"
              if [[ ${target_name:0:1} != "/" ]]; then
                 #this is needed to cope with file names containing :
                 rclone -P copyto "${storage_server}:$object_name"  "./$target_name"

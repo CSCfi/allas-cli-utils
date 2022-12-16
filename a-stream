@@ -52,10 +52,19 @@ do
                 asis_mode=1
                   shift
                 ;; 
-              '--s3cmd' )
+             '--s3cmd' | '--s3allas' )
                   mode=("s3cmd")
                   shift
                 ;;
+             '--lumi' )
+                mode=("lumi")
+                shift
+                ;;
+             '--allas' )
+                mode=("swift")
+                shift
+                ;;
+
              '--sk' )
                   secret_key="$2"
                   if [[ ! -e $secret_key ]]; then
@@ -148,6 +157,10 @@ if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
 fi
 
+#Rclone through s3
+if [[ $mode == "lumi" ]];then
+   storage_server="lumi-o"
+fi
 #source /appl/opt/allas_conf
 #input=("$1")
 

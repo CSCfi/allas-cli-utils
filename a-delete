@@ -73,6 +73,10 @@ do
                   mode="s3cmd"
                   shift
                 ;;
+             '--lumi' )
+                 mode="lumi"
+                 shift
+              ;;
 
              '-h' | '--help' )
                   print_help=1
@@ -142,6 +146,9 @@ if [[ $mode == "s3cmd" ]]; then
  storage_server="s3allas"
 fi
 
+if [[ $mode == "lumi" ]]; then
+ storage_server="lumi-o"
+fi
 
 #The method to remove a bucket
 if [[ $remove_bucket -eq 1 ]]; then

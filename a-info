@@ -104,6 +104,12 @@ if [[ $mode == "s3cmd" ]]; then
   storage_server="s3allas"
 fi 
 
+if [[ $mode == "lumi" ]]; then
+  storage_server="lumi-o"
+fi 
+
+
+
 
 if [[ $object_name == "" ]] ; then 
   for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')

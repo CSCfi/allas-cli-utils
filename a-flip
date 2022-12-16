@@ -25,6 +25,15 @@ input_def=("")
 mode=("swift")
 #tmp_dir=("${tmp_root}/a_put_$$_tmp")
 
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else
+   customized=0
+fi
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -84,8 +93,17 @@ then
     echo "Please try setting up the connection again."
     exit 1
   fi
-else
-  echo "a-flip is available only in swift mode"
+fi
+
+if [[ $mode == "s3cmd" ]]
+then
+  echo "a-flip is not available s3allas."
+  exit
+fi
+
+if [[ $mode == "lumi" ]]
+then
+  storage_server="lumi-pub"
 fi
 
 
@@ -103,6 +121,12 @@ echo "Files to be uploaded: $input_def"
 #set default bucket
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 bucket_name=("${user}-${project_label}-flip")
+
+if [[ $mode == "lumi" ]]; then
+   echo "rclone mkdir ${storage_server}:${bucket_name}"
+   rclone mkdir ${storage_server}:${bucket_name}
+fi
+
 
 make_temp_dir
 
@@ -196,15 +220,14 @@ do
 
   #upload
 
-  if [ $mode == "swift" ]
-  then
-    # For less than 5GB files rclone is used for uploading
+  #if [[ $mode == "swift" ]]; then
+  # For less than 5GB files rclone is used for uploading
 
-    echo "Uploading data to allas."
-    # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-    rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}
-    exitcode=$?
-    if [ $exitcode -ne 0 ]; then
+  echo "Uploading data to allas."
+  echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}"
+  rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}
+  exitcode=$?
+  if [ $exitcode -ne 0 ]; then
        echo ""
        echo "File upload for $infile failed"
 
@@ -213,29 +236,28 @@ do
        rm -f ${tmp_dir}/${tmp_file}_ameta
        clean_temp_dir
        exit 1
-    fi
+  fi
 
-    # rclone md5sums can be calculated only for files that are smaller than 5GB
-    if [[ $tot_size -lt 5000000 ]]
-    then
-       echo "Confirming upload..."
-       #checksums for local and allas files
-       sum1=($(md5sum ${tmp_dir}/$tmp_file))
-       sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
+  # rclone md5sums can be calculated only for files that are smaller than 5GB
+  if [[ $tot_size -lt 5000000 ]]
+  then
+     echo "Confirming upload..."
+     #checksums for local and allas files
+     sum1=($(md5sum ${tmp_dir}/$tmp_file))
+     sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
 
-       #check is checksums match
-       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
-       then
-         echo "Upload of $input was not successful!"
-         echo "Cleaning the failed upload"
-         rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
-         rm -f ${tmp_dir}/$tmp_file
-         rm -f ${tmp_dir}/${tmp_file}_ameta
-	 clean_temp_dir
-         exit 1
-       fi
-       echo "$input OK"
-    fi
+     #check is checksums match
+     if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+     then
+       echo "Upload of $input was not successful!"
+       echo "Cleaning the failed upload"
+       rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
+       rm -f ${tmp_dir}/$tmp_file
+       rm -f ${tmp_dir}/${tmp_file}_ameta
+       clean_temp_dir
+       exit 1
+     fi
+     echo "$input OK"
   fi
 
 
@@ -251,7 +273,12 @@ do
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
-  echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
+  if [[ $mode == "swift" ]]; then
+     echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
+  fi
+  if [[ $mode == "lumi" ]]; then
+     echo "Public link:  https://${os_project_name}.lumidata.eu/${bucket_name}/$tmp_file"
+  fi
 
   tmp_file=("not_defined")
 
@@ -271,18 +298,21 @@ done
 #Publish and rebuild index file
 
 echo '<html>' >  ${tmp_dir}/index.html
-for i in $(swift list $bucket_name | grep -v '_ameta$' )
+#for i in $(swift list $bucket_name | grep -v '_ameta$' )
+for i in $(rclone ls  ${storage_server}:${bucket_name} | grep -v '_ameta$' | awk '{print "X "$0}' | tr -s " " | cut -d " " -f 3- )
 do
-echo '<li><a href="'$i'">'$i'</a></li>' >> ${tmp_dir}/index.html
+  echo '<li><a href="'$i'">'$i'</a></li>' >> ${tmp_dir}/index.html
 done
 echo '</html>' >>  ${tmp_dir}/index.html
-rclone copy  ${tmp_dir}/index.html ${storage_server}:${bucket_name}/
 
+rclone copy  ${tmp_dir}/index.html ${storage_server}:${bucket_name}/
 rm -f   ${tmp_dir}/index.html
 
-#set access control
-swift post ${bucket_name} --read-acl ".r:*,.rlistings"
-swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
+#set access control in case of Allas/swift
+if [[ $mode == "swift" ]]; then
+  swift post ${bucket_name} --read-acl ".r:*,.rlistings"
+  swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
+fi
 
 clean_temp_dir
 echo ""

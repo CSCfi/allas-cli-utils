@@ -28,6 +28,16 @@ mode="swift"
 #tmp_dir="${tmp_root}/a_put_$$_tmp"
 make_temp_dir
 
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else
+   customized=0
+fi
+
+
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -53,7 +63,14 @@ do
                   mode=("s3cmd")
                   shift
                 ;;
-
+            '--lumi' )
+                  mode=("lumi")
+                  shift
+                ;;
+            '--allas' )
+                  mode=("swift")
+                  shift
+                ;;
              '--index' | '-i' )
                   index_mode=$2
                   if [[ $index_mode == "static" || $index_mode == "dynamic" ]]; then
@@ -134,43 +151,6 @@ exit
 
 fi 
 
-#Configure rclone
-if [ ! -e $HOME/.config/rclone ]
-then 
-  mkdir -p  $HOME/.config/rclone
-fi
-if [ -e $HOME/.config/rclone/rclone.conf ]
-then 
-   rc_check=$(grep -c $storage_server $HOME/.config/rclone/rclone.conf)
-   if [ $rc_check -lt 1 ]
-   then
-      echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-      echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-      echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf
-   fi
-else
-   echo '[pouta]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = swift'  >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = true'   >>  $HOME/.config/rclone/rclone.conf 
-fi
-
-#Assign project to be used if not defined 
-if [ $os_project_name == "" ]
-then
-  if [ -e $HOME/.allas_default ]
-  then
-     source $HOME/.allas_default
-  else
-     echo "Default project is not defined"
-     source $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
-     echo ""
-  fi
-  source $HOME/.allas_default
-fi
-
-
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
@@ -184,12 +164,6 @@ then
   fi 
 fi
 
-#source /appl/opt/allas_conf
-#input=("$1")
-
-#check free space in $WRKDIR
-#quota_s=($(lfs quota -q -u $USER $WRKDIR))
-#free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
 
 echo "Files to be uploaded: $input_def"
 
@@ -199,7 +173,18 @@ if [[ "$bucket_name" == "not_defined" ]]
 then
    bucket_name=("${user}-${project_label}-pub")
 fi 
+
+#In case of lumi the bucket must be cereated
+if [[ $mode == "lumi" ]]; then
+   storage_server="lumi-pub"
+   echo "rclone mkdir ${storage_server}:${bucket_name}"
+   rclone mkdir ${storage_server}:${bucket_name}
+fi
+
+
 echo "Bucket: $bucket_name"
+
+
 
 
 for input in $input_def
@@ -269,82 +254,67 @@ do
   then 
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
-    echo "Please use swift or rclone command to upload the data to allas"
+    echo "Please use swift or rclone command to upload the data to $storage_server"
     rm -f ${tmp_dir}/${tmp_file}_ameta
     clean_temp_dir
     exit 1
   fi 
 
-#  if [[ $tot_size -gt $free_space ]]
-#  then 
-#    echo "There is not enough space for the temporary files."
-#    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
-#    echo "Available free space is ${free_space}K"
-#    echo ""
-#    rm -f ${tmp_dir}/${tmp_file}_ameta
-#    rmdir ${tmp_dir}
-#    exit 1
-#  fi
-
-  #this is not a good approach.
-  #test if a symbolic link would do
-  #cp $input ${tmp_dir}/$tmp_file  
   ln -s ${file_path} ${tmp_dir}/$tmp_file
 
   #upload
-  if [ $mode == "swift" ]
-  then
-    # For less than 5GB files rclone is used for uploading
+  #if [[ $mode == "swift" ]]
+  #then
+  # For less than 5GB files rclone is used for uploading
     
-    echo "Uploading data to allas."
-    # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-    rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
-    exitcode=$?
-    if [ $exitcode -ne 0 ]; then
-       echo ""
-       echo "File upload for $infile failed"
+  echo "Uploading data to allas."
+  # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+  rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+  exitcode=$?
+  if [[ $exitcode -ne 0 ]]; then
+     echo ""
+     echo "File upload for $infile failed"
+     if [[ $partial_path == "" ]]; then
+        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
+     else
+        rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+     fi
+     rm -f ${tmp_dir}/$tmp_file 
+     if [[ $include_ameta -eq 1  ]]; then
+       rm -f ${tmp_dir}/${tmp_file}_ameta
+     fi
+     clean_temp_dir
+     exit 1
+  fi
+
+  # rclone md5sums can be calculated only for files that are smaller than 5GB
+  if [[ $tot_size -lt 5000000 ]]
+  then
+     echo "Confirming upload..."
+     #checksums for local and allas files 
+     sum1=($(md5sum ${tmp_dir}/$tmp_file))
+       
+     if [[ $partial_path == "" ]]; then
+        sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
+     else  
+        sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
+     fi
+     #check if checksums match 
+     if [[ ${sum1[0]} !=  ${sum2[0]} ]]
+     then 
+       echo "Upload of $input was not successful!"
+       echo "Cleaning the failed upload"
        if [[ $partial_path == "" ]]; then
-         rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
+          rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
        else
-         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+          rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
        fi
        rm -f ${tmp_dir}/$tmp_file 
-       if [[ $include_ameta -eq 1  ]]; then
-         rm -f ${tmp_dir}/${tmp_file}_ameta
-       fi
+       rm -f ${tmp_dir}/${tmp_file}_ameta
        clean_temp_dir
        exit 1
-    fi
-
-   # rclone md5sums can be calculated only for files that are smaller than 5GB
-   if [[ $tot_size -lt 5000000 ]]
-   then
-       echo "Confirming upload..."
-       #checksums for local and allas files 
-       sum1=($(md5sum ${tmp_dir}/$tmp_file))
-       
-       if [[ $partial_path == "" ]]; then
-          sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
-       else  
-          sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
-       fi
-       #check if checksums match 
-       if [[ ${sum1[0]} !=  ${sum2[0]} ]]
-       then 
-         echo "Upload of $input was not successful!"
-         echo "Cleaning the failed upload"
-         if [[ $partial_path == "" ]]; then
-      	    rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
-         else
-           rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
-         fi
-         rm -f ${tmp_dir}/$tmp_file 
-         rm -f ${tmp_dir}/${tmp_file}_ameta
-	 clean_temp_dir
-         exit 1
-       fi
-       echo "$input OK"
-    fi
+     fi
+     echo "$input OK"
   fi
 
 
@@ -362,10 +332,18 @@ do
   fi
 
   echo "$input uploaded to ${bucket_name}"
+
+  if [[ $mode == "swift" ]]; then
+     https_root="https://a3s.fi"
+  fi
+  if [[ $mode == "lumi" ]]; then
+     https_root="https://${os_project_name}.lumidata.eu"
+  fi
+
   if [[ $partial_path == "" ]]; then 
-     echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
+     echo "Public link: ${https_root}/${bucket_name}/$tmp_file"
   else 
-     echo "Public link: https://a3s.fi/${bucket_name}/${partial_path}/$tmp_file"
+     echo "Public link: ${https_root}/${bucket_name}/${partial_path}/$tmp_file"
   fi
   tmp_file=("not_defined")
 
@@ -377,7 +355,7 @@ if [[ $index_mode == "static" ]];then
   echo '<html>' >  ${tmp_dir}/index.html
   echo '<table>' >>  ${tmp_dir}/index.html
   echo "<h2>Contents of bucket $bucket_name<h2>" >>  ${tmp_dir}/index.html
-  rclone lsl allas:$bucket_name | grep -v "_ameta" | awk '{print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td><b><a href=\"https://a3s.fi/'$bucket_name'/"$4"\">"$4"</a></b></td><td><a href=\"https://a3s.fi/'$bucket_name'/"$4"_ameta\" target=\"_self\" >info</a></td></tr>"}' >>  ${tmp_dir}/index.html
+  rclone lsl ${storage_server}:$bucket_name | grep -v "_ameta" | awk '{print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td><b><a href=\"'${https_root}'/'$bucket_name'/"$4"\">"$4"</a></b></td><td><a href=\"'${https_root}'/'$bucket_name'/"$4"_ameta\" target=\"_self\" >info</a></td></tr>"}' >>  ${tmp_dir}/index.html
   echo '</table>'  >>  ${tmp_dir}/index.html
   echo '</html>' >>  ${tmp_dir}/index.html
 else
@@ -390,8 +368,10 @@ rclone copy  ${tmp_dir}/index.html ${storage_server}:${bucket_name}/
 rm -f   ${tmp_dir}/index.html
 
 #set access control
-swift post ${bucket_name} --read-acl ".r:*,.rlistings"
-swift post "${bucket_name}_segments" --read-acl ".r:*,.rlistings"
+if [[ $mode == "swift" ]]; then
+  swift post ${bucket_name} --read-acl ".r:*,.rlistings"
+  swift post "${bucket_name}_segments" --read-acl ".r:*,.rlistings"
+fi
 
 clean_temp_dir
 echo ""

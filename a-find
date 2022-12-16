@@ -15,17 +15,17 @@ source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
 #local variables
-user=($USER)
-bucket_name=("not_defined")
-silent=(0)
-print_help=(0)
-os_project_name=("$OS_PROJECT_NAME")
-input_def=("")
-mode=("swift")
+user="$USER"
+bucket_name="not_defined"
+silent=0
+print_help=0
+os_project_name="$OS_PROJECT_NAME"
+input_def=""
+mode="swift"
 #tmp_dir=("${tmp_root}/a_put_$$_tmp")
-show_filelist=(0)
-query=("")
-all_buckets=(0)
+show_filelist=0
+query=""
+all_buckets=0
 
 
 # read customer defaults
@@ -41,7 +41,7 @@ while [[ $# -ge 1 ]]
 do
   case "$1" in
              '--user' | '-u' )
-                  user=("$2")
+                  user="$2"
                   shift
                   shift
                 ;;
@@ -57,19 +57,23 @@ do
                   shift
                 ;;
              '-silent' | '-s')
-                  silent=(1)
+                  silent=1
+                  shift
+                ;;
+            '--lumi')
+                  mode="lumi"
                   shift
                 ;;
             '--files' | '-f' )
-                  show_filelist=(1)
+                  show_filelist=1
                   shift
                 ;;
             '--all_bukets' | '-a' | '--all_buckets' )
-                  bucket_name=("$(swift list| tr  '\n' ' ')")
+                  all_buckets=1
                   shift
                 ;;
              '-h' | '--help' )
-                  print_help=(1)
+                  print_help=1
                   shift
                 ;;
              *)
@@ -78,7 +82,7 @@ do
                       echo "Query term is: $query"
                       exit 1
                    fi
-                   query=("$1")
+                   query="$1"
                    shift                       # No more switches
                 ;;
     esac
@@ -170,6 +174,7 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
+  storage_server="allas"
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
@@ -183,6 +188,21 @@ then
   fi
 fi
 
+
+if [[ $mode == "s3cmf" ]]
+then
+  storage_server="s3allas"
+fi
+
+if [[ $mode == "lumi" ]]
+then
+  storage_server="lumi-o"
+fi
+
+if [[ $all_buckets -eq 1 ]]; then
+ #bucket_name=("$(swift list| tr  '\n' ' ')")
+ bucket_name=("$(rclone lsd  ${storage_server}: | awk '{print $NF}'| tr  '\n' ' ')")
+fi
 
 #define standard buckets
 std_buckets=("${user}-${project_label}-MISC ${user}-${project_label}-HOME ${project_label}-puhti-SCRATCH ${project_label}-puhti-PROJAPPL ${user}-${project_label}-pub ${user}-${project_label}-flip")
@@ -240,7 +260,7 @@ do
     echo "----------------------------------------------"
     echo "Checking bucket: $bn"
   fi
-  rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep -v "_ameta$" | grep "$query" > ./$$_find_tmp
+  rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print "x " $0}' | tr -s ' '|  cut -d " " -f 3- | grep -v "_ameta$" | grep "$query" > ./$$_find_tmp
   object_hits=$(cat ./$$_find_tmp | wc -l)
   if [[ $object_hits -gt 0 ]];then
     if [ $silent -eq 0 ]; then

@@ -1,3 +1,4 @@
+#!/bin/bash
 
 
 #default user
@@ -49,6 +50,11 @@ do
                 ;;
               '--s3cmd' )
                   mode=("s3cmd")
+                  shift
+                ;;
+
+              '--lumi' )
+                  mode=("lumi")
                   shift
                 ;;
              '-b' | '--bucket' )
@@ -189,6 +195,12 @@ fi
 if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
 fi
+
+#Rclone through s3
+if [[ $mode == "lumi" ]];then
+   storage_server="lumi-o"
+fi
+
 
 #source /appl/opt/allas_conf
 #input=("$1")

@@ -69,7 +69,7 @@ do
                   shift
                 ;;
              '--project' | '-p' )
-                  os_project_name=($2)
+                  os_project_name="$2"
                   shift
                   shift
                 ;;
@@ -89,8 +89,12 @@ do
                   shift
                   shift
                 ;;
+            '--lumi' | '-L' )
+                  mode="lumi"
+                  shift
+                ;; 
             '--s3cmd' | '--s3' | '-S' )
-                  mode=("s3cmd")
+                  mode="s3cmd"
                   shift
                 ;;
              '--compress' | '-c')
@@ -103,7 +107,7 @@ do
                   shift
                 ;;
              '-s' | '--silent' )
-                  silent=(1)
+                  silent=1
                   shift
                 ;;
              '-h' | '--help' )
@@ -111,12 +115,12 @@ do
                   shift
                 ;;
              '--user' | '-u' )
-                  user=("$2")
+                  user="$2"
                   shift
                   shift
                 ;;
              '--tmpdir' | '-t' )
-                  tmp_root=("$2")
+                  tmp_root="$2"
                   shift
                   shift
                 ;;
@@ -428,6 +432,9 @@ fi
 if [[ $mode == "s3cmd" ]]; then 
    storage_server="s3allas"
 fi
+if [[ $mode == "lumi" ]]; then 
+   storage_server="lumi-o"
+fi
 
 
 #check free space in tmpdir
@@ -675,7 +682,29 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
-     
+       
+     #Lumi project
+     if [ $(echo $file_path  | cut -c1-8) == "/project" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-project")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Project area of project: $puhti_project"
+          echo "But it will be stored to ${storage_server} under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+     fi
+
+
+
      #Puhti FMI-projappl
      if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
      then
@@ -763,7 +792,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
   echo "input: $input" >> ${tmp_dir}/${tmp_file}_ameta
   echo "original_location: $file_path " >> ${tmp_dir}/${tmp_file}_ameta
-  echo "protocol: $mode " >> ${tmp_dir}/${tmp_file}_ameta
+  if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]; then
+     echo "protocol: S3 " >> ${tmp_dir}/${tmp_file}_ameta
+  else
+     echo "protocol: swift" >> ${tmp_dir}/${tmp_file}_ameta
+  fi
   if [[ $compression -eq 1 ]]; then
      echo "compression: zstd" >> ${tmp_dir}/${tmp_file}_ameta
   else
@@ -963,11 +996,17 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
  
   if [[ $silent -eq 0 ]] ; then
-     echo "Uploading data to allas."
+     echo "Uploading data to ${storage_server}."
   fi
-    
+  
+  # Lumi-O dont allow upper case letters in bucket names
+  if [[ $mode == "lumi" ]]; then  
+     bucket_name=$(echo $bucket_name | tr [:upper:]  [:lower:] )
+  fi
+
   #S3 protocol requires that directory exist before copying
-  if [[ $mode == "s3cmd" ]]; then
+  if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]  ; then
+     echo "rclone mkdir  ${storage_server}:${bucket_name}"
      rclone mkdir  ${storage_server}:${bucket_name}
   fi
     
@@ -998,7 +1037,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        echo "File upload for $infile failed!"
        echo "Upload summary:"
        cat ${tmp_dir}/upload.log
-       rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
+       rclone deletefile ${storage_server}:${bucket_name}${partial_path}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file 
        rm -f ${tmp_dir}/${tmp_file}_ameta
        rm -f ${tmp_dir}/upload.log
@@ -1083,7 +1122,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        fi
      fi
      #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-     if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]; then
+     if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]||[[ $mode == "lumi" ]] ; then
          if [[ $silent -eq 0 ]] ; then
              #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
              rclone copy -L --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
