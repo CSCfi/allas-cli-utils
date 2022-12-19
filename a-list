@@ -47,6 +47,10 @@ do
                   mode="lumi"
                 shift
                 ;; 
+              '--allas' | '-A' )
+                  mode="swift"
+                shift
+                ;; 
              '--dir' | '-d' )
                 dir_like=(1)
                 shift

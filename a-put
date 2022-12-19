@@ -93,6 +93,11 @@ do
                   mode="lumi"
                   shift
                 ;; 
+            '--allas' | '-A' )
+                  mode="lumi"
+                  shift
+                ;;
+
             '--s3cmd' | '--s3' | '-S' )
                   mode="s3cmd"
                   shift
@@ -370,8 +375,18 @@ a-put command line options:
                             to Allas. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
-                            your-project-number_SD-CONNECT,
+                            your-project-number_SD-CONNECT.
 
+
+-A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
+                            Normally this (Allas with swift) is the default and this option is not needed,
+                            but if you have set e.g. Lumi-O as the default storage server, this option can be
+                            used to upload data to Allas without changing the default storage server.
+                              
+--s3cmd                     Use Allas with S3 protocol.
+
+-L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+                            If Lumi-O is defined to be the default storage server and this option is not needed.
 
 Related commands: a-find, a-get, a-delete, a-info
 EOF
@@ -487,6 +502,7 @@ do
   #Check if connection works and update if needed and possible
   if [[ $mode == "swift" ]]
   then
+    storage_server="allas"
     if [[ $silent -eq 0 ]] ; then 
       check_swift_connection 
     else 
@@ -700,8 +716,30 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
              exit 0
           fi
         fi
-        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+        partial_path=$(dirname $file_path | sed -e s/"\/project\/$puhti_project"/""/g)
      fi
+
+    #Lumi flash
+     if [ $(echo $file_path  | cut -c1-6) == "/flash" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-flash")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Project area of project: $puhti_project"
+          echo "But it will be stored to ${storage_server} under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/flash\/$puhti_project"/""/g)
+     fi
+
+
 
 
 

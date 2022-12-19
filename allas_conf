@@ -34,8 +34,11 @@ local usage="
 Usage: source allas_conf [OPTIONS] [PROJECT]
 
     This bash script sets up the environment variables and the configuration
-    files for accessing Allas storage service https://a3s.fi using swift
-    (default) and/or S3 APIs.
+    files for accessing Allas or Lumi-O storage service.
+
+    Allas
+
+    By default this script confgure swift based connection to Allas (https://a3s.fi).
 
     The program asks your CSC password before starting the configuration
     process.
@@ -47,12 +50,26 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     rclone connections.
 
 
+    Lumi-O
+
+    With option --lumi, this script can be used to configure S3 based connection to
+    Lumi-O. In that case you need to use seprate web server (https://auth.lumidata.eu/)
+    to create authentication keys for Lumi-O. Authentication server provides key strings
+    based of which this script creates configuration files for rclone, S3 and S3cmd.
+
+    Note that you can have active connection to both Lumi-O and Allas in the same time
+    but in that case you must indicate the stroage server to be used in the commands
+    you are using.
+ 
+
     OPTIONS
     -------
 
      -m, --mode S3            Configure S3 API (default: swift)
 
      -m, --mode both          Configure both swift and S3 APIs
+
+     --lumi, --mode lumi      Configure Lumi-O connection. 
 
      -u, --user USER          Storage server username (default: $USER)
 

@@ -55,7 +55,18 @@ do
              '--help' | '-h' )
                   print_help=(1)
                   shift
-                ;;
+                 ;;
+             '--allas' )
+                  mode="swfit"
+                  shift
+                 ;;
+             '--lumi' )
+                  mode="lumi"
+                  shift
+                 ;;
+
+
+
              *)
                    if [[ $object_name != "" ]]; then
                       echo "unknown option: $1"
@@ -97,7 +108,8 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
 if [[ $mode == "swift" ]]; then
-    check_swift_connection 
+   storage_server="allas"
+   check_swift_connection 
 fi
  
 if [[ $mode == "s3cmd" ]]; then
