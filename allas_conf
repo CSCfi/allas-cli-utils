@@ -127,6 +127,7 @@ while [[ $# -ge 1 ]]; do
         '--s3remove' )          mode=s3remove;           shift;;
         '--debug' )             debug=true;              shift;;
         '--store-token' )       ood=true;                shift;;
+        '--lumi')               mode="lumi";             shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -159,21 +160,139 @@ case "$mode" in
         local use_swift=true
         local use_s3cmd=true
         ;;
-     'swift')
+    'swift')
         local use_swift=true
         local use_s3cmd=false
         ;; 
-      's3remove')
+    's3remove')
         local use_swift=false
         local use_s3cmd=false
         local s3remove=true
         ;; 
- 
+    'lumi')
+        local use_swift=false
+        local use_s3cmd=false
+        ;;
     *)
         echo "Error: Wrong argument to '--mode' option $usage" >&2
         return 1
         ;;
 esac
+
+
+# Turn off lumi off default if configuration is not done for lumi
+if [[ mode != "lumi" ]]; then
+     if [[ -e $HOME/.a_tools_conf ]]; then
+        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
+        if [[ $lumi_mode_check  -ne 0 ]]; then
+           echo "Lumi-o is set as the default object storage server in your local configuration file"
+           echo "Do you want to remiove this setting and use Allas a the defaut object storage server (y/n)?"
+           read ansver
+           if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
+                grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+                rm -f $HOME/.a_tools_conf
+                mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
+           fi
+        fi
+     fi
+fi
+
+             
+# Setup commands for Lumi-O
+
+echo "Mode $mode"
+
+if [[ $mode == "lumi" ]]; then
+
+   echo "Please login to  https://auth.lumidata.eu/"
+   echo "In the web interface, choose first the project you wish to use."
+   echo "Next generate a new key or use existing valid key"
+   echo "Open the Key details view and based on that give following information" 
+   echo "Lumi Project Number: "
+   read lumi_project_number
+   lumi_project_number=$(echo $lumi_project_number | tr -d " ")
+   echo "Access key:"
+   read lumi_access_key
+   lumi_access_key=$(echo $lumi_access_key | tr -d " ")
+   echo "Secret key:" 
+   read lumi_secret_key
+   lumi_secret_key=$(echo $lumi_secret_key | tr -d " ")
+
+   #S3 parameters
+   export AWS_ACCESS_KEY_ID="$lumi_access_key"
+   export AWS_SECRET_ACCESS_KEY="$lumi_secret_key"
+   export S3_ACCESS_KEY_ID="$lumi_access_key";
+   export S3_SECRET_ACCESS_KEY="$lumi_secret_key";
+   export S3_HOSTNAME=lumidata.eu;
+   storage_service="lumi" 
+   export OS_PROJECT_NAME=$lumi_project_number
+   
+   #rclone parameters
+   rclone config delete lumi-o
+   rclone config delete lumi-pub
+   mkdir -p  $HOME/.config/rclone/
+   echo "" >> $HOME/.config/rclone/rclone.conf
+   chmod go-rwx $HOME/.config/rclone/rclone.conf
+   echo '[lumi-o]' >>  $HOME/.config/rclone/rclone.conf
+   #echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
+   echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
+   echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
+   echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
+
+   echo "rclone remote lumi-o: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
+   echo ""  
+   echo ""  >>  $HOME/.config/rclone/rclone.conf
+   echo '[lumi-pub]' >>  $HOME/.config/rclone/rclone.conf
+   #echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
+   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
+   echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
+   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
+   echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
+   echo 'acl = public-read' >>  $HOME/.config/rclone/rclone.conf
+
+   echo "rclone remote lumi-pub: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
+   echo ""  
+
+   #S3cmd parameters
+   rm $HOME/.s3cfg
+   echo '[lumi-'${lumi_project_number}']' > $HOME/.s3cfg
+   echo "access_key   = $S3_ACCESS_KEY_ID" >> $HOME/.s3cfg
+   echo "secret_key   = $S3_SECRET_ACCESS_KEY"  >> $HOME/.s3cfg
+   echo "host_base    = https://lumidata.eu" >> $HOME/.s3cfg
+   echo "host_bucket  = https://lumidata.eu" >> $HOME/.s3cfg
+   echo "human_readable_sizes = True" >> $HOME/.s3cfg
+   echo "enable_multipart = True" >> $HOME/.s3cfg
+   echo "signature_v2 = True" >> $HOME/.s3cfg
+   echo "use_https = True" >> $HOME/.s3cfg
+   
+   echo "Do you want to make Lumi-O the default storage service for a-commands (y/n)?"
+   read lumi_as_default 
+   if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
+    # define Lumi-o in customer defaults
+     if [[ -e $HOME/.a_tools_conf ]]; then
+        grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+        rm -f $HOME/.a_tools_conf
+        mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
+     fi
+     echo "storage_service=lumi" >> $HOME/.a_tools_conf
+     echo "mode=lumi" >> $HOME/.a_tools_conf
+     echo "os_project_name=${lumi_project_number}" >> $HOME/.a_tools_conf
+   else
+     echo "Lumi-O connection is activated but it is not used by default"
+     echo "When using a-commands, add option:"
+     echo "    --lumi"
+     echo ""
+     echo "to the a-commands to use Lumi-O in stead of Allas."
+   fi 
+   return
+fi
+
 
 if [[ "$chunk_size" -lt 5 || "$chunk_size" -gt 5000 || \
           ! "$chunk_size" =~ ^[0-9]+$ ]]; then
@@ -186,11 +305,14 @@ if ! $keep_password; then
 fi
 
 
+
 # Check availability of command line tools
 
-if [ -z "$OS_PROJECT_NAME" ] && ! command -v openstack >/dev/null 2>&1; then
-    echo -e "\nError: openstack command not found!" >&2
-    return 1
+if [[ $mode != "lumi" ]]; then
+  if [ -z "$OS_PROJECT_NAME" ] && ! command -v openstack >/dev/null 2>&1; then
+      echo -e "\nError: openstack command not found!" >&2
+      return 1
+  fi
 fi
 
 if $use_s3cmd && ! command -v s3cmd >/dev/null 2>&1; then
@@ -221,6 +343,8 @@ fi
 if ! command -v curl >/dev/null 2>&1; then
     echo "NOTE: curl command was not found."
 fi
+
+
 
 # Ask for CSC password
 
@@ -522,6 +646,7 @@ fi
 
 
 
+
 ## 7. Create allas_default and unset some variables
 #reset allas_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
@@ -537,7 +662,6 @@ if ! $keep_password; then
  unset OS_INTERFACE
  unset OS_IDENTITY_API_VERSION
 fi
-
 
 }
 
