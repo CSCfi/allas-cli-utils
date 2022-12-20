@@ -85,11 +85,11 @@ do
                   mode="s3cmd"
                   shift
                 ;;
-              '--lumi' , '-L' )
+              '--lumi' | '-L' )
                   mode="lumi"
                   shift
                 ;;
-              '--allas' , '-A' )
+              '--allas' | '-A' )
                   mode="swift"
                   shift
                 ;;

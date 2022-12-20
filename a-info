@@ -56,11 +56,11 @@ do
                   print_help=(1)
                   shift
                  ;;
-             '--allas' )
+             '--allas' | '-A' )
                   mode="swfit"
                   shift
                  ;;
-             '--lumi' )
+             '--lumi' | '-L' )
                   mode="lumi"
                   shift
                  ;;

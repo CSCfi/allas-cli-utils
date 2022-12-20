@@ -73,8 +73,13 @@ do
                   mode="s3cmd"
                   shift
                 ;;
-             '--lumi' )
+             '--lumi' | '-L' )
                  mode="lumi"
+                 shift
+              ;;
+
+              '--allas' | '-A' )
+                 mode="allas"
                  shift
               ;;
 
