@@ -32,7 +32,7 @@ fi
 
 #a-info
 
-if [[ $(a-info $object | grep -c "test_") -eq 9 ]]; then
+if [[ $(a-info $object | grep -c "test_") -eq 8 ]]; then
   echo "a-info OK"
 else
   echo "a-info FAILED"
