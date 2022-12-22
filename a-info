@@ -60,6 +60,11 @@ do
                   mode="swfit"
                   shift
                  ;;
+             '--s3allas' )
+                  mode="s3cmd"
+                  shift
+                 ;;
+
              '--lumi' | '-L' )
                   mode="lumi"
                   shift
@@ -148,7 +153,7 @@ if [[ $object_with_bucket == 2 ]]; then
      object_with_bucket=(1)
 fi
 
-#echo "this checks if objectname contains bucket name"
+#echo this checks if objectname contains bucket name"
 check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -gt 0 ]; then
   object_with_bucket=(1)
@@ -231,8 +236,42 @@ else
      echo "   a-find"
   fi
 fi 
-  
+
+#
+#Here we print the actual output  
+#
+
+# name and size
 rclone lsl ${storage_server}:/${object_name}
+
+#in case of swift protocol, we can print metadata if swift command is available
+if [[ $mode == "swift" ]];then 
+   if command -v swift >/dev/null 2>&1; then
+      echo "-----------------------------------------------------"
+      echo "Metadata for ${object_name}:"
+       bucket_name=$(echo $object_name | awk -F / '{print $1}')
+       #split bucket and object
+       if [[ $bucket_name != $object_name ]]; then
+            swift_object=$(echo $object_name | sed -e s/"${bucket_name}\/"/""/)                      
+            swift stat $bucket_name $swift_object
+       fi
+   else
+       echo "Detailed metadata can't be printed as swift command is not available"
+   fi
+fi
+#in case of S3 protocol, we can print metadata if s3cmd command is available
+if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]  ;then
+  if command -v s3cmd >/dev/null 2>&1; then
+      echo "-----------------------------------------------------"
+      echo "Metadata for ${object_name}:"
+      s3cmd info "s3://${object_name}"
+  else
+      echo "Detailed metadata can't be printed as s3cmd command is not available"    
+  fi
+fi
+#
+echo ""
+echo "--------------------------------------"
 rclone cat ${storage_server}:/${object_name}_ameta
 
 #Use curl to check is the bucket is public
@@ -244,31 +283,5 @@ fi
 
 
 
-
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
