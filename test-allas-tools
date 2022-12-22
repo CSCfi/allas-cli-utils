@@ -6,10 +6,12 @@ echo "aaa" > test_$$/a.txt
 echo "bbb" > test_$$/b.txt
 echo "ccc" > test_$$/c.txt
 
+test_bucket="allastest$$"
+
 #a-put
 
-object=$(a-put -b allastest_$$ test_$$ -s 2> /dev/null | tail -1 | tr -d "\n")
-if [[ $object == "allastest_$$/test_$$.tar" ]]; then
+object=$(a-put -b $test_bucket test_$$ -s 2> /dev/null | tail -1 | tr -d "\n")
+if [[ $object == "$test_bucket/test_$$.tar" ]] ; then
   echo "a-put OK"
 else
   echo "a-put FAILED"
@@ -18,19 +20,19 @@ else
 fi
  
 #a-list
-t1=$(a-list allastest_$$ | tr -d "\n" )
-if [[ $t1 == "allastest_$$/test_$$.tar" ]]; then
+t1=$(a-list $test_bucket | tr -d "\n" )
+if [[ $t1 == "$test_bucket/test_$$.tar" ]]; then
   echo "a-list OK"
 else
   echo "a-list FAILED"
-  echo "a-list  allastest_$$"
-  a-list  allastest_$$
+  echo "a-list  $test_bucket"
+  a-list $test_bucket
   exit
 fi
 
 #a-info
 
-if [[ $(a-info $object | grep -c "test_") -eq 6 ]]; then
+if [[ $(a-info $object | grep -c "test_") -eq 9 ]]; then
   echo "a-info OK"
 else
   echo "a-info FAILED"
@@ -49,11 +51,11 @@ else
 fi
 
 a-delete -f  $object > /dev/null
-a-delete --rmb  allastest_$$ -f > /dev/null
+a-delete --rmb $test_bucket -f > /dev/null
 
 rm -rf test_$$
 
-a=$(a-list allastest_$$ 2>&1 | awk '{print $(NF-1)" "$NF}' )
+a=$(a-list $test_bucket 2>&1 | awk '{print $(NF-1)" "$NF}' )
 if [[ $a == "not found" ]]; then
    echo "a-delete OK"
 else
