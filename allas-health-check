@@ -125,10 +125,10 @@ do
       auth=$(swift stat ${bucket} | grep "Account:"  | awk '{print $NF}')
       auth_seg=$(swift stat ${bucket}_segments | grep "Account:"  | awk '{print $NF}')
       if [[ $auth == "" ]]; then
-         echo "Main bucket that would match ${bucket}_segements was not found!"
+         echo "Main bucket that would match ${bucket}_segments was not found!"
       else 
          if [[ $auth != $auth_seg ]]; then
-            echo "$bucket and  ${bucket}_segements are owned by diffent projects"
+            echo "$bucket and  ${bucket}_segments are owned by different projects"
          fi
       fi        
 
