@@ -144,15 +144,19 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
 if [[ $mode == "swift" ]]; then
+ storage_server="allas"
+ storage_name="Allas"
  check_swift_connection
 fi
 
 if [[ $mode == "s3cmd" ]]; then
- storage_server="s3allas"
+ storage_server="s3allas" 
+ storage_name="Allas"
 fi
 
 if [[ $mode == "lumi" ]]; then
  storage_server="lumi-o"
+ storage_name="Lumi-o"
 fi
 
 #The method to remove a bucket

@@ -180,7 +180,9 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
 if [[ $mode == "swift" ]]
-then
+  then
+  storage_server="allas"
+  storage_name="Allas"
   #here we check that rclone is available
   if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
       echo ""
@@ -205,11 +207,13 @@ fi
 #Rclone through s3
 if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
+   storage_name="Allas"
 fi
 
 #lumi
 if [[ $mode == "lumi" ]];then
    storage_server="lumi-o"
+   storage_name="Lumi-o"
 fi
 
 
@@ -425,7 +429,7 @@ if [[ $is_tar_file -eq 1 ]]; then
        cd $target_dir
      fi
      #rclone cat "${storage_server}:/$object_name" | zstdmt -d | tar -x -o $file_name
-     echo "Downloading compressed object from Allas"
+     echo "Downloading compressed object from $storage_name"
      
      #if [[ $mode == "swift" ]]; then
         rclone copyto -P "${storage_server}:$object_name" a-get_download_$$_tmp.zst
