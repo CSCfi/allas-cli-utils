@@ -18,6 +18,15 @@ remove_read_project=""
 remove_write_project=""
 mode="swift"
 
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   customized=1
+   source $HOME/.a_tools_conf
+else 
+   customized=0
+fi
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -147,6 +156,22 @@ Related commands: a-put, a-get, a-list
 EOF
 exit 0
 fi
+
+
+# note about customization 
+if [[ $silent -eq 0 ]]; then
+   if [[ $customized -eq 1 ]]; then
+     echo "Customer settings read from $HOME/.a_tools_conf"
+   fi
+fi 
+
+if [[ $mode != "swift" ]]; then
+   echo "This tool can be used only for managing access control for swift based object storage services"
+   echo "For S3 based services, like Lumo-o or s3allas, you need to use other access control tools, e.g. s3cmd setacl."
+   exit 1
+fi
+
+
 
 #Check that bucket exists
 bnrows=$(swift stat $bucket 2> /dev/null | wc -l )
