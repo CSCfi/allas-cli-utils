@@ -2,7 +2,7 @@
  
 ```text
 
-a-publish copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
+a-publish copies a file to LUMI-O into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
 uploaded data object can read and download the data with a web browser or tools like wget and curl. 
 a-publish works mostly like a-put but there are some differences: 
 
@@ -22,7 +22,7 @@ The public URL to a data object is:
 
 https://a3s.fi/username-projectNumber-pub/object_name
 
-An object uploaded with a-publish can be removed from Allas with command a-delete.
+An object uploaded with a-publish can be removed from LUMI-O with command a-delete.
 
 a-publish options:
 

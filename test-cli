@@ -96,7 +96,7 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to show information about a data object that has been uploaded to Allas service using the a-put command.
+This tool is used to show information about a data object that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-info object_name
@@ -125,7 +125,7 @@ if [[ $mode == "swift" ]]; then
 fi
  
 if [[ $mode == "s3cmd" ]]; then
-  storage_server="s3allas"
+  storage_server="s3lumio"
 fi 
 
 
@@ -147,7 +147,7 @@ if [[ $object_name == "" ]] ; then
   rclone about ${storage_server}:
   exit
 fi
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 if [[ $object_with_bucket == 2 ]]; then
      object_name=("${bucket}/${object_name}")

@@ -113,7 +113,7 @@ The basic syntax of the command is:
 
 
 The query term is compared to the object names as well as the names and original paths of the files that
-have been uploaded to Allas with a-put. The matching objects are reported (but not downloaded).
+have been uploaded to LUMI-O with a-put. The matching objects are reported (but not downloaded).
 
 The query term is processed as a regular expression where some characters, for example dot (.), have a special meaning.
 The same regular expression syntax is used with e.g. grep, awk and sed commands.
@@ -160,9 +160,9 @@ then
      source $HOME/.lumio_default
   else
      echo "Default project is not defined"
-     source $allas_conf_path -user $user
+     source $lumio_conf_path -user $user
      echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
-     echo "Default allas project is stored to  \$HOME/.lumio_default"
+     echo "Default lumio project is stored to  \$HOME/.lumio_default"
      echo ""
      source $HOME/.lumio_default
   fi
@@ -174,16 +174,16 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
-  storage_server="allas"
+  storage_server="lumio"
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then
-    echo "No connection to Allas!"
+    echo "No connection to LUMI-O!"
     echo "Please try setting up the connection again"
     echo "by running the command:"
     echo ""
-    echo "   source $allas_conf_path"
+    echo "   source $lumio_conf_path"
     exit 1
   fi
 fi
@@ -191,7 +191,7 @@ fi
 
 if [[ $mode == "s3cmf" ]]
 then
-  storage_server="s3allas"
+  storage_server="s3lumio"
 fi
 
 if [[ $mode == "lumi" ]]
@@ -247,7 +247,7 @@ fi
 
 
 
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 
 total_hits=(0)

@@ -1,7 +1,7 @@
 # lo-delete
  
 ```text
-This tool is used to remove data that has been uploaded to Allas service using the a-put command.
+This tool is used to remove data that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-delete object_name

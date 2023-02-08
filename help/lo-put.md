@@ -2,7 +2,7 @@
  
 ```text
 This tool is used to upload data from the disk environment 
-of CSC's supercomputers to Allas and Lumi-o storage environments. 
+of CSC's supercomputers to LUMI-O and Lumi-o storage environments. 
 a-put can be used in other environments too.
 
 The basic syntax of the command is:
@@ -17,14 +17,14 @@ By default this tool performs following operations:
 2. In case of directory, the content of the directory is 
    collected into a single file (using tar command).
 
-3. By default the data is uploaded to Allas using rclone command 
-   and swift protocol. Lumi-o and Allas with S3 protocol is available too.
+3. By default the data is uploaded to LUMI-O using rclone command 
+   and swift protocol. Lumi-o and LUMI-O with S3 protocol is available too.
 
 NOTE! Data was compression with zstdmt command is no longer done by 
 default before the upload.
 
 
-The location were data is stored in the storage server (Allas or Lumi-o) can be defined with 
+The location were data is stored in the storage server (LUMI-O or Lumi-o) can be defined with 
 options --bucket (-b) and --object (-o).
 
 The default option is that data that locates in: 
@@ -115,11 +115,11 @@ a-put command line options:
 --override                  Allow overwriting existing objects.
 
 --input-list <list_file>    Give a file that lists the files or directories 
-                            to be uploaded to Allas. Each item will be stored as one object.
+                            to be uploaded to LUMI-O. Each item will be stored as one object.
 
--a, --asis                  Copy the given file or content of a directory to Allas
+-a, --asis                  Copy the given file or content of a directory to LUMI-O
                             without compression and packing so that each file in the 
-                            directory will be copied to Allas as an individual object.
+                            directory will be copied to LUMI-O as an individual object.
                             The object name contains the relative path of the file to 
                             be copied. 
 
@@ -130,21 +130,21 @@ a-put command line options:
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
---sdx                       Upload data to Allas in format format that is compatible with
+--sdx                       Upload data to LUMI-O in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with 
                             crypt4gh using CSC public key after which the files are imported 
-                            to Allas. 
+                            to LUMI-O. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-project-number_SD-CONNECT.
 
 
--A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
-                            Normally this (Allas with swift) is the default and this option is not needed,
+-A, --lumio                     Upload data to LUMI-O with swift protocol in stead of currently set storage server. 
+                            Normally this (LUMI-O with swift) is the default and this option is not needed,
                             but if you have set e.g. Lumi-O as the default storage server, this option can be
-                            used to upload data to Allas without changing the default storage server.
+                            used to upload data to LUMI-O without changing the default storage server.
                               
---s3cmd                     Use Allas with S3 protocol.
+--s3cmd                     Use LUMI-O with S3 protocol.
 
 -L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
                             If Lumi-O is defined to be the default storage server and this option is not needed.

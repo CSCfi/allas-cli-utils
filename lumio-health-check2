@@ -2,10 +2,10 @@
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-inst_root="/appl/opt/allas-cli-utils"
+inst_root="/appl/opt/lumio-cli-utils"
 source $inst_root/lo_env_conf
 
-#allas_conf_path=("/appl/opt/allas-cli-utils/allas_conf")
+#lumio_conf_path=("/appl/opt/lumio-cli-utils/lumio_conf")
 
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
@@ -30,7 +30,7 @@ buk=(1)
 
 usage="
 
-allas-healt-check checks segment related metadata for all segmented objects in all projects. 
+lumio-healt-check checks segment related metadata for all segmented objects in all projects. 
 With the option -p, you can focus the checking to just one project.
 
 OPTIONS 
@@ -87,10 +87,10 @@ do
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
-  source $allas_conf_path -f --silent --keeppasswd $pro
+  source $lumio_conf_path -f --silent --keeppasswd $pro
 
-  echo "-------------------------------------------" >>  /tmp/allas-health-tmp-$$ 
-  echo "Project: $pro" >> /tmp/allas-health-tmp-$$
+  echo "-------------------------------------------" >>  /tmp/lumio-health-tmp-$$ 
+  echo "Project: $pro" >> /tmp/lumio-health-tmp-$$
   #Run the test  
   fail_pro=0
   echo $bucket
@@ -114,15 +114,15 @@ do
           check_if_exists=$(rclone ls ${storage_server}:${bucket}/${fobject}| wc -l)
           if [[ $check_if_exists -eq 0 ]]; then
              echo "Object $fobject has segment objects, but no front object"         
-             echo "    Object $bucket/$fobject has segment objects, but no front object."  >> /tmp/allas-health-tmp-$$ 
+             echo "    Object $bucket/$fobject has segment objects, but no front object."  >> /tmp/lumio-health-tmp-$$ 
                (( num_fail = num_fail + 1 )) 
                (( fail_pro = fail_pro + 1 ))
            else
            bucket_check=$( swift stat ${bucket} ${fobject} | grep Manifest | grep -c "$sobject" ) 
               if [[ $bucket_check -ne 1 ]]; then      
                  echo "    Problem with object: ${bucket}/$fobject"
-                 echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/allas-health-tmp-$$
-                 echo "    Segments are either not found or there are several versions available." >>  /tmp/allas-health-tmp-$$
+                 echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/lumio-health-tmp-$$
+                 echo "    Segments are either not found or there are several versions available." >>  /tmp/lumio-health-tmp-$$
                 (( num_fail = num_fail + 1 )) 
                 (( fail_pro = fail_pro + 1 ))
               else
@@ -140,7 +140,7 @@ do
      fi
   done
   if [[ $fail_pro -eq 0 ]]; then
-    echo "OK" >> /tmp/allas-health-tmp-$$
+    echo "OK" >> /tmp/lumio-health-tmp-$$
   fi
 done
 
@@ -149,9 +149,9 @@ if [[ fail_tot -gt 0 ]]; then
    echo "----------------------------------------------------------------"
    echo "   "
    echo "----------------------------------------------------------------"
-   echo "Summary of Allas health check"
-   cat /tmp/allas-health-tmp-$$
-   rm -f  /tmp/allas-health-tmp-$$
+   echo "Summary of LUMI-O health check"
+   cat /tmp/lumio-health-tmp-$$
+   rm -f  /tmp/lumio-health-tmp-$$
 fi
 
 

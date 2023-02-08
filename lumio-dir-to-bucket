@@ -10,7 +10,7 @@
 
 # $1 is the location to be copied, $2 is the destination container
 
-# TODO: Check if 500k file limit in bucket is exceeded 
+# TODO: Check if 500k file limit in bucket is exceeded
 
 
 #read static variables
@@ -94,19 +94,19 @@ cat <<EOF
 DESCRIPTION
 
 This tool is used to upload on content of a directory or a file to a bucket in
-Allas. Upload is done with rclone. 
+LUMI-O. Upload is done with rclone.
 
-The upload is done so that the content between the source directory in your local 
-computer and the target bucket in Allas is synchronized. This means that in addition to 
-copying data from the local directory to the bucket in Allas, the objects 
-in Allas, that don't match files in the local directory, are removed.
+The upload is done so that the content between the source directory in your local
+computer and the target bucket in LUMI-O is synchronized. This means that in addition to
+copying data from the local directory to the bucket in LUMI-O, the objects
+in LUMI-O, that don't match files in the local directory, are removed.
 
 Because of that you should mainly use this tool to upload data to
-a new empty bucket in Allas. If the target bucket does not exist, it will be 
+a new empty bucket in LUMI-O. If the target bucket does not exist, it will be
 automatically created.
- 
-In Allas, files larger than 5 GiB will be stored as 5GiB segments. 
-This tool utilizes this segmentation to speed up the upload process 
+
+In LUMI-O, files larger than 5 GiB will be stored as 5GiB segments.
+This tool utilizes this segmentation to speed up the upload process
 by uploading several segments of a large file simultaneously.
 Smaller files will be uploaded using normal rclone copy command.
 
@@ -114,34 +114,34 @@ USAGE
 
 The basic syntax of the command is:
 
-   allas-dir-to-bucket source-directory  target-bucket
+   lumio-dir-to-bucket source-directory  target-bucket
 
-You can also define source directory and target bucket with 
+You can also define source directory and target bucket with
 command line options.
 
-The files will be uploaded to the defined bucket and the object names 
+The files will be uploaded to the defined bucket and the object names
 will include the source directory name. For example if we have a directory
 "data1" containing files sample_1.dat and sample_2.dat, then command:
-  
-  allas-dir-to-bucket data1  p20001234_backup
+
+  lumio-dir-to-bucket data1  p20001234_backup
 
 Will create bucket:
- 
+
    p20001234_backup
 
 That contains objects:
-   
+
   data1/sample_1.dat
   data1/sample_2.dat
 
-  
+
 COMMAND LINE OPTIONS
 
-allas-dir-to-bucket command line options:
+lumio-dir-to-bucket command line options:
 
--d, --directory' <dir_name> Name of the directory or file to be uploaded to Allas.
+-d, --directory' <dir_name> Name of the directory or file to be uploaded to LUMI-O.
 
--b, --bucket <bucket_name>  Define a name of the bucket into 
+-b, --bucket <bucket_name>  Define a name of the bucket into
                             which the data is uploaded.
 
 -s, --stream <number>         Number of simultaneous upload streams.
@@ -153,7 +153,7 @@ allas-dir-to-bucket command line options:
                             (default: current username).
 
 -h, --help                  Print this help.
- 
+
 EOF
 
 fi
@@ -161,14 +161,12 @@ fi
 
 if [[ -z "$OS_PASSWORD" ]]; then
    echo "OS_PASSWORD not defined!"
-   echo "allas-dir-to-bucket needs to have your Allas password stored in an environment variable."
-   echo "Please setup you Allas connection with a command that sets this variable."
+   echo "lumio-dir-to-bucket needs to have your LUMI-O password stored in an environment variable."
+   echo "Please setup you LUMI-O connection with a command that sets this variable."
    echo ""
-   echo " In Puhti and Mahti use:"
-   echo "      allas-conf -k"
    echo ""
    echo " In Other servers use: "
-   echo "      source allas_conf -k -u <your-csc-user-account>"
+   echo "      source lumio_conf -k -u <your-csc-user-account>"
    exit 1
 fi
 
@@ -206,7 +204,7 @@ check_swift_connection
 token_time=$(date +%s)
 
 #Check bucket
-#echo "rclone size allas:$bucket_name "
+#echo "rclone size lumio:$bucket_name "
 bucket_check=$(rclone size ${storage_server}:$bucket_name 2> /dev/null | wc -l)
 
 if [[ $bucket_check -lt 2 ]]; then
@@ -226,14 +224,14 @@ else
    if [[ $ans == "y" || $ans == "yes" ]]; then
      old_objects=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "objects:" | awk '{print $NF}')
      old_size=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "size:" | awk '{print $3" "$4}')
-     
+
      if [[ $old_objects -gt 0 ]]; then
            echo	""
            echo	"Are you really sure?"
-           echo "Allas location $bucket_name/${input} contains $old_objects objects "
+           echo "LUMI-O location $bucket_name/${input} contains $old_objects objects "
            echo "that include $old_size of data."
-           echo "This data will be overwritten or removed by this upload process."  
-           echo "Do you	want to	use Allas location ${bucket_name}/${input} [yes/no]"
+           echo "This data will be overwritten or removed by this upload process."
+           echo "Do you	want to	use LUMI-O location ${bucket_name}/${input} [yes/no]"
            read ans2
            if [[ $ans2 == "y" || $ans2 == "yes" ]]; then
               echo "Target bucket:  ${bucket_name}"
@@ -245,7 +243,7 @@ else
            else
               exit
            fi
-     fi  
+     fi
    else
       exit
    fi
@@ -275,31 +273,31 @@ for file in $FILES_LARGE; do
     echo "${fn}/${num_large_files} Uploading file $file ${filesize_gb}GiB."
     (( token_age = start_time - token_time ))
     if [[ $token_age -gt 3600 ]]; then
-       check_swift_connection 
-       token_time=$start_time 
-    fi 
+       check_swift_connection
+       token_time=$start_time
+    fi
     # echo "start_time $start_time"
     # echo "concurrent_rclone_rcat.sh $file $bucket_name"
     # Try 3 times to upload a large file
     i=0
     success=0
-    while [ $success -ne 1 ]; do  
+    while [ $success -ne 1 ]; do
        concurrent_rclone_rcat.sh $file $bucket_name $check_md5
        if [[ $? -ne 0 ]]; then
          echo "Data upload failed!"
        fi
-  
+
       end_time=$(date +%s)
       (( duration = end_time - start_time ))
       (( speed = filesize_mb / duration ))
       #check size of uploaded file
-      allas_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')     
-      allas_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')    
-      #echo allas_size  $allas_size
-      #echo allas_segments_size    $allas_segments_size
+      lumio_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')
+      lumio_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')
+      #echo lumio_size  $lumio_size
+      #echo lumio_segments_size    $lumio_segments_size
       #echo filesize $filesize
 
-      if [[ $filesize -eq $allas_size && $allas_size -eq $allas_segments_size ]]; then
+      if [[ $filesize -eq $lumio_size && $lumio_size -eq $lumio_segments_size ]]; then
           echo "Upload was done in ${duration}s. ( $speed MB/s )"
           success=1
       else
@@ -308,20 +306,20 @@ for file in $FILES_LARGE; do
          if [[ $i -gt 2 ]]; then
             echo "Too many failed upload attempts"
             failed_uploads=(${failed_uploads[@]} "$file")
-            success=1                       
+            success=1
          else
             echo "Retrying to upload $file"
          fi
          if [[  $file != "" ]]; then
             rclone delete $RCLONE_DESTINATION:$bucket_name/$file
-            rclone delete $RCLONE_DESTINATION:${bucket_name}_segments/$file 
-         fi  
+            rclone delete $RCLONE_DESTINATION:${bucket_name}_segments/$file
+         fi
       fi
-   done   
+   done
 done
 
 # Upload the rest
-check_swift_connection 
+check_swift_connection
 
 echo ""
 echo "Starting to upload files that are smaller than 5 GB."
@@ -331,17 +329,17 @@ ftype=$(file $input | awk '{print $NF}')
 if [[ $ftype == "directory" ]] ; then
    rclone --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
 else
-   rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input 
+   rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
 fi
- 
+
 echo "DONE uploading ${1}"
 
 if [[ ${#failed_uploads[@]} -gt 0 ]]; then
   echo "NOTE! Not all files were successfully uploaded!"
   echo "Upload failed for following files:"
-  for value in "${failed_uploads[@]}"  
+  for value in "${failed_uploads[@]}"
   do
        echo $value
-  done 
+  done
 
 fi

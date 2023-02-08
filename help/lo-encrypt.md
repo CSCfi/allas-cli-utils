@@ -1,17 +1,17 @@
 # lo-encrypt
  
 ```text
-This tool is used to encrypt objects, that have already been uploaded to Allas.
+This tool is used to encrypt objects, that have already been uploaded to LUMI-O.
 The basic syntax of the command is:
 
    a-encrypt object_name
 
 a-encrypt command streams the object to the local computer where crypt4gh encryption is applied
-to the data stream. The encrypted data is then streamed back to Allas into a new object.
+to the data stream. The encrypted data is then streamed back to LUMI-O into a new object.
 By default the object is encrypted with CSC public key only. The encrypted object is located to the
 same bucket as the original object. Suffix: .c4gh is added to the object name.
 
-The main purpose of this tool is to make a file, uploaded to the Allas service, compatible with the
+The main purpose of this tool is to make a file, uploaded to the LUMI-O service, compatible with the
 Sensitive data services of CSC.
 
 Options:

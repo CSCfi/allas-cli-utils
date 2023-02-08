@@ -89,7 +89,7 @@ do
                   mode="lumi"
                   shift
                 ;;
-              '--allas' | '-A' )
+              '--lumio' | '-A' )
                   mode="swift"
                   shift
                 ;;
@@ -124,7 +124,7 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to download data that has been uploaded to Allas service using the a-put command.
+This tool is used to download data that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-get object_name
@@ -149,12 +149,12 @@ Options:
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
-                              Normally this (Allas with swft) is the default and this option is not needed,
+--lumio                       Get data from LUMI-O with swift protocol in stead of currently set storage server. 
+                              Normally this (LUMI-O with swft) is the default and this option is not needed,
                               but if you have set e.g. Lumi-O as the default storage server, this option can be
-                              used to get data from Allas without changing the default storage server.
+                              used to get data from LUMI-O without changing the default storage server.
                               
---s3cmd                       Use Allas with S3 protocol.
+--s3cmd                       Use LUMI-O with S3 protocol.
 
 --lumi                        Get data from Lumi-O with S3 protocol in stead of the default storage server. 
                               If Lumi-O is defined to be the default storage server and this option is not needed.
@@ -181,8 +181,8 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 #Check if connection works
 if [[ $mode == "swift" ]]
   then
-  storage_server="allas"
-  storage_name="Allas"
+  storage_server="lumio"
+  storage_name="LUMI-O"
   #here we check that rclone is available
   if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
       echo ""
@@ -199,15 +199,15 @@ if [[ $mode == "swift" ]]
     echo "Please try setting up the connection again"
     echo "by running command:"
     echo ""
-    echo "   source $allas_conf_path"
+    echo "   source $lumio_conf_path"
     exit 1
   fi 
 fi
 
 #Rclone through s3
 if [[ $mode == "s3cmd" ]];then
-   storage_server="s3allas"
-   storage_name="Allas"
+   storage_server="s3lumio"
+   storage_name="LUMI-O"
 fi
 
 #lumi
@@ -219,7 +219,7 @@ fi
 
 
 
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 
 #check that object exists
@@ -404,7 +404,7 @@ if [[ -n "$OS_PASSWORD" ]]; then
    if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token"
    fi
-   source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
+   source $lumio_conf_path --user $user -k $OS_PROJECT_NAME -f 
 fi
 
 
@@ -575,13 +575,13 @@ end_time=$(date +%s)
 
 #Execute log creation
 message="$0 $(date) $bucket_name  $kesto s"
-printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $lumio_log
 
 
 #If log is a file and not a service then check permissions
-if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]; then
-  if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
-     chmod a+rwx  $allas_log
+if [[ $(ls $lumio_log 2> /dev/null | wc -l) -eq 1 ]]; then
+  if [[ $(ls -l $lumio_log | awk '{print $3}') == $user ]]; then
+     chmod a+rwx  $lumio_log
   fi
 fi
 

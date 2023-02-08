@@ -11,7 +11,7 @@ source $inst_root/lumio-lib
 
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the name of a file to be uploaded to allas as an argument of this command."
+  echo "Please give the name of a file to be uploaded to lumio as an argument of this command."
   echo ""
   exit 1
 fi
@@ -67,7 +67,7 @@ do
                   mode=("lumi")
                   shift
                 ;;
-            '--allas' )
+            '--lumio' )
                   mode=("swift")
                   shift
                 ;;
@@ -108,7 +108,7 @@ done
 if [ $print_help -eq 1 ]; then
 cat <<EOF
 
-a-publish copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
+a-publish copies a file to LUMI-O into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
 uploaded data object can read and download the data with a web browser or tools like wget and curl. 
 a-publish works mostly like a-put but there are some differences: 
 
@@ -128,7 +128,7 @@ The public URL to a data object is:
 
 https://a3s.fi/username-projectNumber-pub/object_name
 
-An object uploaded with a-publish can be removed from Allas with command a-delete.
+An object uploaded with a-publish can be removed from LUMI-O with command a-delete.
 
 a-publish options:
 
@@ -158,7 +158,7 @@ then
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
-    echo "No connection to Allas!"
+    echo "No connection to LUMI-O!"
     echo "Please try setting up the connection again."
     exit 1
   fi 
@@ -267,7 +267,7 @@ do
   #then
   # For less than 5GB files rclone is used for uploading
     
-  echo "Uploading data to allas."
+  echo "Uploading data to lumio."
   # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
   rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
   exitcode=$?
@@ -291,7 +291,7 @@ do
   if [[ $tot_size -lt 5000000 ]]
   then
      echo "Confirming upload..."
-     #checksums for local and allas files 
+     #checksums for local and lumio files 
      sum1=($(md5sum ${tmp_dir}/$tmp_file))
        
      if [[ $partial_path == "" ]]; then
@@ -359,7 +359,7 @@ if [[ $index_mode == "static" ]];then
   echo '</table>'  >>  ${tmp_dir}/index.html
   echo '</html>' >>  ${tmp_dir}/index.html
 else
-  wget https://raw.githubusercontent.com/CSCfi/allas-cli-utils/master/dynamic_index.js
+  wget https://raw.githubusercontent.com/CSCfi/lumio-cli-utils/master/dynamic_index.js
   mv dynamic_index.js ${tmp_dir}/index.html
 fi
 

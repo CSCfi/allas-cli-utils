@@ -4,10 +4,10 @@
 
 By default, only project members can read and write the data in a bucket.
 Members of the project can grant read and write access to the bucket and
-the objects it contains, for other Allas projects or make the bucket publicly
+the objects it contains, for other LUMI-O projects or make the bucket publicly
 accessible to the internet.
 
-a-access is a tool to control access permissions of a bucket in Allas.
+a-access is a tool to control access permissions of a bucket in LUMI-O.
 
 In cases where access permissions are given or removed to a specific project the syntax is:
 

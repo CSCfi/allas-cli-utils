@@ -11,7 +11,7 @@ The basic syntax of the command is:
 
 
 The query term is compared to the object names as well as the names and original paths of the files that
-have been uploaded to Allas with a-put. The matching objects are reported (but not downloaded).
+have been uploaded to LUMI-O with a-put. The matching objects are reported (but not downloaded).
 
 The query term is processed as a regular expression where some characters, for example dot (.), have a special meaning.
 The same regular expression syntax is used with e.g. grep, awk and sed commands.

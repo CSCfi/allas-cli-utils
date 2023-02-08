@@ -1,4 +1,4 @@
-# Currently available Allas tools
+# Currently available LUMI-O tools
  
 [lo-access](./lo-access.md)
  

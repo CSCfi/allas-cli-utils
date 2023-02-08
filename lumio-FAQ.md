@@ -1,4 +1,4 @@
-# Frequently asked questions about using Allas and A-tools
+# Frequently asked questions about using LUMI-O and A-tools
 
 **Q: Data transfer seems to continue forever
 and the output shows that well over 100% of the data has been transported. Is this normal?**

@@ -2,7 +2,7 @@
 
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the name of a directory or file to be uploaded to allas as an argument of this command."
+  echo "Please give the name of a directory or file to be uploaded to lumio as an argument of this command."
   echo "For more information, give command:"
   echo " a-put -h "
   echo ""
@@ -233,15 +233,15 @@ cat <<EOF
 
 
 
-This tool is used to check if Allas already includes objects that would matching objects
+This tool is used to check if LUMI-O already includes objects that would matching objects
 that a-put would create. This command can be use check the success of a data upload process
 done with a-put. Alternatively, the results can be used to list objects that need to be removed
-or renamed, before uploading a new version of a dataset to Allas
-For example, if you have uploaded a directory to Allas using command:
+or renamed, before uploading a new version of a dataset to LUMI-O
+For example, if you have uploaded a directory to LUMI-O using command:
    a-put datadir/*
 You can use command:
    a-check datadir/*
-To check if all the directories and files have corresponding objects in Allas.
+To check if all the directories and files have corresponding objects in LUMI-O.
 If you have defined a bucket with option -b, you must include this option
 in the a-check command too:
   a-put -b 123_bucket datadir/*
@@ -297,12 +297,12 @@ a-check command line options:
 --override                  Allow overwriting existing objects.
 
 --input-list <list_file>    Give a file that lists the files or directories 
-                            to be uploaded to Allas.
+                            to be uploaded to LUMI-O.
                             Each item will be stored as one object.
 
--a, --asis                  Copy the given file or content of a directory to Allas
+-a, --asis                  Copy the given file or content of a directory to LUMI-O
                             without compression and packing so that each file in the
-                            directory will be copied to Allas as an individual object.
+                            directory will be copied to LUMI-O as an individual object.
                             The object name contains the relative path of the file to
                             be copied.
 
@@ -313,10 +313,10 @@ a-check command line options:
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
---sdx                       Upload data to Allas in format format that is compatible with
+--sdx                       Upload data to LUMI-O in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with
                             crypt4gh using CSC public key after which the files are imported
-                            to Allas as individual objects as in --asis format.
+                            to LUMI-O as individual objects as in --asis format.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-project-number_SD-CONNECT,
@@ -346,9 +346,9 @@ fi
 #     source $HOME/.lumio_default
 #  else
 #     echo "Default project is not defined"
-#     source $allas_conf_path -user $user
+#     source $lumio_conf_path -user $user
 #     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
-#     echo "Default allas project is stored to  \$HOME/.lumio_default"
+#     echo "Default lumio project is stored to  \$HOME/.lumio_default"
 #     echo ""
 #  fi
 #  source $HOME/.lumio_default
@@ -374,7 +374,7 @@ fi
 
 # s3cmd mode
 if [[ $mode == "s3cmd" ]]; then
-   storage_server="s3allas"
+   storage_server="s3lumio"
 fi
 
 
@@ -417,7 +417,7 @@ if [[ $asis_mode -eq 1 ]];then
    fi
 fi
 
-printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in Allas" >> ${tmp_dir}/upload.log
+printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in LUMI-O" >> ${tmp_dir}/upload.log
 
 
 for input in $input_def
@@ -559,7 +559,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      bucket_name=("${user}-${project_label}-MISC")
 
      ## Puhti and Mahti
-     # In Puhti and Mahti we check if puhti-project and Allas project match
+     # In Puhti and Mahti we check if puhti-project and LUMI-O project match
      #Puhti scratch
      if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
      then
@@ -568,7 +568,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
-          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
@@ -588,7 +588,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
-          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo ""
           echo "Is this OK (y/n)?"
@@ -609,7 +609,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
-          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
           read user_answer
@@ -629,7 +629,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
-          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
           read user_answer
@@ -650,7 +650,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
-          echo "But it will be stored to Allas under project: $os_project_name"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
           echo "Bucket to be used is: $bucket_name"
           echo "Is this OK (y/n)?"
           read user_answer
@@ -679,7 +679,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
       then
           is_uploaded=1
-          allas_object="${bucket_name}/${tmp_file}"
+          lumio_object="${bucket_name}/${tmp_file}"
           if [[ $quick_check -eq 0 ]]; then
             ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
           else
@@ -690,7 +690,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
       then
           is_uploaded=1
-          allas_object="${bucket_name}/${partial_path}/${tmp_file}"
+          lumio_object="${bucket_name}/${partial_path}/${tmp_file}"
           if [[ $quick_check -eq 0 ]]; then
               ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
           else
@@ -701,9 +701,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   fi
   #Print results
   if [[ $is_uploaded -eq 1 ]]; then
-    printf "%45s %80s %25s %s\n" "$input" "$allas_object" "$ainfo" "GMT"
+    printf "%45s %80s %25s %s\n" "$input" "$lumio_object" "$ainfo" "GMT"
    else
-    printf  "%45s %80s\n" "$input" "No matching object in Allas!"
+    printf  "%45s %80s\n" "$input" "No matching object in LUMI-O!"
     echo "$input" >>  ${tmp_dir}/missing_files.txt
   fi
 
@@ -713,7 +713,7 @@ done
 if [[ -e "${tmp_dir}/missing_files.txt" ]];then
   echo "-----------------------------------------------------------------"
   echo ""
-  echo "Following local files or directories do not have a matching object in Allas:"
+  echo "Following local files or directories do not have a matching object in LUMI-O:"
   cat ${tmp_dir}/missing_files.txt
   cp  ${tmp_dir}/missing_files.txt ./missing_${bucket_name}_$$
   echo ""
@@ -723,7 +723,7 @@ if [[ -e "${tmp_dir}/missing_files.txt" ]];then
 else
   echo "-----------------------------------------------------------------"
   echo ""
-  echo "All files or directories matching to the input definition have a matching object in Allas"
+  echo "All files or directories matching to the input definition have a matching object in LUMI-O"
   echo "Note that the check is based only on the names of files and directories."
   echo "The actual content of the objects is not checked!"
 

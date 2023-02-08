@@ -52,7 +52,7 @@ do
                 asis_mode=1
                   shift
                 ;; 
-             '--s3cmd' | '--s3allas' )
+             '--s3cmd' | '--s3lumio' )
                   mode=("s3cmd")
                   shift
                 ;;
@@ -60,7 +60,7 @@ do
                 mode=("lumi")
                 shift
                 ;;
-             '--allas' )
+             '--lumio' )
                 mode=("swift")
                 shift
                 ;;
@@ -95,7 +95,7 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to stream data, that has been uploaded to Allas service using the a-put command.
+This tool is used to stream data, that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-stream object_name
@@ -143,25 +143,25 @@ then
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
-    echo "No connection to Allas!"  >&2
+    echo "No connection to LUMI-O!"  >&2
     echo "Please try setting the connection again."  >&2
     echo "by running command:" >&2 
     echo "" >&2
-    echo "   source $allas_conf_path" >&2
+    echo "   source $lumio_conf_path" >&2
     exit 1
   fi 
 fi
 
 #Rclone through s3
 if [[ $mode == "s3cmd" ]];then
-   storage_server="s3allas"
+   storage_server="s3lumio"
 fi
 
 #Rclone through s3
 if [[ $mode == "lumi" ]];then
    storage_server="lumi-o"
 fi
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 
 #check that object exists
@@ -294,7 +294,7 @@ if [[ -n "$OS_PASSWORD" ]]; then
    if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token" >&2
    fi
-   source $allas_conf_path --user $user -k $OS_PROJECT_NAME -f 
+   source $lumio_conf_path --user $user -k $OS_PROJECT_NAME -f 
 fi
 
 

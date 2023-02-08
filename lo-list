@@ -47,7 +47,7 @@ do
                   mode="lumi"
                 shift
                 ;;
-              '--allas' | '-A' )
+              '--lumio' | '-A' )
                   mode="swift"
                 shift
                 ;;
@@ -97,14 +97,14 @@ if [[ $silent -eq 0 ]]; then
 fi
 
 if [[ $mode == "swift" ]];then
-   storage_server="allas"
-   storage_name="Allas"
+   storage_server="lumio"
+   storage_name="LUMI-O"
 fi
 
 
 if [[ $mode == "s3cmd" ]];then
-   storage_server="s3allas"
-   storage_name="Allas"
+   storage_server="s3lumio"
+   storage_name="LUMI-O"
 fi
 if [[ $mode == "lumi" ]];then
    storage_server="lumi-o"
@@ -125,7 +125,7 @@ fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to list buckets and objects in Allas or Lumi-o. If bucket name is not defined, all buckets are listed.
+This tool is used to list buckets and objects in LUMI-O or Lumi-o. If bucket name is not defined, all buckets are listed.
 If bucket name is defined, then objects inside the bucket are listed.
 
 
@@ -146,9 +146,9 @@ Working with shared buckets:
 
                         When you list a contents of a bucket with a-list, the command checks if the bucket used
                         belongs to the current project. If it does not belong to the project, the name of the shared
-                        bucket is stored to Allas or Lumi-o ( into object project-number-a-tools/buckets_shared_to).
+                        bucket is stored to LUMI-O or Lumi-o ( into object project-number-a-tools/buckets_shared_to).
                         When you check the available buckets with command a-list, the command shows also the names of
-                        the shared buckets stored to Allas or Lumi-o. NOTE that this option shows information about only about
+                        the shared buckets stored to LUMI-O or Lumi-o. NOTE that this option shows information about only about
                         shared buckets that have previously been used by a-list. Thus you can't use a-list check if some
                         new buckets has been shared to you.
 
@@ -169,7 +169,7 @@ shared_list="buckets_shared_to"
 
 if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
    bucket_readable=$(rclone ls ${storage_server}:$bucket_name 2> /dev/null | wc -l)
-   own_bucket=$(rclone lsd allas: | awk '{ print $NF}' | grep -c -w $bucket_name )
+   own_bucket=$(rclone lsd lumio: | awk '{ print $NF}' | grep -c -w $bucket_name )
    # case: bucket reable but not owned
    if [[ $bucket_readable -gt 0 ]] && [[ $own_bucket -eq 0 ]]; then
        # do we already have a list of shared buckets

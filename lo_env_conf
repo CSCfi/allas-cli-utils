@@ -1,9 +1,9 @@
 #Common settings for a_ -tools
 storage_server="lumio"
 local_host="$(hostname)"
-allas_log="/dev/null"
+lumio_log="/dev/null"
 
-#change here your allas_conf location
+#change here your lumio_conf location
 lumio_conf_path="/some/path/lumio-cli-utils/lumio_conf"
 max_size=5000000000
 max_files=100000

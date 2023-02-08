@@ -1,4 +1,4 @@
-name: allas
+name: lumio
 channels:
   - conda-forge
   - defaults

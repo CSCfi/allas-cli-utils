@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-allas_conf_path=("/appl/opt/allas-cli-utils/allas_conf")
+lumio_conf_path=("/appl/opt/lumio-cli-utils/lumio_conf")
 
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
@@ -74,7 +74,7 @@ do
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
-  source $allas_conf_path -f --silent --keeppasswd $pro
+  source $lumio_conf_path -f --silent --keeppasswd $pro
   for kont in $(swift list )
   do 
     if [ $buk -ne 1 ]; then

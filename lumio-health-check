@@ -3,12 +3,12 @@
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root="/appl/opt/allas-cli-utils"
+#inst_root="/appl/opt/lumio-cli-utils"
 #cat  $inst_root/lo_env_conf
 source $inst_root/lo_env_conf
 source $inst_root/lumio-lib
 
-allas_conf_path=("${inst_root}/allas_conf")
+lumio_conf_path=("${inst_root}/lumio_conf")
 
 export OS_USERNAME=$(whoami)
 export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
@@ -33,7 +33,7 @@ buk=(1)
 
 usage="
 
-allas-health-check checks segment related metadata for all segmented objects in all projects. 
+lumio-health-check checks segment related metadata for all segmented objects in all projects. 
 With the option -p, you can focus the checking to just one project.
 
 OPTIONS 
@@ -90,12 +90,12 @@ do
   echo "-----------------------------------------------"
   projnum=$( echo $pro | sed -e s/"project_"/""/g | sed -e s/"Project_"/""/g )
   saldo -p $projnum 2> /dev/null | grep "^Project"
-  # source $allas_conf_path -f  --keeppasswd $pro
-  source $allas_conf_path -f --silent --keeppasswd $pro > /dev/null
+  # source $lumio_conf_path -f  --keeppasswd $pro
+  source $lumio_conf_path -f --silent --keeppasswd $pro > /dev/null
   echo "-------------------------------------------" 
   echo "Project: $pro"
-  echo "-------------------------------------------" >>  /tmp/allas-health-tmp-$$ 
-  echo "Project: $pro" >> /tmp/allas-health-tmp-$$
+  echo "-------------------------------------------" >>  /tmp/lumio-health-tmp-$$ 
+  echo "Project: $pro" >> /tmp/lumio-health-tmp-$$
   num_buckets=$(swift stat | grep 'Containers:' | awk '{ print $2}')
  
   if [[ $num_buckets -gt 999 ]]; then
@@ -152,7 +152,7 @@ do
            check_if_exists=$(rclone ls ${storage_server}:${bucket}/${fobject}| wc -l)
            if [[ $check_if_exists -eq 0 ]]; then
                echo "Object $fobject has segment objects, but no front object"         
-               echo "    Object $bucket/$fobject has segment objects, but no front object."  >> /tmp/allas-health-tmp-$$ 
+               echo "    Object $bucket/$fobject has segment objects, but no front object."  >> /tmp/lumio-health-tmp-$$ 
                (( num_fail = num_fail + 1 )) 
                (( fail_pro = fail_pro + 1 ))
            else
@@ -162,7 +162,7 @@ do
                   (( num_fail = num_fail + 1 )) 
                   (( fail_pro = fail_pro + 1 ))
                   echo  "Object $fobject has some segment objects missing."           
-                  echo  "    Object $bucket/$fobject has some segment objects missing."  >> /tmp/allas-health-tmp-$$
+                  echo  "    Object $bucket/$fobject has some segment objects missing."  >> /tmp/lumio-health-tmp-$$
               fi
               if [[ $seg_stat -gt 0 ]]; then
                   (( num_fail = num_fail + 1 )) 
@@ -172,21 +172,21 @@ do
                   segs_size=$(rclone ls ${storage_server}:$mani_obj | awk '{a = a + $1}END{print a}')
                   if [[ $meta_size -eq  $segs_size ]];then
                      echo  "Object $fobject is OK but it has extra segment objects that could be removed."           
-                     echo  "    Object $fobject is OK but it has extra segment objects that could be removed."  >> /tmp/allas-health-tmp-$$
+                     echo  "    Object $fobject is OK but it has extra segment objects that could be removed."  >> /tmp/lumio-health-tmp-$$
                      (( num_ok = num_ok + 1 ))
                   else
                      (( num_fail = num_fail + 1 )) 
                      (( fail_pro = fail_pro + 1 ))
                      echo  "Object $fobject has some segment objects missing!"           
-                     echo  "     Object $bucket/$fobject has some segment objects missing."  >> /tmp/allas-health-tmp-$$
+                     echo  "     Object $bucket/$fobject has some segment objects missing."  >> /tmp/lumio-health-tmp-$$
                   fi
               fi
               if [[ $seg_stat -eq 0 ]]; then
               ## bucket_check=$( swift stat ${bucket} ${fobject} | grep Manifest | grep -c "$sobject" ) 
               ##if [[ $bucket_check -ne 1 ]]; then      
               ##  echo "    Problem with object: ${bucket}/$fobject"
-              ##   echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/allas-health-tmp-$$
-              ##   echo "    Segments are either not found or there are several versions available." >>  /tmp/allas-health-tmp-$$
+              ##   echo "    Problem with object: ${bucket}/$fobject" >>  /tmp/lumio-health-tmp-$$
+              ##   echo "    Segments are either not found or there are several versions available." >>  /tmp/lumio-health-tmp-$$
               ##  (( num_fail = num_fail + 1 )) 
               ##  (( fail_pro = fail_pro + 1 ))
               ##else
@@ -204,7 +204,7 @@ do
      fi
   done
   if [[ $fail_pro -eq 0 ]]; then
-    echo "OK" >> /tmp/allas-health-tmp-$$
+    echo "OK" >> /tmp/lumio-health-tmp-$$
   fi
   bucket=""
 done
@@ -214,9 +214,9 @@ if [[ fail_tot -gt 0 ]]; then
    echo "----------------------------------------------------------------"
    echo "   "
    echo "----------------------------------------------------------------"
-   echo "Summary of Allas health check"
-   cat /tmp/allas-health-tmp-$$
-   rm -f  /tmp/allas-health-tmp-$$
+   echo "Summary of LUMI-O health check"
+   cat /tmp/lumio-health-tmp-$$
+   rm -f  /tmp/lumio-health-tmp-$$
 fi
 
 
@@ -233,12 +233,12 @@ fi
 
 #Execute log creation
 message="$0 $(date) broken-objects: $fail_tot "
-printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $lumio_log
 
 
 #If log is a file and not a service then check permissions
-if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]; then
-  if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
-     chmod a+rwx  $allas_log
+if [[ $(ls $lumio_log 2> /dev/null | wc -l) -eq 1 ]]; then
+  if [[ $(ls -l $lumio_log | awk '{print $3}') == $user ]]; then
+     chmod a+rwx  $lumio_log
   fi
 fi

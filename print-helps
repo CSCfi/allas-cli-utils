@@ -1,4 +1,4 @@
-echo "# Currently available Allas tools" > help/index.md
+echo "# Currently available LUMI-O tools" > help/index.md
 echo " ">>help/index.md
 
 for a in $(ls lo-*)  

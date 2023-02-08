@@ -78,8 +78,8 @@ do
                  shift
               ;;
 
-              '--allas' | '-A' )
-                 mode="allas"
+              '--lumio' | '-A' )
+                 mode="lumio"
                  shift
               ;;
 
@@ -107,7 +107,7 @@ fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to remove data that has been uploaded to Allas service using the a-put command.
+This tool is used to remove data that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-delete object_name
@@ -144,14 +144,14 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
 if [[ $mode == "swift" ]]; then
- storage_server="allas"
- storage_name="Allas"
+ storage_server="lumio"
+ storage_name="LUMI-O"
  check_swift_connection
 fi
 
 if [[ $mode == "s3cmd" ]]; then
- storage_server="s3allas" 
- storage_name="Allas"
+ storage_server="s3lumio" 
+ storage_name="LUMI-O"
 fi
 
 if [[ $mode == "lumi" ]]; then

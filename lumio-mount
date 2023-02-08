@@ -91,29 +91,29 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool mounts a bucket in Allas to be used as a read-only disk areas.
+This tool mounts a bucket in LUMI-O to be used as a read-only disk areas.
 Syntax of the command is:
 
-  allas-mount <bucket_name>
+  lumio-mount <bucket_name>
 
 By default the bucket is mounted to a directory named after the bucket.
 You can use optional mount points with option -m (--mountpoint)
    
-   allas-mount <bucket_name> -m <dir_name>
+   lumio-mount <bucket_name> -m <dir_name>
 
 To unmount a bucket use option -u or --umount:
 
-   allas-mount -u  <dir_name>
+   lumio-mount -u  <dir_name>
 
-Option -l (--list) lists the currently active rclone mount commands, launched by allas-mount.
+Option -l (--list) lists the currently active rclone mount commands, launched by lumio-mount.
 
-   allas-mount -l
+   lumio-mount -l
 
 By default buckets are mounted as read-only directories. With option -w (--write) write permission is
-added to the mounted bucket. Writing data to allas this way can cause problems in the cases where the
+added to the mounted bucket. Writing data to lumio this way can cause problems in the cases where the
 same object is modified by several processes at the same time.
    
-   allas-mount <bucket_name> -w
+   lumio-mount <bucket_name> -w
 
 EOF
 
@@ -136,15 +136,15 @@ then
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
   then 
-    source $inst_root/allas_conf -f
+    source $inst_root/lumio_conf -f
     test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
     if [[ $test -lt 1 ]]
     then 
-      echo "No connection to Allas!"
+      echo "No connection to LUMI-O!"
       echo "Please try setting up the connection again."
       echo "by running command:"
       echo ""
-      echo "   source $allas_conf_path"
+      echo "   source $lumio_conf_path"
       exit 1
     fi
   fi 
@@ -196,14 +196,14 @@ fi
 
 if [[ $os_project_name != $OS_PROJECT_NAME ]]
 then 
-     echo "Switching allas configuration to use project $os_project_name"
-     source $allas_conf_path -user $user $os_project_name -keeppasswd
+     echo "Switching lumio configuration to use project $os_project_name"
+     source $lumio_conf_path -user $user $os_project_name -keeppasswd
      export OS_PROJECT_NAME=$os_project_name
 fi 
 
 
 
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 if [[ $bucket_name == "" ]]
 then
@@ -217,11 +217,11 @@ then
            exit 1
     ;;
     *)
-    select bucket_name in "${all_buckets[@]}" "abort allas-mount"; 
+    select bucket_name in "${all_buckets[@]}" "abort lumio-mount"; 
     do
       [[ -n "$bucket_name" ]] && break
     done
-    if [[ "$bucket_name" == "abort allas-mount" ]]; then
+    if [[ "$bucket_name" == "abort lumio-mount" ]]; then
       exit 0 
     fi
     ;;
@@ -276,7 +276,7 @@ run-rclone-mount.sh  $storage_server $bucket_name $mount_point $read_or_write &
 
 
 
-echo "Allas bucket: $bucket_name is mounted to $mount_point"
+echo "LUMI-O bucket: $bucket_name is mounted to $mount_point"
 
 
 

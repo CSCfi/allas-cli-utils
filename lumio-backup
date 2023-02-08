@@ -5,7 +5,7 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/lo_env_conf
 
 
-#allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
+#lumio_conf_path=("/home/kkmattil/lumio-cli-utils/lumio_conf")
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
 bucket_name=("${project_label}-BACKUP")
@@ -75,7 +75,7 @@ do
                 then
                    input=("$1")
                    shift
-                else 
+                else
                    options=("$options $1")
                    shift
                 fi
@@ -93,10 +93,10 @@ fi
 
 
 if [[ $(which restic 2>/dev/null | wc -c) -eq 0 ]]
-   then 
+   then
         echo "restic command not found!"
         echo ""
-        echo "restic (https://restic.readthedocs.io) must be installed" 
+        echo "restic (https://restic.readthedocs.io) must be installed"
         echo "and in command path in order to use this tool"
         echo ""
         return
@@ -107,44 +107,44 @@ fi
 if [[ $help -eq 1 ]]; then
 cat <<EOF
 
-allas-backup
+lumio-backup
 
-allas-backup tool provides easy to use command line interface to the restic back up tool.
-(https://restic.readthedocs.io/). allas-backup automatically creates a project specific back up 
-repository to the Allas storage service at CSC and uses that for making cumulative back ups.
+lumio-backup tool provides easy to use command line interface to the restic back up tool.
+(https://restic.readthedocs.io/). lumio-backup automatically creates a project specific back up
+repository to the LUMI-O storage service at CSC and uses that for making cumulative back ups.
 
-In order to use this tool, you must first open connection to Allas storage service with
+In order to use this tool, you must first open connection to LUMI-O storage service with
 command:
-   source $allas_conf_path
+   source $lumio_conf_path
 
 The connection remains open for eight hours.
 
 
 BACKUP OPERATIONS
 
-allas-backup can be used for following five operations:
+lumio-backup can be used for following five operations:
 
-  allas-backup <file_name>  or
-  allas-backup add <file_name>       Add a new backup version (snapshot) of the given file 
+  lumio-backup <file_name>  or
+  lumio-backup add <file_name>       Add a new backup version (snapshot) of the given file
                                  or directory to the back up repository.
 
-  allas-backup list                  Lists the snapshots saved to the repository. 
+  lumio-backup list                  Lists the snapshots saved to the repository.
                                  Option: -last lists only the latest versions of different snapshots.
- 
-  allas-backup files <snapshot_id>   List the files that the snapshot includes.
 
-  allas-backup find <query>          Find snapshots that contain file or directory that match the given query term.
+  lumio-backup files <snapshot_id>   List the files that the snapshot includes.
 
-  allas-backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. By default 
-                                 the stored data is restored to the local directory. Other locations can be 
+  lumio-backup find <query>          Find snapshots that contain file or directory that match the given query term.
+
+  lumio-backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. By default
+                                 the stored data is restored to the local directory. Other locations can be
                                  defined with -target option.
 
-  allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
+  lumio-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
 
   Extra options:
- 
+
   -b, -bucket                        Use specific bucket for your repository. Note that this makes
-                                     Allas-backup to use different separate repository instead of
+                                     lumio-backup to use different separate repository instead of
                                      the default one.
 
 EOF
@@ -152,10 +152,10 @@ exit 0
 fi
 
 
-# update connection is allas-conf -k is in use      
-if [[ -n "$OS_PASSWORD" ]]; then   
+# update connection is lumio_conf -k is in use
+if [[ -n "$OS_PASSWORD" ]]; then
       echo "Updating token"
-      source $allas_conf_path --user $USER -k $OS_PROJECT_NAME -f 
+      source $lumio_conf_path --user $USER -k $OS_PROJECT_NAME -f
 fi
 
 
@@ -164,9 +164,9 @@ test=$(rclone about ${storage_server}: | wc -l)
 if [[ $test -lt 1 ]]
 then
    echo ""
-   echo "Allas connection is not set up or has expired!"
+   echo "LUMI-O connection is not set up or has expired!"
    echo "Please run command:"
-   echo "   source $allas_conf_path"
+   echo "   source $lumio_conf_path"
    exit 1
 fi
 
@@ -174,7 +174,7 @@ fi
 if [[ ! -e $HOME/.backup_passwd_${project_label} ]]
 then
   echo restic_$project_label >  $HOME/.backup_passwd_${project_label}
-fi 
+fi
 
 
 
@@ -186,7 +186,7 @@ snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} check 2> /
 if [[ $snum -lt 1 ]]
 then
    restic init --repo $repository -p $HOME/.backup_passwd_${project_label} $options
-fi 
+fi
 
 
 if [[ $task == "add" ]]
@@ -204,7 +204,7 @@ if [[ $task == "files" ]]
 then
   if [[ $input == "" ]]; then
      echo ""
-     echo "No snapshot name defined for command: allas-backup files."
+     echo "No snapshot name defined for command: lumio-backup files."
      echo "Please give the snapshot name as a command line argument."
      echo ""
      exit 1
@@ -217,7 +217,7 @@ if [[ $task == "find" ]]
 then
   echo "-------------------------------------------------------"
   if [[ $input == "" ]]; then
-     echo "No query term defined for command: allas-backup find"
+     echo "No query term defined for command: lumio-backup find"
      echo " Please give the query term as a command line argument."
      echo ""
      exit 1
@@ -241,7 +241,7 @@ then
   fi
   restic restore --repo $repository -p $HOME/.backup_passwd_${project_label} $input --target $target $options
 fi
-  
+
 if [[ $task == "delete" ]]
 then
   if [[ $input == "" ]]; then
@@ -249,19 +249,19 @@ then
      echo ""
      exit 1
   fi
-  restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input 
-fi 
+  restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input
+fi
 
 
 #Execute log creation
-message="$0 $(date) allas-backup $task "
-printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
+message="$0 $(date) lumio-backup $task "
+printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $lumio_log
 
 
 #If log is a file and not a service then check permissions
-if [[ $(ls $allas_log 2> /dev/null | wc -l) -eq 1 ]]; then
-  if [[ $(ls -l $allas_log | awk '{print $3}') == $user ]]; then
-     chmod a+rwx  $allas_log
+if [[ $(ls $lumio_log 2> /dev/null | wc -l) -eq 1 ]]; then
+  if [[ $(ls -l $lumio_log | awk '{print $3}') == $user ]]; then
+     chmod a+rwx  $lumio_log
   fi
 fi
 exit 0

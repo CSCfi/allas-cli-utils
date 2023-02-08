@@ -1,7 +1,7 @@
 # lo-info
  
 ```text
-This tool is used to show information about a data object that has been uploaded to Allas service using the a-put command.
+This tool is used to show information about a data object that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-info object_name

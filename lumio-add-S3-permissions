@@ -58,7 +58,7 @@ if [[ $help -eq 1 ]]; then
 cat <<EOF
 Command syntax:
   
-   allas-add-S3-permissions -b bucket -i project-id-string
+   lumio-add-S3-permissions -b bucket -i project-id-string
 
 EOF
 exit 

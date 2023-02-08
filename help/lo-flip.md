@@ -3,7 +3,7 @@
 ```text
 a-flip is a tool to make individual files temporary available in the internet.
 
-a-flip copies a file to Allas into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the
+a-flip copies a file to LUMI-O into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the
 uploaded data object can read and download the data with a web browser or tools like *wget* and *curl*.
 a-flip works mostly like a-publish but there are some differences:
 1) only the pre-defined bucket name ( _username-projectNumber_-flip ) can be used

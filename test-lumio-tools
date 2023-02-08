@@ -6,7 +6,7 @@ echo "aaa" > test_$$/a.txt
 echo "bbb" > test_$$/b.txt
 echo "ccc" > test_$$/c.txt
 
-test_bucket="allastest$$"
+test_bucket="lumiotest$$"
 
 #a-put
 

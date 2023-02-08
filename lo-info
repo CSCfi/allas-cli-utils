@@ -56,11 +56,11 @@ do
                   print_help=(1)
                   shift
                  ;;
-             '--allas' | '-A' )
+             '--lumio' | '-A' )
                   mode="swfit"
                   shift
                  ;;
-             '--s3allas' )
+             '--s3lumio' )
                   mode="s3cmd"
                   shift
                  ;;
@@ -88,7 +88,7 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to show information about a data object that has been uploaded to Allas service using the a-put command.
+This tool is used to show information about a data object that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-info object_name
@@ -113,12 +113,12 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
 if [[ $mode == "swift" ]]; then
-   storage_server="allas"
+   storage_server="lumio"
    check_swift_connection 
 fi
  
 if [[ $mode == "s3cmd" ]]; then
-  storage_server="s3allas"
+  storage_server="s3lumio"
 fi 
 
 if [[ $mode == "lumi" ]]; then
@@ -146,7 +146,7 @@ if [[ $object_name == "" ]] ; then
   rclone about ${storage_server}:
   exit
 fi
-#source /appl/opt/allas_conf
+#source /appl/opt/lumio_conf
 #input=("$1")
 if [[ $object_with_bucket == 2 ]]; then
      object_name=("${bucket}/${object_name}")

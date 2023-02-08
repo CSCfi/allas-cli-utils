@@ -1,7 +1,7 @@
 # lo-get
  
 ```text
-This tool is used to download data that has been uploaded to Allas service using the a-put command.
+This tool is used to download data that has been uploaded to LUMI-O service using the a-put command.
 The basic syntax of the command is:
 
    a-get object_name
@@ -26,12 +26,12 @@ Options:
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
-                              Normally this (Allas with swft) is the default and this option is not needed,
+--lumio                       Get data from LUMI-O with swift protocol in stead of currently set storage server. 
+                              Normally this (LUMI-O with swft) is the default and this option is not needed,
                               but if you have set e.g. Lumi-O as the default storage server, this option can be
-                              used to get data from Allas without changing the default storage server.
+                              used to get data from LUMI-O without changing the default storage server.
                               
---s3cmd                       Use Allas with S3 protocol.
+--s3cmd                       Use LUMI-O with S3 protocol.
 
 --lumi                        Get data from Lumi-O with S3 protocol in stead of the default storage server. 
                               If Lumi-O is defined to be the default storage server and this option is not needed.

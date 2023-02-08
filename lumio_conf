@@ -6,7 +6,7 @@ shell_check=`ps -hp $$|awk '{print $5}'| grep -c bash `
 
 
 if [[ $shell_check -ne 1 ]]; then
-   echo " allas_conf is written for bash shell."
+   echo " lumio_conf is written for bash shell."
    my_shell=`ps -hp $$|awk '{print $5}'`
    echo " You are using $my_shell shell."
    echo " This may cause this command to fail."
@@ -27,18 +27,18 @@ export OS_IDENTITY_API_VERSION=3
 
 
 
-allas_conf_scope () {
+lumio_conf_scope () {
 
 local usage="
 
-Usage: source allas_conf [OPTIONS] [PROJECT]
+Usage: source lumio_conf [OPTIONS] [PROJECT]
 
     This bash script sets up the environment variables and the configuration
-    files for accessing Allas or Lumi-O storage service.
+    files for accessing LUMI-O or Lumi-O storage service.
 
-    Allas
+    LUMI-O
 
-    By default this script confgure swift based connection to Allas (https://a3s.fi).
+    By default this script confgure swift based connection to LUMI-O (https://a3s.fi).
 
     The program asks your CSC password before starting the configuration
     process.
@@ -57,7 +57,7 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     to create authentication keys for Lumi-O. Authentication server provides key strings
     based of which this script creates configuration files for rclone, S3 and S3cmd.
 
-    Note that you can have active connection to both Lumi-O and Allas in the same time
+    Note that you can have active connection to both Lumi-O and LUMI-O in the same time
     but in that case you must indicate the stroage server to be used in the commands
     you are using.
 
@@ -84,7 +84,7 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
      -f, --force              Skip check that tries to ensure that this command is
                               sourced correctly. This option needs to be used in batch jobs.
 
-     --s3remove               Remove S3 access key for an Allas project.
+     --s3remove               Remove S3 access key for an LUMI-O project.
 
     DEPENDENCIES
     ------------
@@ -159,7 +159,7 @@ done
 
 
 if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
-    echo "Error: allas_conf should not be executed directly. $usage" >&2
+    echo "Error: lumio_conf should not be executed directly. $usage" >&2
     exit 1
 fi
 
@@ -198,7 +198,7 @@ if [[ mode != "lumi" ]]; then
         lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
-           echo "Do you want to remiove this setting and use Allas a the defaut object storage server (y/n)?"
+           echo "Do you want to remiove this setting and use LUMI-O a the defaut object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
                 grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
@@ -300,7 +300,7 @@ if [[ $mode == "lumi" ]]; then
      echo "When using a-commands, add option:"
      echo "    --lumi"
      echo ""
-     echo "to the a-commands to use Lumi-O in stead of Allas."
+     echo "to the a-commands to use Lumi-O in stead of LUMI-O."
    fi
    return
 fi
@@ -416,7 +416,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 
    case ${#all_projects[@]} in
        0)
-           echo "Error: No Allas projects found!" >&2
+           echo "Error: No LUMI-O projects found!" >&2
            echo "Please check that you typed your password correctly" >&2
            return 1
            ;;
@@ -427,10 +427,10 @@ if [ -z "$OS_PROJECT_NAME" ]; then
        *)
            PS3="Please choose a project by giving an item number from the list above: "
            local project
-           local allas_projects
+           local lumio_projects
 
            if ! command -v csc-projects >/dev/null 2>&1; then
-             select project in "${all_projects[@]}" "abort allas_conf"; do
+             select project in "${all_projects[@]}" "abort lumio_conf"; do
                  [[ -n "$project" ]] && break
              done
            else
@@ -438,14 +438,14 @@ if [ -z "$OS_PROJECT_NAME" ]; then
              for g in ${all_projects[@]}
              do
                 title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
-                allas_projects+=("${g}  ${title}")
+                lumio_projects+=("${g}  ${title}")
              done
-             select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
-                 [[ -n "$allas_project" ]] && break
+             select lumio_project in "${lumio_projects[@]}" "abort lumio_conf"; do
+                 [[ -n "$lumio_project" ]] && break
              done
-             project=$(echo "$allas_project" | awk '{print $1}')
+             project=$(echo "$lumio_project" | awk '{print $1}')
            fi
-	   if [[ "$project" == "abort allas_conf" || "$project" == "abort" ]]; then
+	   if [[ "$project" == "abort lumio_conf" || "$project" == "abort" ]]; then
 	       return 1
 	   fi
            export OS_PROJECT_NAME=$project
@@ -531,12 +531,12 @@ if $use_s3cmd; then
 
    export PYTHONPATH=$activePythonPath
 
-   #s3allas for rclone
-   rclone config delete s3allas
+   #s3lumio for rclone
+   rclone config delete s3lumio
    mkdir -p  $HOME/.config/rclone/
    echo "" >> $HOME/.config/rclone/rclone.conf
    chmod go-rwx $HOME/.config/rclone/rclone.conf
-   echo '[s3allas]' >>  $HOME/.config/rclone/rclone.conf
+   echo '[s3lumio]' >>  $HOME/.config/rclone/rclone.conf
    echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
    echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf
    echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
@@ -545,7 +545,7 @@ if $use_s3cmd; then
    echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
    echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
 
-   echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
+   echo "rclone remote s3lumio: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
    echo ""
 
 
@@ -566,7 +566,7 @@ fi
 
 
 ## 7. Create lumio_default and unset some variables
-#reset allas_default
+#reset lumio_default
 echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
 echo "user=$OS_USERNAME" >>  $HOME/.lumio_default
 
@@ -591,5 +591,5 @@ function rclone() {
 }
 
 
-allas_conf_scope "$@"
-unset -f allas_conf_scope
+lumio_conf_scope "$@"
+unset -f lumio_conf_scope

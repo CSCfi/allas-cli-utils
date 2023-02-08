@@ -4,15 +4,15 @@
 
 
 
-This tool is used to check if Allas already includes objects that would matching objects
+This tool is used to check if LUMI-O already includes objects that would matching objects
 that a-put would create. This command can be use check the success of a data upload process
 done with a-put. Alternatively, the results can be used to list objects that need to be removed
-or renamed, before uploading a new version of a dataset to Allas
-For example, if you have uploaded a directory to Allas using command:
+or renamed, before uploading a new version of a dataset to LUMI-O
+For example, if you have uploaded a directory to LUMI-O using command:
    a-put datadir/*
 You can use command:
    a-check datadir/*
-To check if all the directories and files have corresponding objects in Allas.
+To check if all the directories and files have corresponding objects in LUMI-O.
 If you have defined a bucket with option -b, you must include this option
 in the a-check command too:
   a-put -b 123_bucket datadir/*
@@ -68,12 +68,12 @@ a-check command line options:
 --override                  Allow overwriting existing objects.
 
 --input-list <list_file>    Give a file that lists the files or directories 
-                            to be uploaded to Allas.
+                            to be uploaded to LUMI-O.
                             Each item will be stored as one object.
 
--a, --asis                  Copy the given file or content of a directory to Allas
+-a, --asis                  Copy the given file or content of a directory to LUMI-O
                             without compression and packing so that each file in the
-                            directory will be copied to Allas as an individual object.
+                            directory will be copied to LUMI-O as an individual object.
                             The object name contains the relative path of the file to
                             be copied.
 
@@ -84,10 +84,10 @@ a-check command line options:
 
 --pk, --public-key          Public key used for crypt4gh encryption.
 
---sdx                       Upload data to Allas in format format that is compatible with
+--sdx                       Upload data to LUMI-O in format format that is compatible with
                             the CSC Sensitive data services: The files are encrypted with
                             crypt4gh using CSC public key after which the files are imported
-                            to Allas as individual objects as in --asis format.
+                            to LUMI-O as individual objects as in --asis format.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-project-number_SD-CONNECT,
