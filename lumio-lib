@@ -1,14 +1,27 @@
 
 # make secure temp dir and set the global tmp_dir to it
 function make_temp_dir {
+# test if os is Darwin derivative
+
+VAR1=$(uname)
+VAR2='Darwin'
+if  [[ "$VAR1" == "$VAR2" ]]; then
+	if ! [ -x "$(command -v gmktemp)" ]; then
+  	echo 'Error: gmktemp is not installed. This can be found from Coreutils in https://brew.sh/ ' >&2
+  	exit 1
+		else
+  	tmp_dir=$(gmktemp -d -p ${tmp_root} allas-cli-tools-XXXXXX)
+		fi
+else
 	tmp_dir=$(mktemp -d -p ${tmp_root} allas-cli-tools-XXXXXX)
+fi
 }
 
 # remove tmp_dir if it exists
 function clean_temp_dir {
 	if [ -n "${tmp_dir}" -a -d "${tmp_dir}" ]; then
 		rm -rf ${tmp_dir}
-	fi	
+	fi
 
 }
 
@@ -54,7 +67,7 @@ echo $path_string
 }
 
 
-# This function returns the difference between the sum of segment sizes and 
+# This function returns the difference between the sum of segment sizes and
 # and the expected size. This is needed for allas-health-check
 check_segments(){
   local segment_server="$1"
@@ -106,5 +119,3 @@ Check the segments bucket ${segments_bucket} for object ${check_object}."
 }
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
-
-

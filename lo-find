@@ -11,8 +11,8 @@ fi
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
 
 #local variables
 user="$USER"
@@ -155,16 +155,16 @@ fi
 #Assign project to be used if not defined
 if [ "$os_project_name" == "" ]
 then
-  if [ -f $HOME/.allas_default ]
+  if [ -f $HOME/.lumio_default ]
   then
-     source $HOME/.allas_default
+     source $HOME/.lumio_default
   else
      echo "Default project is not defined"
      source $allas_conf_path -user $user
-     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-     echo "Default allas project is stored to  \$HOME/.allas_default"
+     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
+     echo "Default allas project is stored to  \$HOME/.lumio_default"
      echo ""
-     source $HOME/.allas_default
+     source $HOME/.lumio_default
   fi
 fi
 

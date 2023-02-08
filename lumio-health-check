@@ -4,9 +4,9 @@
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 #inst_root="/appl/opt/allas-cli-utils"
-#cat  $inst_root/a_env_conf
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
+#cat  $inst_root/lo_env_conf
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
 
 allas_conf_path=("${inst_root}/allas_conf")
 

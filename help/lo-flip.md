@@ -1,4 +1,4 @@
-# a-flip
+# lo-flip
  
 ```text
 a-flip is a tool to make individual files temporary available in the internet.

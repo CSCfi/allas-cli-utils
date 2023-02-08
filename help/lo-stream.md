@@ -1,4 +1,4 @@
-# a-stream
+# lo-stream
  
 ```text
 This tool is used to stream data, that has been uploaded to Allas service using the a-put command.

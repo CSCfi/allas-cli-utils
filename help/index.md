@@ -1,42 +1,26 @@
 # Currently available Allas tools
  
-[a-access](./a-access.md)
+[lo-access](./lo-access.md)
  
-[a-check](./a-check.md)
+[lo-check](./lo-check.md)
  
-[a-delete](./a-delete.md)
+[lo-delete](./lo-delete.md)
  
-[a-encrypt](./a-encrypt.md)
+[lo-encrypt](./lo-encrypt.md)
  
-[a-find](./a-find.md)
+[lo-find](./lo-find.md)
  
-[a-flip](./a-flip.md)
+[lo-flip](./lo-flip.md)
  
-[a-get](./a-get.md)
+[lo-get](./lo-get.md)
  
-[a-info](./a-info.md)
+[lo-info](./lo-info.md)
  
-[a-list](./a-list.md)
+[lo-list](./lo-list.md)
  
-[a-publish](./a-publish.md)
+[lo-publish](./lo-publish.md)
  
-[a-put](./a-put.md)
+[lo-put](./lo-put.md)
  
-[a-put-batch](./a-put-batch.md)
- 
-[a-stream](./a-stream.md)
- 
-[allas-add-S3-permissions](./allas-add-S3-permissions.md)
- 
-[allas-backup](./allas-backup.md)
- 
-[allas-dir-to-bucket](./allas-dir-to-bucket.md)
- 
-[allas-health-check](./allas-health-check.md)
- 
-[allas-list-all](./allas-list-all.md)
- 
-[allas-mount](./allas-mount.md)
- 
-[allas-share-bucket](./allas-share-bucket.md)
+[lo-stream](./lo-stream.md)
  

@@ -60,36 +60,31 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     Note that you can have active connection to both Lumi-O and Allas in the same time
     but in that case you must indicate the stroage server to be used in the commands
     you are using.
- 
+
 
     OPTIONS
     -------
 
-     -m, --mode S3            Configure S3 API (default: swift)
+     -m, --mode S3            Configure S3 API (default: S3)
 
-     -m, --mode both          Configure both swift and S3 APIs
 
-     --lumi, --mode lumi      Configure Lumi-O connection. 
+     --lumi, --mode lumi      Configure Lumi-O connection.
 
      -u, --user USER          Storage server username (default: $USER)
 
-     -k, --keeppasswd         Keep OS_PASSWORD environment variable once the
-                              configuration is done. This can be useful if you
-                              use this tool in scripts that need to switch between 
-                              projects or re-open Allas connection
 
      -c, --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
                               SIZE, in MB, are automatically uploaded
                               multithread-multipart  (default: 5000)
 
-     -p, --project            Define Allas-project to be used.
+     -p, --project            Define LUMI-project to be used.
 
      -s, --silent             Less output
 
      -f, --force              Skip check that tries to ensure that this command is
                               sourced correctly. This option needs to be used in batch jobs.
-  
-     --s3remove               Remove S3 access key for an Allas project. 
+
+     --s3remove               Remove S3 access key for an Allas project.
 
     DEPENDENCIES
     ------------
@@ -97,13 +92,13 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     This script uses openstack and swift/s3cmd utilities, which in
     CSC servers are available using
 
-        module load allas
+        module load lumi-o
 
     On other machines these need to be installed separately, see README.md
     for example.
 "
 
-local storage_service=("allas")
+local storage_service=("lumio")
 local show_keys=false
 local keep_password=false
 local silent_mode=false
@@ -149,15 +144,15 @@ while [[ $# -ge 1 ]]; do
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
                 export OS_PROJECT_NAME="$2"
-                shift 
+                shift
               else
-                export OS_PROJECT_NAME="" 
+                export OS_PROJECT_NAME=""
               fi
-          else 
+          else
               export OS_PROJECT_NAME=""
-          fi    
+          fi
           shift
-          ;; 
+          ;;
         *) export OS_PROJECT_NAME="$1";                  shift;;
     esac
 done
@@ -180,12 +175,12 @@ case "$mode" in
     'swift')
         local use_swift=true
         local use_s3cmd=false
-        ;; 
+        ;;
     's3remove')
         local use_swift=false
         local use_s3cmd=false
         local s3remove=true
-        ;; 
+        ;;
     'lumi')
         local use_swift=false
         local use_s3cmd=false
@@ -214,7 +209,7 @@ if [[ mode != "lumi" ]]; then
      fi
 fi
 
-             
+
 # Setup commands for Lumi-O
 
 echo "Mode $mode"
@@ -224,14 +219,14 @@ if [[ $mode == "lumi" ]]; then
    echo "Please login to  https://auth.lumidata.eu/"
    echo "In the web interface, choose first the project you wish to use."
    echo "Next generate a new key or use existing valid key"
-   echo "Open the Key details view and based on that give following information" 
+   echo "Open the Key details view and based on that give following information"
    echo "Lumi Project Number: "
    read lumi_project_number
    lumi_project_number=$(echo $lumi_project_number | tr -d " ")
    echo "Access key:"
    read lumi_access_key
    lumi_access_key=$(echo $lumi_access_key | tr -d " ")
-   echo "Secret key:" 
+   echo "Secret key:"
    read lumi_secret_key
    lumi_secret_key=$(echo $lumi_secret_key | tr -d " ")
 
@@ -241,9 +236,9 @@ if [[ $mode == "lumi" ]]; then
    export S3_ACCESS_KEY_ID="$lumi_access_key";
    export S3_SECRET_ACCESS_KEY="$lumi_secret_key";
    export S3_HOSTNAME=lumidata.eu;
-   storage_service="lumi" 
+   storage_service="lumi"
    export OS_PROJECT_NAME=$lumi_project_number
-   
+
    #rclone parameters
    rclone config delete lumi-o
    rclone config delete lumi-pub
@@ -255,26 +250,26 @@ if [[ $mode == "lumi" ]]; then
    echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
    echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
    echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf
    echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
    echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
    echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
 
    echo "rclone remote lumi-o: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
-   echo ""  
+   echo ""
    echo ""  >>  $HOME/.config/rclone/rclone.conf
    echo '[lumi-pub]' >>  $HOME/.config/rclone/rclone.conf
    #echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
    echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
    echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
    echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf
    echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
    echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
    echo 'acl = public-read' >>  $HOME/.config/rclone/rclone.conf
 
    echo "rclone remote lumi-pub: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
-   echo ""  
+   echo ""
 
    #S3cmd parameters
    rm $HOME/.s3cfg
@@ -287,9 +282,9 @@ if [[ $mode == "lumi" ]]; then
    echo "enable_multipart = True" >> $HOME/.s3cfg
    echo "signature_v2 = True" >> $HOME/.s3cfg
    echo "use_https = True" >> $HOME/.s3cfg
-   
+
    echo "Do you want to make Lumi-O the default storage service for a-commands (y/n)?"
-   read lumi_as_default 
+   read lumi_as_default
    if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
     # define Lumi-o in customer defaults
      if [[ -e $HOME/.a_tools_conf ]]; then
@@ -306,7 +301,7 @@ if [[ $mode == "lumi" ]]; then
      echo "    --lumi"
      echo ""
      echo "to the a-commands to use Lumi-O in stead of Allas."
-   fi 
+   fi
    return
 fi
 
@@ -337,12 +332,12 @@ if $use_s3cmd && ! command -v s3cmd >/dev/null 2>&1; then
         return 1
 fi
 
-if [[ $auth_method == "swift" ]];then 
+if [[ $auth_method == "swift" ]];then
    if ! command -v swift >/dev/null 2>&1; then
       echo -e "\nError: swift command not found!" >&2
       return 1
    fi
-else   
+else
    if ! command -v curl >/dev/null 2>&1; then
       echo -e "\nError: curl command was not found."
       return 1
@@ -381,7 +376,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    #unset pythonpath temporarily
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
- 
+
    if [[ $project_list_method == "curl" ]];  then
       ## This section replaces openstack based project listing
       ##
@@ -433,7 +428,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
            PS3="Please choose a project by giving an item number from the list above: "
            local project
            local allas_projects
-           
+
            if ! command -v csc-projects >/dev/null 2>&1; then
              select project in "${all_projects[@]}" "abort allas_conf"; do
                  [[ -n "$project" ]] && break
@@ -462,8 +457,8 @@ fi
 #rclone configuration file check
 if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]; then
        mkdir -p  $HOME/.config/rclone/
-       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
-       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
+       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf
+       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf
        echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
        if [[ $silent_mode = "false" ]]; then
            echo ""
@@ -475,85 +470,17 @@ echo "Configuration will be done for project: $OS_PROJECT_NAME"
 echo "Protocols:"
 if $use_swift; then
    echo "  swift"
-fi 
+fi
 
 if $use_s3cmd; then
    echo "  S3"
 fi
- 
+
 if $s3remove; then
    echo "  S3"
-fi 
-
-
-
-# 6.1 swift configuration
-if $use_swift; then
-    #authentication either with swift or curl
-    if [[ $auth_method == "curl" ]];  then
-      ## This section replaces swift auth based authentication
-      ##
-      # authenticates and save token to environment variable
-      
- 
-      os_auth_data='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
-                     "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
-
-      # authenticate and get return values
-      #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
-      curl_out=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "${OS_AUTH_URL}/auth/tokens" 2>&1 <<< "$os_auth_data")
-      curl_exit="$?"
-      curl_status=`echo "$curl_out" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
-      if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
-            echo "FAILED" >&2
-            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
-      else
-           # save token to environment variable
-           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
-
-           # save also the storage url, figure it out with just basic tools without dependency to any json tool
-           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|grep "$storage_url_re"|grep "$storage_url_interface_re"|sed "$storage_url_sed"`
-      fi
-    else
-       if command -v openstack >/dev/null 2>&1; then
-         activePythonPath=$PYTHONPATH
-         unset PYTHONPATH
-         export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-         export PYTHONPATH=$activePythonPath     
-       fi
-       eval "$(swift auth)"
-    fi
-
-    if [[ $(grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
-        mkdir -p  ${rconf%/*}
-        printf "%s\n" >> $rconf \
-            "[${storage_service}]" \
-	    "type = swift" \
-	    "env_auth = true"
-        $echop "$storage_service service added to '$rconf'."
-    fi
-
-    if [ -z "${OS_AUTH_TOKEN}" ] ; then
-        echo "Error: Swift authentication failed!" >&2
-        echo "Are you sure that the password and project ID are valid?" >&2
-        echo "Please try again."  >&2
-        return 1
-    else
-        $echop "$storage_service connection configured successfully."
-        if $active_mode; then
-            export ACTIVE_TOKEN=$(launch_atoken $$)
-            $echop "ACTIVE_TOKEN launched"
-        else   
-            echo "Connection stays active for eight hours."
-            #echo "Connection stays active until:"
-            #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
-        fi
-    fi
-   if $ood; then
-     echo "OS_AUTH_TOKEN=$OS_AUTH_TOKEN" > $HOME/.allas_connection
-     echo "OS_STORAGE_URL=$OS_STORAGE_URL" >> $HOME/.allas_connection
-   fi
 fi
+
+
 
 
 # 6.2 s3cmd configuration
@@ -589,16 +516,16 @@ if $use_s3cmd; then
    rm -f  $HOME/.s3cfg_$$
    echo "signurl_use_https = True" >> $HOME/.s3cfg
    echo "public_url_use_https = True" >> $HOME/.s3cfg
-   
+
    echo ""
    echo "s3cmd configuration ready."
    echo ""
 
-   #aws.s3 conf   
+   #aws.s3 conf
    mkdir -m 0700 -p $HOME/.aws
    echo '[default]' > $HOME/.aws/credentials
    chmod go-rwx $HOME/.aws/credentials
-   echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
+   echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials
    echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
    echo AWS_DEFAULT_REGION =" regionOne " >> $HOME/.aws/credentials
 
@@ -613,7 +540,7 @@ if $use_s3cmd; then
    echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
    echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf
    echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf 
+   echo "access_key_id = $ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
    echo "secret_access_key = $SECRET_KEY" >> $HOME/.config/rclone/rclone.conf
    echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
    echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
@@ -624,50 +551,24 @@ if $use_s3cmd; then
 
  #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
  #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
- #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
+ #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg
 fi
 
 
 # Option to remove s3cmd key
 if $s3remove; then
-    
-    echo ""
-    echo "s3 access key removal requested for project $OS_PROJECT_NAME"
-    activePythonPath=$PYTHONPATH
-    unset PYTHONPATH
-    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-    local accesskeys=($(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | awk '{print $1}'))
-    if [[ ${#accesskeys[*]} -eq 0 ]]; then
-       echo "No access keys found for project $OS_PROJECT_NAME"
-       return 1
-    fi
-    if [[ ${#accesskeys[*]} -eq 1 ]]; then
-       openstack ec2 credentials delete ${accesskeys[0]}
-       echo "Accesskey ${accesskeys[0]} removed"
-       return
-    else
-       echo "Project has several access keys:"
-       PS3="Please choose an access key to be deleted by giving an item number form the list above: "
-       local accesskey
-       select accesskey in "${accesskeys[@]}" "abort allas_conf"; do
-              [[ -n "accesskey" ]] && break
-       done
-       if [[ "$accesskey" == "abort allas_conf" ]]; then
-          return 1
-       else 
-           openstack ec2 credentials delete $accesskey
-       fi
 
-    fi
+    echo ""
+    echo "s3 access key removal requested for project $OS_PROJECT_NAME requires access https://auth.lumidata.eu portal"
+
 fi
 
 
 
-
-## 7. Create allas_default and unset some variables
+## 7. Create lumio_default and unset some variables
 #reset allas_default
-echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
-echo "user=$OS_USERNAME" >>  $HOME/.allas_default
+echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
+echo "user=$OS_USERNAME" >>  $HOME/.lumio_default
 
 # unset variables unnecessary for token access or user/project info for the user
 # These need to be kept if you want to use openstack

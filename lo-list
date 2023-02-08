@@ -1,11 +1,11 @@
-#!/bin/bash 
+#!/bin/bash
 
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 mode="swift"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
 
 
 #local variables
@@ -24,7 +24,7 @@ show_shared=1
 if [[ -e $HOME/.a_tools_conf ]]; then
    customized=1
    source $HOME/.a_tools_conf
-else 
+else
    customized=0
 fi
 
@@ -46,11 +46,11 @@ do
              '--lumi' | '-L' )
                   mode="lumi"
                 shift
-                ;; 
+                ;;
               '--allas' | '-A' )
                   mode="swift"
                 shift
-                ;; 
+                ;;
              '--dir' | '-d' )
                 dir_like=(1)
                 shift
@@ -61,7 +61,7 @@ do
              ;;
              '--shared' | '-s')
                 show_shared=1
-                shift     
+                shift
              ;;
              '--help' | '-h' )
                   print_help=1
@@ -73,7 +73,7 @@ do
                       echo "Bucket name is: $bucket_name"
                       exit 1
                    fi
-                   
+
                    full_name="$1"
                    if [[ ${full_name:(-1)} == "/" ]]; then
                         full_name=${full_name%/}
@@ -81,7 +81,7 @@ do
                    bucket_name=$(echo $full_name | awk -F / '{print $1}')
                    #split bucket and object if needed
                    if [[ $bucket_name != $full_name ]]; then
-                      prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)                      
+                      prefix_string=$(echo $1 | sed -e s/"${bucket_name}\/"/""/)
                       options="$options -p $prefix_string "
                    fi
                    shift                       # No more switches
@@ -89,13 +89,13 @@ do
     esac
 done
 
-#Assign project to be used if not defined 
+#Assign project to be used if not defined
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
      echo "Customer settings read from $HOME/.a_tools_conf"
    fi
 fi
- 
+
 if [[ $mode == "swift" ]];then
    storage_server="allas"
    storage_name="Allas"
@@ -125,7 +125,7 @@ fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to list buckets and objects in Allas or Lumi-o. If bucket name is not defined, all buckets are listed. 
+This tool is used to list buckets and objects in Allas or Lumi-o. If bucket name is not defined, all buckets are listed.
 If bucket name is defined, then objects inside the bucket are listed.
 
 
@@ -144,22 +144,22 @@ Options:
 
 Working with shared buckets:
 
-                        When you list a contents of a bucket with a-list, the command checks if the bucket used 
-                        belongs to the current project. If it does not belong to the project, the name of the shared 
+                        When you list a contents of a bucket with a-list, the command checks if the bucket used
+                        belongs to the current project. If it does not belong to the project, the name of the shared
                         bucket is stored to Allas or Lumi-o ( into object project-number-a-tools/buckets_shared_to).
                         When you check the available buckets with command a-list, the command shows also the names of
-                        the shared buckets stored to Allas or Lumi-o. NOTE that this option shows information about only about 
+                        the shared buckets stored to Allas or Lumi-o. NOTE that this option shows information about only about
                         shared buckets that have previously been used by a-list. Thus you can't use a-list check if some
                         new buckets has been shared to you.
 
 
-                    
+
 
 Related commands: a-put, a-get, a-delete, a-find
 
 EOF
 exit 0
-fi 
+fi
 
 # check is this is a shared  bucket
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
@@ -167,14 +167,14 @@ a_tools_bucket=${project_label}-a-tools
 shared_list="buckets_shared_to"
 
 
-if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then   
+if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
    bucket_readable=$(rclone ls ${storage_server}:$bucket_name 2> /dev/null | wc -l)
    own_bucket=$(rclone lsd allas: | awk '{ print $NF}' | grep -c -w $bucket_name )
    # case: bucket reable but not owned
    if [[ $bucket_readable -gt 0 ]] && [[ $own_bucket -eq 0 ]]; then
        # do we already have a list of shared buckets
        check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
-       if [[ $check_os -eq 1 ]]; then        
+       if [[ $check_os -eq 1 ]]; then
           known_shared=$(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -w -c $bucket_name)
           if [[ $known_shared -eq 0 ]]; then
             rclone cat ${storage_server}:${a_tools_bucket}/$shared_list > .$$_a_shared_tmp
@@ -184,21 +184,21 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
             #rm .$$_a_shared_tmp
           fi
        else
-          rclone mkdir ${storage_server}:${a_tools_bucket}  
-          echo "$bucket_name" | rclone rcat ${storage_server}:${a_tools_bucket}/$shared_list 
-          echo "Adding bucket $bucket_name to the list of buckets shared to this project" 
+          rclone mkdir ${storage_server}:${a_tools_bucket}
+          echo "$bucket_name" | rclone rcat ${storage_server}:${a_tools_bucket}/$shared_list
+          echo "Adding bucket $bucket_name to the list of buckets shared to this project"
        fi
    fi
    # case: bucket not readable
    #echo bucket_readable $bucket_readable
-   if [[  $bucket_readable -eq 0 ]]; then  
+   if [[  $bucket_readable -eq 0 ]]; then
       check_os=$(rclone ls ${storage_server}:${a_tools_bucket}/$shared_list 2> /dev/null | wc -l)
       #echo check_os $check_os
        if [[ $check_os -gt 0 ]]; then
           known_shared=$(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -w -c $bucket_name)
           if [[ $known_shared -eq 1 ]]; then
              rclone cat ${storage_server}:${a_tools_bucket}/$shared_list | grep -v -w "$bucket_name" > .$$_a_shared_tmp
-             rmaining_shares=$(cat .$$_a_shared_tmp | wc -l ) 
+             rmaining_shares=$(cat .$$_a_shared_tmp | wc -l )
              if [[ $rmaining_shares -gt 0 ]];then
                 cat .$$_a_shared_tmp | rclone copyto .$$_a_shared_tmp  ${storage_server}:${a_tools_bucket}/$shared_list
              else
@@ -209,7 +209,7 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
           fi
        fi
    fi
- 
+
 
 fi
 # run list command
@@ -223,7 +223,7 @@ fi
 
 if [[ $bucket_name == "" ]]; then
    if [[ $long_listing -eq 0 ]]; then
-      rclone lsd ${storage_server}: | awk '{print $NF}'         
+      rclone lsd ${storage_server}: | awk '{print $NF}'
    else
       rclone lsd ${storage_server}:
    fi
@@ -243,7 +243,7 @@ else
        #rclone ls ${storage_server}:$full_name  | grep -v "_ameta$" | awk '{print "'$full_name'/" $NF}'
      else
        #rclone lsl ${storage_server}:$bucket_name  | grep -v "_ameta$" | awk '{print "x " $0}' | tr -s ' ' | cut -d " " -f 3- | awk '{ print "'$full_name'/ " $0}'
-       rclone lsl ${storage_server}:$full_name | grep -v "_ameta$" 
+       rclone lsl ${storage_server}:$full_name | grep -v "_ameta$"
      fi
    else
      # listing in swift mode
@@ -253,30 +253,5 @@ else
         swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | awk '{print "'$bucket_name'/" $0}'
      fi
    fi
-fi 
+fi
 exit 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

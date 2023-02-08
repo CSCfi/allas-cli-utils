@@ -1,4 +1,4 @@
-# a-delete
+# lo-delete
  
 ```text
 This tool is used to remove data that has been uploaded to Allas service using the a-put command.

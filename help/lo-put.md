@@ -1,8 +1,8 @@
-# a-put
+# lo-put
  
 ```text
 This tool is used to upload data from the disk environment 
-of CSC's supercomputers to Allas storage environment. 
+of CSC's supercomputers to Allas and Lumi-o storage environments. 
 a-put can be used in other environments too.
 
 The basic syntax of the command is:
@@ -11,29 +11,30 @@ The basic syntax of the command is:
 
 By default this tool performs following operations:
 
-1. Ensures that you have working connection to Allas storage 
+1. Ensures that you have working connection to the storage 
    service.
 
 2. In case of directory, the content of the directory is 
    collected into a single file (using tar command).
 
 3. By default the data is uploaded to Allas using rclone command 
-   and swift protocol. S3 protocol is available too.
+   and swift protocol. Lumi-o and Allas with S3 protocol is available too.
 
 NOTE! Data was compression with zstdmt command is no longer done by 
 default before the upload.
 
 
-The location were data is stored in Allas can be defined with 
+The location were data is stored in the storage server (Allas or Lumi-o) can be defined with 
 options --bucket (-b) and --object (-o).
 
 The default option is that data that locates in: 
   - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
   - scratch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
   - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
-  - projappl in Mahti is uploaded to bucket:  project_number-Mahti-PROJAPPL
+  - projappl in Mahti is uploaded to bucket:  project_number-mahti-PROJAPPL
   - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
-
+  - project in Lumi is uploaded to bucket:  project_number-lumi-o-project
+  - flash in Lumi is uploaded to bucket:  project_number-lumi-o-flash
 In other cases the data uploaded to by default : username-project_number-MISC
 
 For example for user kkaytaj belonging in project_201234, data 
@@ -135,8 +136,18 @@ a-put command line options:
                             to Allas. 
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
-                            your-project-number_SD-CONNECT,
+                            your-project-number_SD-CONNECT.
 
+
+-A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
+                            Normally this (Allas with swift) is the default and this option is not needed,
+                            but if you have set e.g. Lumi-O as the default storage server, this option can be
+                            used to upload data to Allas without changing the default storage server.
+                              
+--s3cmd                     Use Allas with S3 protocol.
+
+-L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+                            If Lumi-O is defined to be the default storage server and this option is not needed.
 
 Related commands: a-find, a-get, a-delete, a-info
 ```

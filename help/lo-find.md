@@ -1,4 +1,4 @@
-# a-find
+# lo-find
  
 ```text
 This tool is used to find:

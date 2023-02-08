@@ -5,8 +5,8 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
 
 # local variable
 object_name=""              #object to retrieve
@@ -175,7 +175,7 @@ then
 fi
 
 
-#source $HOME/.allas_default
+#source $HOME/.lumio_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 #Check if connection works
