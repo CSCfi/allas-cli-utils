@@ -3,11 +3,11 @@
 ```text
 This tool is used to upload data from the disk environment 
 of CSC's supercomputers to LUMI-O and Lumi-o storage environments. 
-a-put can be used in other environments too.
+lo-put can be used in other environments too.
 
 The basic syntax of the command is:
 
-   a-put directory_or_file
+   lo-put directory_or_file
 
 By default this tool performs following operations:
 
@@ -49,7 +49,7 @@ E.g. a file called test_1.txt in scratch directory of Puhti can be
 stored with commands:
 
    cd /scratch/project_201234
-   a-put test_1.txt
+   lo-put test_1.txt
 
 In this case the file is stored to bucket: 201234-puhti-SCRATCH
 as object: test_1.txt.zst
@@ -58,17 +58,17 @@ If you have another file called test_1.txt that locates in directory
 /scratch/project_201234/project2/sample3 you can store it with commands:
    
   cd /scratch/project_201234/project2/sample3
-  a-put test_1.txt
+  lo-put test_1.txt
   
 Or commands
   cd /scratch/project_201234
-  a-put project2/sample3/test_1.txt
+  lo-put project2/sample3/test_1.txt
 
 In these cases the file is stored to bucket: 201234-puhti-SCRATCH
 as object:  project2/sample3/test_1.txt.zst
 
 
-a-put command line options:
+lo-put command line options:
 
 -b, --bucket <bucket_name>  Define a name of the bucket into 
                             which the data is uploaded.
@@ -104,7 +104,7 @@ a-put command line options:
                             the object contains to the metadata file.
                             Using this option speeds up the upload process 
                             significantly if the directory to be uploaded 
-                            contains large amount of files. However, a-find 
+                            contains large amount of files. However, lo-find 
                             can't be used to locate objects uploaded this way.
 
 --no-ameta                  Don't create metadata objects ( _ameta ) for the 
@@ -149,5 +149,5 @@ a-put command line options:
 -L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
                             If Lumi-O is defined to be the default storage server and this option is not needed.
 
-Related commands: a-find, a-get, a-delete, a-info
+Related commands: lo-find, lo-get, lo-delete, lo-info
 ```

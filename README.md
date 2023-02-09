@@ -5,7 +5,7 @@ In many cases, effective usage of LUMI-O requires that the user knows the featur
 both Object Storage systems and the software or protocol that is used to manage data in LUMI-O.
 
 For those users, that just want to use LUMI-O for storing data that is in CSC computing environment, 
-CSC provides a set of commands (a-tools ) for moving data between CSC computing environment and LUMI-O.
+CSC provides a set of commands (lo-tools ) for moving data between CSC computing environment and LUMI-O.
 
 ## Opening connection with lumio_conf
 
@@ -28,30 +28,30 @@ or _s3cmd_ to manage data in lumio.
 
 For those users, that just want to use LUMI-O for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and LUMI-O.
 
-**Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprocessing operation. In the future, use option -c in case you want to compress the data before upload.**
+**Note! since the update done on 1.3. 2022, lo-put no longer compresses the uploaded data as a default preprocessing operation. In the future, use option -c in case you want to compress the data before upload.**
 
 
 ## Four main tools for using LUMI-O
 
-|a-command | Function |
+|lo-command | Function |
 | :--- | :--- |
-| [a-put](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-put) | Upload a file or directory to LUMI-O as one object |
-| [a-get](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-get) | Download a stored dataset (object) from LUMI-O |
-| [a-list](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-list) | List buckets and objects in LUMI-O |
-| [a-delete](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-delete) | Delete an object from LUMI-O |
+| [lo-put](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-put) | Upload a file or directory to LUMI-O as one object |
+| [lo-get](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-get) | Download a stored dataset (object) from LUMI-O |
+| [lo-list](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-list) | List buckets and objects in LUMI-O |
+| [lo-delete](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-delete) | Delete an object from LUMI-O |
 
 ## Other tools
 The available tools are:
   
-|a-command | Function |
+|lo-command | Function |
 | :--- | :--- |
-| [a-access](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-access)| Manage access permissions of your buckets in LUMI-O || [a-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-check) | Command to check if a-put command was successfully executed |
-| [a-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-check) | Command to check if a-put command was successfully executed |
-| [a-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services | 
-| [a-find](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-find)| Search and locate data that has been uploaded with a-put |
-| [a-flip](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-flip)| Upload a file to LUMI-O into a bucket that will keep the file temporarily available to the internet |
-| [a-info](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-info)| Display information about an object in LUMI-O |
-| [a-publish](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#a-publish) | Upload a file to LUMI-O into a bucket that allows public access over the internet |
+| [lo-access](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-access)| Manage access permissions of your buckets in LUMI-O || [lo-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-check) | Command to check if lo-put command was successfully executed |
+| [lo-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-check) | Command to check if lo-put command was successfully executed |
+| [lo-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services | 
+| [lo-find](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-find)| Search and locate data that has been uploaded with lo-put |
+| [lo-flip](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-flip)| Upload a file to LUMI-O into a bucket that will keep the file temporarily available to the internet |
+| [lo-info](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-info)| Display information about an object in LUMI-O |
+| [lo-publish](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-publish) | Upload a file to LUMI-O into a bucket that allows public access over the internet |
 
 
 
@@ -120,7 +120,7 @@ export PATH=${PATH}:$(pwd)
 conda env create -n lumio --file lumio-dependencies.yaml 
 conda activate lumio
 source lumio_conf -u csc-useraccount
-a-list 
+lo-list 
 ```
 Example: Installing lumio-cli-utils to CentOS 7 based virtual machine in cPouta
 
@@ -140,13 +140,13 @@ cd lumio-cli-utils/
 export PATH=${PATH}:$(pwd)
 conda create -n lumio
 conda activate lumio
-conda install -c conda-forge zstd python pip s3cmd
+conda install -c condlo-forge zstd python pip s3cmd
 pip install --upgrade setuptools
 pip install python-openstackclient
 pip install python-swiftclient
 pip install crypt4gh
 source lumio_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
-a-list
+lo-list
 
 ```
 
@@ -157,9 +157,9 @@ you can take in use in macs by giving following in the command in the lumio-cli-
 mv md5sum.macosx md5sum
 ```
 
-## Configuring a-commands
+## Configuring lo-commands
 
-You can define the default settings that the a-tools use in two files: lo_env_conf and .a_tools_conf. These settings affect mostly to the a-put data upload command.
+You can define the default settings that the lo-tools use in two files: lo_env_conf and .a_tools_conf. These settings affect mostly to the lo-put data upload command.
 
 ### 1. lo_env_conf
 
@@ -170,9 +170,9 @@ The file *lo_env_conf*, that locates in the installation directory of _lumio-cli
 
 ### 2. .a_tools_conf
 
-A user can define her own default settings for a-commands by making a configuration file named as **.a_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers too. In this file you can set default values for many of the functions that are defined with a-put command options.
+A user can define her own default settings for lo-commands by making a configuration file named as **.a_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers too. In this file you can set default values for many of the functions that are defined with lo-put command options.
 
-For example, if you are uploading files that would benefit from compression, you could use _--compress_ option with a-put. If you want this to be default setting you could create .a_tools_conf file
+For example, if you are uploading files that would benefit from compression, you could use _--compress_ option with lo-put. If you want this to be default setting you could create .a_tools_conf file
 that contains setting:
 
 ```text
@@ -180,12 +180,12 @@ compression=1
 ```
 Now command:
 ```text
-a-put my_data.b
+lo-put my_data.b
 ```
 Will compress the data during the upload process. However, you can still skip the compression with option _--nc_.
 
 ```text
-a-put --nc my_data.b
+lo-put --nc my_data.b
 ```
 You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and uncomment and define the variables you wish to use.
 

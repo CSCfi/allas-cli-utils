@@ -4,9 +4,9 @@
 This tool is used to encrypt objects, that have already been uploaded to LUMI-O.
 The basic syntax of the command is:
 
-   a-encrypt object_name
+   lo-encrypt object_name
 
-a-encrypt command streams the object to the local computer where crypt4gh encryption is applied
+lo-encrypt command streams the object to the local computer where crypt4gh encryption is applied
 to the data stream. The encrypted data is then streamed back to LUMI-O into a new object.
 By default the object is encrypted with CSC public key only. The encrypted object is located to the
 same bucket as the original object. Suffix: .c4gh is added to the object name.
@@ -32,16 +32,16 @@ Options:
 -a, --all                        Process all the objects that include the given name in the beginning of
                                  object name.
 
-Related commands: a-put, a-find, a-info, a-delete
+Related commands: lo-put, lo-find, lo-info, lo-delete
 
 Examples:
 
 1. Make an encrypted copy of object my_data.csv that locate in bucket project_12345_data
 
-   a-encrypt project_12345_data/my_data.csv
+   lo-encrypt project_12345_data/my_data.csv
 
 2. Make encrypted copies of all objects in bucket  project_12345_data to bucket  project_12345_sd
 
-   a-encrypt project_12345_data --all --bucket project_12345_sd
+   lo-encrypt project_12345_data --all --bucket project_12345_sd
 
 ```

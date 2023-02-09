@@ -124,10 +124,10 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to download data that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to download data that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-get object_name
+   lo-get object_name
 
 By default the object is retrieved and decompressed 
 
@@ -160,7 +160,7 @@ Options:
                               If Lumi-O is defined to be the default storage server and this option is not needed.
                            
 
-Related commands: a-put, a-find, a-info, a-delete
+Related commands: lo-put, lo-find, lo-info, lo-delete
 
 EOF
 
@@ -228,7 +228,7 @@ check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
-  objects=($(a-find | grep "$object_name"))
+  objects=($(lo-find | grep "$object_name"))
   if [ ${#objects[@]} -eq 1 ]; then
     echo "Did you mean this object:"
     echo "  $objects"
@@ -242,7 +242,7 @@ if [ $check_os -ne 1 ]; then
   fi
   if [ ${#objects[@]} -eq 0 ]; then
     echo "Try running command:"
-    echo "   a-find -a $object_name"
+    echo "   lo-find -a $object_name"
   fi
   exit 1
 else
@@ -286,13 +286,13 @@ else
   #check if object exists
   bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
   if [ $bucket_found -ne 1 ]; then
-     a-find 
+     lo-find 
 
      echo ""
      echo "Object $object_name was not found"
      echo ""
      echo "You can list all the available objects with command:"
-     echo "   a-find"
+     echo "   lo-find"
   fi
 fi 
    
@@ -432,52 +432,52 @@ if [[ $is_tar_file -eq 1 ]]; then
      echo "Downloading compressed object from $storage_name"
      
      #if [[ $mode == "swift" ]]; then
-        rclone copyto -P "${storage_server}:$object_name" a-get_download_$$_tmp.zst
+        rclone copyto -P "${storage_server}:$object_name" lo-get_download_$$_tmp.zst
         exitcode=$?
      #else
-     #  s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
+     #  s3cmd get "s3://${object_name}" lo-get_download_$$_tmp.zst 
      #fi
 
      if [[ $exitcode -ne 0 ]]; then
         echo "Download failed!"
-        rm -f  a-get_download_$$_tmp.zst
+        rm -f  lo-get_download_$$_tmp.zst
         exit 1
      fi
      if [[ $encrypt == "gpg" ]]; then
         echo "Based on the object name, the object has been encrypted with gpg."
-        gpg -d a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
+        gpg -d lo-get_download_$$_tmp.zst > lo-get_download_$$_tmp.zst.tmp
         exitcode=$?          
-        rm -f a-get_download_$$_tmp.zst
-        mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+        rm -f lo-get_download_$$_tmp.zst
+        mv lo-get_download_$$_tmp.zst.tmp lo-get_download_$$_tmp.zst
      fi
      if [[ $encrypt == "crypt4gh" ]]; then
-        crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
+        crypt4gh decrypt --sk "$secret_key" < lo-get_download_$$_tmp.zst > lo-get_download_$$_tmp.zst.tmp
         exitcode=$?
-        rm -f a-get_download_$$_tmp.zst
-        mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+        rm -f lo-get_download_$$_tmp.zst
+        mv lo-get_download_$$_tmp.zst.tmp lo-get_download_$$_tmp.zst
      fi
      if [[ $exitcode -ne 0 ]]; then
         echo "Decryption failed!"
-        rm -f  a-get_download_$$_tmp.zst
+        rm -f  lo-get_download_$$_tmp.zst
         exit 1
      fi
 
 
      echo "Uncompressing downloaded object"
      if [[ $is_compressed -eq 1 ]]; then
-         cat  a-get_download_$$_tmp.zst | zstdmt -d | tar -xv -o $file_name
+         cat  lo-get_download_$$_tmp.zst | zstdmt -d | tar -xv -o $file_name
          exitcode=$?
      else
-         cat  a-get_download_$$_tmp.zst | tar -xv -o $file_name
+         cat  lo-get_download_$$_tmp.zst | tar -xv -o $file_name
          exitcode=$?
      fi
 
      if [[ $exitcode -ne 0 ]]; then
         echo "Decompression failed!"
-        rm -f  a-get_download_$$_tmp.zst
+        rm -f  lo-get_download_$$_tmp.zst
         exit 1
      fi
-     rm -f  a-get_download_$$_tmp.zst
+     rm -f  lo-get_download_$$_tmp.zst
      if [[ $new_target -eq 1 ]];then
        cd -   
      fi

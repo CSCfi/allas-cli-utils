@@ -3,15 +3,15 @@
 ```text
 This tool is used to find:
  1. Objects, whose name matches to the query
- 2. a-put generated objects that contain matching file names.
+ 2. lo-put generated objects that contain matching file names.
 
 The basic syntax of the command is:
 
-   a-find query_term
+   lo-find query_term
 
 
 The query term is compared to the object names as well as the names and original paths of the files that
-have been uploaded to LUMI-O with a-put. The matching objects are reported (but not downloaded).
+have been uploaded to LUMI-O with lo-put. The matching objects are reported (but not downloaded).
 
 The query term is processed as a regular expression where some characters, for example dot (.), have a special meaning.
 The same regular expression syntax is used with e.g. grep, awk and sed commands.
@@ -33,15 +33,15 @@ Options:
 
 -p, --project <project_ID>   Search matches form the buckets of the defined project instead of the currently configured project.
 
--b, --bucket <bucket_name>   By default all the standard buckets, used by a-put, are searched. Option --bucket allows you to specify a
+-b, --bucket <bucket_name>   By default all the standard buckets, used by lo-put, are searched. Option --bucket allows you to specify a
                         single bucket that will be used for the search.
 
--a, --all                    By default all the standard buckets, used by a-put, are searched. Option --all defines
+-a, --all                    By default all the standard buckets, used by lo-put, are searched. Option --all defines
                              that all the buckets of the project will be included in the search.
 
 -s, --silent                 Output just the object names and number of hits. If -file option is included,
                              print object name and matching file name on one row.
 
 
-Related commands: a-put, a-get, a-delete, a-info
+Related commands: lo-put, lo-get, lo-delete, lo-info
 ```

@@ -1,6 +1,6 @@
 name: lumio
 channels:
-  - conda-forge
+  - condlo-forge
   - defaults
 dependencies:
   - zstd

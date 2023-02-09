@@ -1,10 +1,10 @@
 # lo-stream
  
 ```text
-This tool is used to stream data, that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to stream data, that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-stream object_name
+   lo-stream object_name
 
 By default the object is retrieved and uncompressed 
 
@@ -18,6 +18,6 @@ Options:
 
 --s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
 
-Related commands: a-put, a-find, a-info, a-delete
+Related commands: lo-put, lo-find, lo-info, lo-delete
 
 ```

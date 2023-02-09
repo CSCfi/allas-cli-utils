@@ -95,10 +95,10 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to stream data, that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to stream data, that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-stream object_name
+   lo-stream object_name
 
 By default the object is retrieved and uncompressed 
 
@@ -112,7 +112,7 @@ Options:
 
 --s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
 
-Related commands: a-put, a-find, a-info, a-delete
+Related commands: lo-put, lo-find, lo-info, lo-delete
 
 EOF
 
@@ -212,13 +212,13 @@ else
   #check if object exists
   bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
   if [ $bucket_found -ne 1 ]; then
-     a-find 
+     lo-find 
 
      echo "" >&2
      echo "Object $object_name was not found" >&2
      echo "" >&2
      echo "You can list all the available objects with command:" >&2
-     echo "   a-find" >&2
+     echo "   lo-find" >&2
   fi
 fi 
    
@@ -302,7 +302,7 @@ echo "Starting to stream data from $storage_server..." >&2
 
 
 if [[ $is_tar_file -eq 1 ]]; then
-  echo "Tar files can't be streamed with a-stream" >&2
+  echo "Tar files can't be streamed with lo-stream" >&2
   exit
 fi
      

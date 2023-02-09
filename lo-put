@@ -4,7 +4,7 @@ if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to lumio as an argument of this command."
   echo "For more information, give command:"
-  echo " a-put -h "
+  echo " lo-put -h "
   echo ""
   exit 1
 fi
@@ -82,7 +82,7 @@ do
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
-                     echo "     a-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
+                     echo "     lo-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
                      exit 1
                   fi
 
@@ -243,11 +243,11 @@ if [[ $print_help -eq 1 ]]; then
 cat <<EOF
 This tool is used to upload data from the disk environment 
 of CSC's supercomputers to LUMI-O and Lumi-o storage environments. 
-a-put can be used in other environments too.
+lo-put can be used in other environments too.
 
 The basic syntax of the command is:
 
-   a-put directory_or_file
+   lo-put directory_or_file
 
 By default this tool performs following operations:
 
@@ -289,7 +289,7 @@ E.g. a file called test_1.txt in scratch directory of Puhti can be
 stored with commands:
 
    cd /scratch/project_201234
-   a-put test_1.txt
+   lo-put test_1.txt
 
 In this case the file is stored to bucket: 201234-puhti-SCRATCH
 as object: test_1.txt.zst
@@ -298,17 +298,17 @@ If you have another file called test_1.txt that locates in directory
 /scratch/project_201234/project2/sample3 you can store it with commands:
    
   cd /scratch/project_201234/project2/sample3
-  a-put test_1.txt
+  lo-put test_1.txt
   
 Or commands
   cd /scratch/project_201234
-  a-put project2/sample3/test_1.txt
+  lo-put project2/sample3/test_1.txt
 
 In these cases the file is stored to bucket: 201234-puhti-SCRATCH
 as object:  project2/sample3/test_1.txt.zst
 
 
-a-put command line options:
+lo-put command line options:
 
 -b, --bucket <bucket_name>  Define a name of the bucket into 
                             which the data is uploaded.
@@ -344,7 +344,7 @@ a-put command line options:
                             the object contains to the metadata file.
                             Using this option speeds up the upload process 
                             significantly if the directory to be uploaded 
-                            contains large amount of files. However, a-find 
+                            contains large amount of files. However, lo-find 
                             can't be used to locate objects uploaded this way.
 
 --no-ameta                  Don't create metadata objects ( _ameta ) for the 
@@ -389,7 +389,7 @@ a-put command line options:
 -L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
                             If Lumi-O is defined to be the default storage server and this option is not needed.
 
-Related commands: a-find, a-get, a-delete, a-info
+Related commands: lo-find, lo-get, lo-delete, lo-info
 EOF
 
 exit 
@@ -431,7 +431,7 @@ fi
 if [[ $compression -eq 1 ]]; then
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
       echo "Compression command: zstdmt is not available"
-      echo "Please install zstdmt or use a-put without compression"
+      echo "Please install zstdmt or use lo-put without compression"
       exit 1
    fi
 fi
@@ -535,7 +535,7 @@ do
     echo "Found a file/directory name which ends with _ameta"
     echo "  $input"
     echo ""
-    echo "Please rename this file as it will mix up a the metadata management of a-put"
+    echo "Please rename this file as it will mix up a the metadata management of lo-put"
     exit 1
   fi
 
@@ -880,10 +880,10 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       echo "Try uploading subdirectories of $input:"
       echo ""
       echo "  cd $input"
-      echo "  a-put * "
+      echo "  lo-put * "
       echo " "
       echo "or use option --skip-filelist skip file list collection to metadata" 
-      echo "  a-put --skip-filelist * "
+      echo "  lo-put --skip-filelist * "
       exit 1
     fi
     num_files=$num_check
@@ -917,9 +917,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
     echo "Available free space is ${free_space}K"
     echo ""
-    echo "a-put often fails when it tries to check the available free space in WRKDIR or scratch directories."
+    echo "lo-put often fails when it tries to check the available free space in WRKDIR or scratch directories."
     echo "If you are sure that you have enough space in WRKDIR or scratch, you can skip this check by adding"
-    echo "option -x to your a-put command"
+    echo "option -x to your lo-put command"
     echo ""
     echo "If you don't have enough free space, upload some data from WRKDIR/scratch with using option --nc."
     echo "With --nc option, data is not compressed and thus temporary storage space is not needed." 

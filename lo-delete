@@ -107,10 +107,10 @@ fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to remove data that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to remove data that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-delete object_name
+   lo-delete object_name
 
 
 Options:
@@ -128,7 +128,7 @@ Options:
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
 
-Related commands: a-put, a-get, a-find, a-info
+Related commands: lo-put, lo-get, lo-find, lo-info
 EOF
 exit
 fi
@@ -197,7 +197,7 @@ check_os=$(rclone ls ${storage_server}:"$object_name" 2> /dev/null | wc -l)
 if [ $check_os -ne 1 ]; then
   echo "Object name: $object_name not found in $storage_server."
   echo ""
-  #objects=($(a-find -a | grep "$object_name"))
+  #objects=($(lo-find -a | grep "$object_name"))
   #if [ ${#objects[@]} -eq 1 ]; then
   #  echo "Did you mean this object:"
   #  echo "  $objects"
@@ -211,7 +211,7 @@ if [ $check_os -ne 1 ]; then
   #fi
   if [ ${#objects[@]} -eq 0 ]; then
     echo "Try running command:"
-    echo "   a-find $object_name"
+    echo "   lo-find $object_name"
   fi
   exit 1
 else
@@ -278,7 +278,7 @@ else
      echo "Object $object_name was not found"
      echo ""
      echo "You can list all the available objects with command:"
-     echo "   a-find"
+     echo "   lo-find"
   fi
 fi
 

@@ -6,7 +6,7 @@ If bucket name is defined, then objects inside the bucket are listed.
 
 
 
-   a-list <bucket_name>
+   lo-list <bucket_name>
 
 
 Options:
@@ -20,17 +20,17 @@ Options:
 
 Working with shared buckets:
 
-                        When you list a contents of a bucket with a-list, the command checks if the bucket used
+                        When you list a contents of a bucket with lo-list, the command checks if the bucket used
                         belongs to the current project. If it does not belong to the project, the name of the shared
-                        bucket is stored to LUMI-O or Lumi-o ( into object project-number-a-tools/buckets_shared_to).
-                        When you check the available buckets with command a-list, the command shows also the names of
+                        bucket is stored to LUMI-O or Lumi-o ( into object project-number-lo-tools/buckets_shared_to).
+                        When you check the available buckets with command lo-list, the command shows also the names of
                         the shared buckets stored to LUMI-O or Lumi-o. NOTE that this option shows information about only about
-                        shared buckets that have previously been used by a-list. Thus you can't use a-list check if some
+                        shared buckets that have previously been used by lo-list. Thus you can't use lo-list check if some
                         new buckets has been shared to you.
 
 
 
 
-Related commands: a-put, a-get, a-delete, a-find
+Related commands: lo-put, lo-get, lo-delete, lo-find
 
 ```

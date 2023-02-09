@@ -4,7 +4,7 @@ if [[ $# -lt 1 ]]
 then
   echo "Please give the name of a directory or file to be uploaded to lumio as an argument of this command."
   echo "For more information, give command:"
-  echo " a-put -h "
+  echo " lo-put -h "
   echo ""
   exit 1
 fi
@@ -80,7 +80,7 @@ do
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
-                     echo "     a-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
+                     echo "     lo-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
                      exit 1
                   fi
 
@@ -234,23 +234,23 @@ cat <<EOF
 
 
 This tool is used to check if LUMI-O already includes objects that would matching objects
-that a-put would create. This command can be use check the success of a data upload process
-done with a-put. Alternatively, the results can be used to list objects that need to be removed
+that lo-put would create. This command can be use check the success of a data upload process
+done with lo-put. Alternatively, the results can be used to list objects that need to be removed
 or renamed, before uploading a new version of a dataset to LUMI-O
 For example, if you have uploaded a directory to LUMI-O using command:
-   a-put datadir/*
+   lo-put datadir/*
 You can use command:
-   a-check datadir/*
+   lo-check datadir/*
 To check if all the directories and files have corresponding objects in LUMI-O.
 If you have defined a bucket with option -b, you must include this option
-in the a-check command too:
-  a-put -b 123_bucket datadir/*
+in the lo-check command too:
+  lo-put -b 123_bucket datadir/*
 Checking:
-  a-check -b 123_bucket datadir/*
+  lo-check -b 123_bucket datadir/*
 
 Note that the checking is done only based on the names of files, directories and objects.
 The contents of the files and objects are not checked!
-a-check command line options:
+lo-check command line options:
 
 -b, --bucket <bucket_name>  Define a name of the bucket into
                             which the data is uploaded.
@@ -286,7 +286,7 @@ a-check command line options:
                             the object contains to the metadata file.
                             Using this option speeds up the upload process
                             significantly if the directory to be uploaded
-                            contains large amount of files. However, a-find
+                            contains large amount of files. However, lo-find
                             can't be used to locate objects uploaded this way.
 
 --no-ameta                  Don't create metadata objects ( _ameta ) for the
@@ -322,7 +322,7 @@ a-check command line options:
                             your-project-number_SD-CONNECT,
 
 
-Related commands: a-find, a-get, a-delete, a-info
+Related commands: lo-find, lo-get, lo-delete, lo-info
 EOF
 
 exit
@@ -359,7 +359,7 @@ fi
 if [[ $compression -eq 1 ]]; then
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
       echo "Compression command: zstdmt is not available"
-      echo "Please install zstdmt or use a-put without compression"
+      echo "Please install zstdmt or use lo-put without compression"
       exit 1
    fi
 fi
@@ -453,7 +453,7 @@ do
     echo "Found a file/directory name which ends with _ameta"
     echo "  $input"
     echo ""
-    echo "Please rename this file as it will mix up a the metadata management of a-put"
+    echo "Please rename this file as it will mix up a the metadata management of lo-put"
     exit 1
   fi
 

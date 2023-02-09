@@ -5,23 +5,23 @@
 
 
 This tool is used to check if LUMI-O already includes objects that would matching objects
-that a-put would create. This command can be use check the success of a data upload process
-done with a-put. Alternatively, the results can be used to list objects that need to be removed
+that lo-put would create. This command can be use check the success of a data upload process
+done with lo-put. Alternatively, the results can be used to list objects that need to be removed
 or renamed, before uploading a new version of a dataset to LUMI-O
 For example, if you have uploaded a directory to LUMI-O using command:
-   a-put datadir/*
+   lo-put datadir/*
 You can use command:
-   a-check datadir/*
+   lo-check datadir/*
 To check if all the directories and files have corresponding objects in LUMI-O.
 If you have defined a bucket with option -b, you must include this option
-in the a-check command too:
-  a-put -b 123_bucket datadir/*
+in the lo-check command too:
+  lo-put -b 123_bucket datadir/*
 Checking:
-  a-check -b 123_bucket datadir/*
+  lo-check -b 123_bucket datadir/*
 
 Note that the checking is done only based on the names of files, directories and objects.
 The contents of the files and objects are not checked!
-a-check command line options:
+lo-check command line options:
 
 -b, --bucket <bucket_name>  Define a name of the bucket into
                             which the data is uploaded.
@@ -57,7 +57,7 @@ a-check command line options:
                             the object contains to the metadata file.
                             Using this option speeds up the upload process
                             significantly if the directory to be uploaded
-                            contains large amount of files. However, a-find
+                            contains large amount of files. However, lo-find
                             can't be used to locate objects uploaded this way.
 
 --no-ameta                  Don't create metadata objects ( _ameta ) for the
@@ -93,5 +93,5 @@ a-check command line options:
                             your-project-number_SD-CONNECT,
 
 
-Related commands: a-find, a-get, a-delete, a-info
+Related commands: lo-find, lo-get, lo-delete, lo-info
 ```

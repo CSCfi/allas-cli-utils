@@ -1,10 +1,10 @@
 # lo-get
  
 ```text
-This tool is used to download data that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to download data that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-get object_name
+   lo-get object_name
 
 By default the object is retrieved and decompressed 
 
@@ -37,6 +37,6 @@ Options:
                               If Lumi-O is defined to be the default storage server and this option is not needed.
                            
 
-Related commands: a-put, a-find, a-info, a-delete
+Related commands: lo-put, lo-find, lo-info, lo-delete
 
 ```

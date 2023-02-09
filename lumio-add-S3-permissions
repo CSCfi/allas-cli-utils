@@ -69,7 +69,7 @@ echo "Giving S3 read and write permissions for project $project_id"
 echo " to every object in: $obj_path ."
 
 
-for obj in $(a-list $obj_path)
+for obj in $(lo-list $obj_path)
 do 
    #echo $obj
    #echo " s3cmd setacl --acl-grant=read:$project_id s3://$obj"
@@ -79,7 +79,7 @@ do
    obj_only=$(echo $obj | sed -e s/"${bucket}\/"/""/)
    manifest=$(swift stat $bucket $obj_only | grep "Manifest:" | awk '{print $2}')
    if [[ $manifest != "" ]]; then
-     for seg in $(a-list $manifest)
+     for seg in $(lo-list $manifest)
      do
         s3cmd setacl --acl-grant=all:$project_id s3://$seg
      done

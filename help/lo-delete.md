@@ -1,10 +1,10 @@
 # lo-delete
  
 ```text
-This tool is used to remove data that has been uploaded to LUMI-O service using the a-put command.
+This tool is used to remove data that has been uploaded to LUMI-O service using the lo-put command.
 The basic syntax of the command is:
 
-   a-delete object_name
+   lo-delete object_name
 
 
 Options:
@@ -22,5 +22,5 @@ Options:
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
 
-Related commands: a-put, a-get, a-find, a-info
+Related commands: lo-put, lo-get, lo-find, lo-info
 ```
