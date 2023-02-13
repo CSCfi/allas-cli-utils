@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 if [[ $# -lt 1 ]]
 then
@@ -41,7 +41,7 @@ compression=0
 tar_extra_options=""
 encrypt=""
 all_keys=""
-include_ameta=1
+include_ometa=1
 sdx=0
 meta_message=""
 check_mode=0
@@ -51,7 +51,7 @@ max_files=1000000
 if [[ -e $HOME/.lo_tools_conf ]]; then
    customized=1
    source $HOME/.lo_tools_conf
-else 
+else
    customized=0
 fi
 
@@ -78,7 +78,7 @@ do
                   fixed_object=1
                   slashcheck=$(echo $tmp_file | grep -c "/")
                   if [[ $slashcheck -gt 0 ]]; then
-                     echo "Slash characters (/) are not allowed when object name is defined with -o option" 
+                     echo "Slash characters (/) are not allowed when object name is defined with -o option"
                      echo "If you want to use slash characters to define a pseudo folder path, add that part of"
                      echo "object name to the bucket definition (-b):"
                      echo
@@ -92,7 +92,7 @@ do
             '--lumi' | '-L' )
                   mode="lumi"
                   shift
-                ;; 
+                ;;
             '--lumio' | '-A' )
                   mode="lumi"
                   shift
@@ -105,7 +105,7 @@ do
              '--compress' | '-c')
                   compression=1
                   shift
-                ;;              
+                ;;
              '--nc' | '-n' )
                   compression=0
                   free_space_check=0
@@ -144,15 +144,15 @@ do
                '--input-list')
                   list_file=$2
                   if [[ -e $list_file ]];then
-                    input_def=("$(cat $list_file)")                
-                  else  
+                    input_def=("$(cat $list_file)")
+                  else
                     echo "Import file list $list_file not found"
-                    exit 1  
-                  fi 
+                    exit 1
+                  fi
                   shift
                   shift
                 ;;
-                '--asis' | '-a' )               
+                '--asis' | '-a' )
                    compression=0
                    free_space_check=0
                    asis_mode=1
@@ -163,16 +163,16 @@ do
                    meta_message=$2
                   shift
                   shift
-                ;;        
-                 
-                 '--no-ameta')
-                    include_ameta=0
+                ;;
+
+                 '--no-ometa')
+                    include_ometa=0
                     shift
-                 ;;                 
+                 ;;
                  '--follow-links' )
                  tar_extra_options="-h"
                  shift
-                 ;;               
+                 ;;
                  '-e' | '--encrypt' )
                  if [[ $2 == "c4gh" || $2 == "crypt4gh" ]];then
                     if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -182,7 +182,7 @@ do
 		       exit 1
 		    fi
                     encrypt="crypt4gh"
-                 fi         
+                 fi
                  if [[ $2 == "gpg" ]];then
                     if [[ $(which  gpg 2> /dev/null | wc -l ) -ne 1 ]];then
 	         	 echo ""
@@ -192,20 +192,20 @@ do
 		    fi
                     encrypt="gpg"
                  fi
-                 shift                          
+                 shift
                  shift
                  ;;
                  '--pk' | '--public-key' )
                  # query file
                  public_key=$(abspath "$2")
-                 if [[ -e $public_key ]];then 
+                 if [[ -e $public_key ]];then
                     echo Public key: "$public_key"
                     all_keys=$(echo -en  "$all_keys\t--recipient_pk\t$public_key\t")
                     echo $all_keys
                  else
                     echo "Public key $public_key not found"
-                    exit 1  
-                 fi 
+                    exit 1
+                 fi
                  shift
                  shift
                  ;;
@@ -216,12 +216,12 @@ do
 		         echo "Please install crypt4gh if you want to use encryption."
 		         exit 1
 		    fi
-                    include_ameta=0
+                    include_ometa=0
                     encrypt="crypt4gh"
                     compression=0
                     sdx=1
 
-                    fnum=0                  
+                    fnum=0
                  shift
                  ;;
 
@@ -241,8 +241,8 @@ done
 
 if [[ $print_help -eq 1 ]]; then
 cat <<EOF
-This tool is used to upload data from the disk environment 
-of CSC's supercomputers to LUMI-O and Lumi-o storage environments. 
+This tool is used to upload data from the disk environment
+of LUMI supercomputer to Lumi-O storage environments.
 lo-put can be used in other environments too.
 
 The basic syntax of the command is:
@@ -251,41 +251,36 @@ The basic syntax of the command is:
 
 By default this tool performs following operations:
 
-1. Ensures that you have working connection to the storage 
+1. Ensures that you have working connection to the storage
    service.
 
-2. In case of directory, the content of the directory is 
+2. In case of directory, the content of the directory is
    collected into a single file (using tar command).
 
-3. By default the data is uploaded to LUMI-O using rclone command 
-   and swift protocol. Lumi-o and LUMI-O with S3 protocol is available too.
+3. By default the data is uploaded to LUMI-O using rclone command
+   and S3 protocol.
 
-NOTE! Data was compression with zstdmt command is no longer done by 
+NOTE! Data was compression with zstdmt command is no longer done by
 default before the upload.
 
 
-The location were data is stored in the storage server (LUMI-O or Lumi-o) can be defined with 
+The location were data is stored in the storage server (LUMI-O or Lumi-o) can be defined with
 options --bucket (-b) and --object (-o).
 
-The default option is that data that locates in: 
-  - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
-  - scratch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
-  - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
-  - projappl in Mahti is uploaded to bucket:  project_number-mahti-PROJAPPL
-  - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
+The default option is that data that locates in:
   - project in Lumi is uploaded to bucket:  project_number-lumi-o-project
   - flash in Lumi is uploaded to bucket:  project_number-lumi-o-flash
 In other cases the data uploaded to by default : username-project_number-MISC
 
-For example for user kkaytaj belonging in project_201234, data 
+For example for user kkaytaj belonging in project_201234, data
 locating in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
 
-The compressed dataset will be stored as one object. The object 
-name depends on the file name and location. The logic used is that 
-the possible sub-directory path in Mahti or Puhti is included 
-in the object name. 
+The compressed dataset will be stored as one object. The object
+name depends on the file name and location. The logic used is that
+the possible sub-directory path in Mahti or Puhti is included
+in the object name.
 
-E.g. a file called test_1.txt in scratch directory of Puhti can be 
+E.g. a file called test_1.txt in scratch directory of Puhti can be
 stored with commands:
 
    cd /scratch/project_201234
@@ -294,12 +289,12 @@ stored with commands:
 In this case the file is stored to bucket: 201234-puhti-SCRATCH
 as object: test_1.txt.zst
 
-If you have another file called test_1.txt that locates in directory 
+If you have another file called test_1.txt that locates in directory
 /scratch/project_201234/project2/sample3 you can store it with commands:
-   
+
   cd /scratch/project_201234/project2/sample3
   lo-put test_1.txt
-  
+
 Or commands
   cd /scratch/project_201234
   lo-put project2/sample3/test_1.txt
@@ -310,29 +305,26 @@ as object:  project2/sample3/test_1.txt.zst
 
 lo-put command line options:
 
--b, --bucket <bucket_name>  Define a name of the bucket into 
+-b, --bucket <bucket_name>  Define a name of the bucket into
                             which the data is uploaded.
 
--p, --project <project_ID>  Upload data into buckets of the defined 
-                            project instead of the currently 
+-p, --project <project_ID>  Upload data into buckets of the defined
+                            project instead of the currently
                             configured project.
 
--o, --object <object_name>  Define a name for the new object to be 
+-o, --object <object_name>  Define a name for the new object to be
                             created.
 
--S, --s3cmd                 Use S3 protocol instead of swift protocol 
-                            for upload.
-
 -n, --nc                    Do not compress the data that will be uploaded.
-                            (This is now the default mode thus this option is 
+                            (This is now the default mode thus this option is
                             no longer needed).
 
 -c, --compress              The data is compressed using zstdmt command before
-                            upload. 
- 
+                            upload.
+
 -h, --help                  Print this help.
 
--t, --tmpdir                Define a directory that will be used to store 
+-t, --tmpdir                Define a directory that will be used to store
                             temporary files of the upload process.
 
 -s, --silent                Less output
@@ -340,28 +332,28 @@ lo-put command line options:
 -u, --user                  Define username liked to the data to be uploaded
                             (default: current username)
 
---skip-filelist             Do not collect information about the files that 
+--skip-filelist             Do not collect information about the files that
                             the object contains to the metadata file.
-                            Using this option speeds up the upload process 
-                            significantly if the directory to be uploaded 
-                            contains large amount of files. However, lo-find 
+                            Using this option speeds up the upload process
+                            significantly if the directory to be uploaded
+                            contains large amount of files. However, lo-find
                             can't be used to locate objects uploaded this way.
 
---no-ameta                  Don't create metadata objects ( _ameta ) for the 
+--no-ometa                  Don't create metadata objects ( _ometa ) for the
                             stored data objects.
 
 -m, --message "your notes"  Add a one line text note to the metadata object.
 
 --override                  Allow overwriting existing objects.
 
---input-list <list_file>    Give a file that lists the files or directories 
+--input-list <list_file>    Give a file that lists the files or directories
                             to be uploaded to LUMI-O. Each item will be stored as one object.
 
 -a, --asis                  Copy the given file or content of a directory to LUMI-O
-                            without compression and packing so that each file in the 
+                            without compression and packing so that each file in the
                             directory will be copied to LUMI-O as an individual object.
-                            The object name contains the relative path of the file to 
-                            be copied. 
+                            The object name contains the relative path of the file to
+                            be copied.
 
 --follow-links              When uploading a directory, include linked files as real files
                             instead of links.
@@ -371,39 +363,39 @@ lo-put command line options:
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to LUMI-O in format format that is compatible with
-                            the CSC Sensitive data services: The files are encrypted with 
-                            crypt4gh using CSC public key after which the files are imported 
-                            to LUMI-O. 
+                            the CSC Sensitive data services: The files are encrypted with
+                            crypt4gh using CSC public key after which the files are imported
+                            to LUMI-O.
                             With --public-key you can do the encryption with both
                             CSC and your own public key. By default data is stored to bucket with name:
                             your-project-number_SD-CONNECT.
 
 
--A, --lumio                     Upload data to LUMI-O with swift protocol in stead of currently set storage server. 
+-A, --lumio                     Upload data to LUMI-O with swift protocol in stead of currently set storage server.
                             Normally this (LUMI-O with swift) is the default and this option is not needed,
                             but if you have set e.g. Lumi-O as the default storage server, this option can be
                             used to upload data to LUMI-O without changing the default storage server.
-                              
+
 --s3cmd                     Use LUMI-O with S3 protocol.
 
--L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+-L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server.
                             If Lumi-O is defined to be the default storage server and this option is not needed.
 
 Related commands: lo-find, lo-get, lo-delete, lo-info
 EOF
 
-exit 
+exit
 
-fi 
+fi
 
-# note about customization 
+# note about customization
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
      echo "Customer settings read from $HOME/.lo_tools_conf"
    fi
-fi 
+fi
 
-##Assign project to be used if not defined 
+##Assign project to be used if not defined
 #if [[ $os_project_name == "" ]]
 #then
 #  if [ -e $HOME/.lumio_default ]
@@ -445,11 +437,11 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
 fi
 
 # s3cmd mode
-if [[ $mode == "s3cmd" ]]; then 
+if [[ $mode == "s3cmd" ]]; then
    storage_server="s3lumio"
    storage_name="LUMI-O"
 fi
-if [[ $mode == "lumi" ]]; then 
+if [[ $mode == "lumi" ]]; then
    storage_server="lumi-o"
    storage_name="Lumi-o"
 fi
@@ -478,7 +470,7 @@ if [[ $asis_mode -eq 1 ]];then
       exit 1
    fi
    #For field separator changed to allow spaces in file names
-   #IFS contains the default field separator  
+   #IFS contains the default field separator
    SAVEIFS="$IFS"
    #input_def=($(echo $input_def))
    IFS=$(echo -en "\t\n\b")
@@ -491,8 +483,8 @@ if [[ $asis_mode -eq 1 ]];then
           echo "Input definition: $one_input_def"
           echo "don't return any files to input"
           exit 1
-   fi   
-fi   
+   fi
+fi
 
 
 
@@ -507,9 +499,9 @@ do
   then
     storage_server="lumio"
     storage_name="LUMI-O"
-    if [[ $silent -eq 0 ]] ; then 
-      check_swift_connection 
-    else 
+    if [[ $silent -eq 0 ]] ; then
+      check_swift_connection
+    else
       check_swift_connection > /dev/null
     fi
   fi
@@ -521,7 +513,7 @@ do
   if [[ ! -e $input ]] ; then
     echo "File or directory $input does not exist!"
     exit 1
-  fi 
+  fi
 
   #Remove the trailing / if it exist
   if [ $(echo -n $input | tail -c 1) == "/" ]
@@ -529,10 +521,10 @@ do
     sl=$(expr ${#input} - 1)
     input=$(echo $input | cut -c 1-$sl)
   fi
- 
-  #check that file name does not end with _ameta
-  if [[ ${input:(-6):6} == "_ameta" ]]; then
-    echo "Found a file/directory name which ends with _ameta"
+
+  #check that file name does not end with _ometa
+  if [[ ${input:(-6):6} == "_ometa" ]]; then
+    echo "Found a file/directory name which ends with _ometa"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of lo-put"
@@ -554,7 +546,7 @@ do
     then
        if [[ $compression -eq 1 ]]; then
           tmp_file=($(basename "$input" | tr " " "_" )".zst")
-       else 
+       else
           tmp_file=($(basename "$input" | tr " " "_" ))
        fi
     else
@@ -571,22 +563,22 @@ do
        if [[ $compression -eq 1 ]]; then
           if [[ ${tmp_file: -4} != ".zst" ]]; then
                tmp_file="${tmp_file}.zst"
-          fi 
+          fi
        fi
     else
        if [[ $compression -eq 1 ]]; then
-         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then 
+         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then
            tmp_file="${tmp_file}.tar.zst"
          fi
        else
-         if [[ ${tmp_file: -4} != ".tar" ]]; then     
+         if [[ ${tmp_file: -4} != ".tar" ]]; then
             tmp_file="${tmp_file}.tar"
          fi
        fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
    fi
   fi
-  
+
   # encryption name includes gpg
   if [[ $encrypt == "gpg" ]];then
      tmp_file="${tmp_file}.gpg"
@@ -609,7 +601,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > $tmp_dir/.sdx_key_tmp_$$
      fi
   fi
- 
+
 
   #In case of asis-upload, partial_path is the relative path
   if [[ $asis_mode -eq 1 ]]; then
@@ -639,7 +631,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   if [[ $bucket_name == "not_defined" ]]; then
      #default
      bucket_name=("${user}-${project_label}-MISC")
-           
+
      ## Puhti and Mahti
      # In Puhti and Mahti we check if puhti-project and LUMI-O project match
      #Puhti scratch
@@ -707,7 +699,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         fi
         partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
      fi
-       
+
      #Lumi project
      if [ $(echo $file_path  | cut -c1-8) == "/project" ]
      then
@@ -793,17 +785,17 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
     fi
     partial_path=$(remove_slash_from_ends $partial_path)
-  fi 
-  
-  #the name of the object to be created 
+  fi
+
+  #the name of the object to be created
   if [[ $partial_path == "" ]]; then
         target_location="${bucket_name}/${tmp_file}"
   else
         target_location="${bucket_name}/${partial_path}/$tmp_file"
   fi
-  
 
-  #Check if the object already exists  
+
+  #Check if the object already exists
   target_exists=0
   #echo "rclone ls ${storage_server}:${target_location}"
   if [[ $(rclone ls ${storage_server}:${target_location} 2> /dev/null | wc -c) -gt 0 ]]; then
@@ -812,7 +804,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
 
   if [[ $check_mode -eq 0 ]]; then
-    if [[ $target_exists -eq 1 ]]; then      
+    if [[ $target_exists -eq 1 ]]; then
       if [[ $override_mode -eq 1 ]]; then
          # in override mode explicitly delete the old object
          rclone delete ${storage_server}:${target_location}
@@ -821,7 +813,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          echo "A file/directory with the same name has already been uploaded into"
          echo "bucket $bucket_name in $storage_server"
          echo ""
-         echo "   ${target_location}  " 
+         echo "   ${target_location}  "
          echo ""
          echo "Remove the old object if you wish to upload a new version of $input to $storage_server."
          echo "You can add option: --override to your command line, if you want to overwrite the object already existing in $storage_name."
@@ -830,45 +822,42 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          exit 1
       fi
     fi
-  fi   
- 
+  fi
+
 
   #collect and count metadata
-  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "input: $input" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "original_location: $file_path " >> ${tmp_dir}/${tmp_file}_ameta
+  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "input: $input" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "original_location: $file_path " >> ${tmp_dir}/${tmp_file}_ometa
   if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]; then
-     echo "protocol: S3 " >> ${tmp_dir}/${tmp_file}_ameta
-  else
-     echo "protocol: swift" >> ${tmp_dir}/${tmp_file}_ameta
-  fi
+     echo "protocol: S3 " >> ${tmp_dir}/${tmp_file}_ometa
   if [[ $compression -eq 1 ]]; then
-     echo "compression: zstd" >> ${tmp_dir}/${tmp_file}_ameta
+     echo "compression: zstd" >> ${tmp_dir}/${tmp_file}_ometa
   else
-     echo "compression: none" >> ${tmp_dir}/${tmp_file}_ameta 
-  fi 
+     echo "compression: none" >> ${tmp_dir}/${tmp_file}_ometa
+  fi
 
   if [[ $encrypt == "gpg" ]]; then
      gpg_version="$(gpg --version |head -2 | tr  "\n" " ")"
-     echo "encryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
-  fi 
+     echo "encryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ometa
+  fi
 
   if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh_version="$(crypt4gh -v)"
-     echo "encryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
-  fi 
+     echo "encryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ometa
+  fi
   if [[ $sdx -eq 1 ]]; then
-     echo "sd_connect: yes" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "sd_connect: yes" >>  ${tmp_dir}/${tmp_file}_ometa
   fi
   if [[ $meta_message != "" ]]; then
-     echo "Note: $meta_message"  >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "Note: $meta_message"  >>  ${tmp_dir}/${tmp_file}_ometa
   fi
   num_files=0
 
   #initial check of file or directory count
-  if [[ $filelist_level -lt 2 ]] ; then 
+  if [[ $filelist_level -lt 2 ]] ; then
     num_check=$(find "$input" -type f | wc -l )
     if [[ $num_check -gt $max_files ]]; then
       echo ""
@@ -882,7 +871,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
       echo "  cd $input"
       echo "  lo-put * "
       echo " "
-      echo "or use option --skip-filelist skip file list collection to metadata" 
+      echo "or use option --skip-filelist skip file list collection to metadata"
       echo "  lo-put --skip-filelist * "
       exit 1
     fi
@@ -890,29 +879,29 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     #Print file list
     if [[ $num_check -gt 0 ]]; then
         #echo "find "$input" -type f -print0 | xargs -0 ls -l"
-        find "$input" -type f -print0 | xargs -0 ls -l >>  ${tmp_dir}/${tmp_file}_ameta    
+        find "$input" -type f -print0 | xargs -0 ls -l >>  ${tmp_dir}/${tmp_file}_ometa
     else
-        echo "Empty directory" >>  ${tmp_dir}/${tmp_file}_ameta
+        echo "Empty directory" >>  ${tmp_dir}/${tmp_file}_ometa
     fi
   else
       num_files="unknown_number"
-      echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ameta
+      echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ometa
   fi
 
   #check if there is enough space for temporary data
   if [[ $tot_size -gt $max_size ]]
-  then 
+  then
      echo "This file or directory is too big for this tool"
      echo "Total size: ${tot_size}K"
-     echo "Please use swift or rclone command to upload the data to lumio"
-     rm -f ${tmp_dir}/${tmp_file}_ameta
+     echo "Please use rclone command to upload the data to lumio"
+     rm -f ${tmp_dir}/${tmp_file}_ometa
      clean_temp_dir
      exit 1
-  fi 
+  fi
   echo ""
 
   if [[ $tot_size -gt $free_space ]] && [[ $compression -eq 1 ]]
-  then 
+  then
     echo "It looks like that there is not enough space for the temporary files."
     echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
     echo "Available free space is ${free_space}K"
@@ -922,16 +911,16 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     echo "option -x to your lo-put command"
     echo ""
     echo "If you don't have enough free space, upload some data from WRKDIR/scratch with using option --nc."
-    echo "With --nc option, data is not compressed and thus temporary storage space is not needed." 
+    echo "With --nc option, data is not compressed and thus temporary storage space is not needed."
 
-    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rm -f ${tmp_dir}/${tmp_file}_ometa
     clean_temp_dir
     exit 1
   fi
 
-   
+
   if [[ $silent -eq 0 ]];then
-    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space" 
+    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
   fi
 
   packing_failed=0
@@ -943,15 +932,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           echo "Compressing $input"
           zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file
           exitcode=$?
-          (( packing_failed = packing_failed + exitcode )) 
+          (( packing_failed = packing_failed + exitcode ))
         else
           zstdmt -f -T3 $input -o ${tmp_dir}/$tmp_file 2> /dev/null
           exitcode=$?
        	  (( packing_failed = packing_failed + exitcode ))
         fi
-        if [[ $filelist_level -eq 1 ]]; then      
-           ls $input >> ${tmp_dir}/${tmp_file}_ameta
-        fi 
+        if [[ $filelist_level -eq 1 ]]; then
+           ls $input >> ${tmp_dir}/${tmp_file}_ometa
+        fi
      else
         #compress data
         if [[ $silent -eq 0 ]] ; then
@@ -964,10 +953,10 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
            exitcode=$?
        	   (( packing_failed = packing_failed + exitcode ))
         fi
-        
-        if [[ $filelist_level -eq 1 ]]; then      
-           grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
-        fi   
+
+        if [[ $filelist_level -eq 1 ]]; then
+           grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ometa
+        fi
      fi
   else
   # ei pakkaamista
@@ -976,7 +965,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        then
           ln -s "${file_path}" "${tmp_dir}/$tmp_file"
        else
-         #Hakeisto tar-pakettina      
+         #Hakeisto tar-pakettina
          if [[ $silent -eq 0 ]] ; then
              echo "Collecting data from directory $input to archive file: $tmp_file"
              tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
@@ -988,13 +977,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
              (( packing_failed = packing_failed + exitcode ))
          fi
 
-	 if [[ $filelist_level -eq 1 ]]; then      
-             grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
-	 fi   
+	 if [[ $filelist_level -eq 1 ]]; then
+             grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ometa
+	 fi
 
        fi
   fi
-  
+
   if [[ $packing_failed -gt 0 ]] ; then
       echo "Packing or compression failed!"
       echo "Check that you have enough space for temporary files."
@@ -1004,7 +993,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [[ $silent -eq 0 ]] ; then
       echo "Packing successful."
      fi
-  fi  
+  fi
 
   if [[ $compression -eq 1 ]] ; then
     #tmp file size in KB
@@ -1018,19 +1007,19 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   else
     tmp_size=$tot_size
   fi
- 
-  # encrypt if requested 
+
+  # encrypt if requested
   #gpg
   if [[ $encrypt == "gpg" ]]; then
-     gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file 
+     gpg --output ${tmp_dir}/${tmp_file}.tmp --symmetric --cipher-algo AES256 ${tmp_dir}/$tmp_file
      rm   ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
-  fi 
+  fi
 
   #crypt4gh
-  if [[ $encrypt == "crypt4gh" ]]; then  
+  if [[ $encrypt == "crypt4gh" ]]; then
      if [[ $sdx -eq 1 ]]; then
-       # encryption for sdx 
+       # encryption for sdx
         crypt4gh encrypt --recipient_pk ${tmp_dir}/.sdx_key_tmp_$$ $all_keys < ${tmp_dir}/$tmp_file > ${tmp_dir}/${tmp_file}.tmp
      else
        echo "normal encryption"
@@ -1038,16 +1027,16 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      fi
      rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
-  fi 
+  fi
 
 
- 
+
   if [[ $silent -eq 0 ]] ; then
      echo "Uploading data to ${storage_server}."
   fi
-  
+
   # Lumi-O dont allow upper case letters in bucket names
-  if [[ $mode == "lumi" ]]; then  
+  if [[ $mode == "lumi" ]]; then
      bucket_name=$(echo $bucket_name | tr [:upper:]  [:lower:] )
   fi
 
@@ -1056,13 +1045,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      echo "rclone mkdir  ${storage_server}:${bucket_name}"
      rclone mkdir  ${storage_server}:${bucket_name}
   fi
-    
+
   #upload with rclone
   if [[ $silent -eq 0 ]] ; then
-     if [[ $compression -eq 1 ]] ; then  
+     if [[ $compression -eq 1 ]] ; then
         rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
-        exitcode=$?     
-     else  
+        exitcode=$?
+     else
         # echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
         rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
@@ -1075,9 +1064,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          #echo "rclone copy -L ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
          rclone copy -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
          exitcode=$?
-      fi    
+      fi
   fi
-     
+
   if [[ $exitcode -ne 0 ]]; then
        echo $(date +"%d.%m.%y %H:%m:%S") $input $tot_size  $exitcode >> ${tmp_dir}/upload.log
        echo ""
@@ -1085,8 +1074,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        echo "Upload summary:"
        cat ${tmp_dir}/upload.log
        rclone deletefile ${storage_server}:${bucket_name}${partial_path}/$tmp_file
-       rm -f ${tmp_dir}/$tmp_file 
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f ${tmp_dir}/$tmp_file
+       rm -f ${tmp_dir}/${tmp_file}_ometa
        rm -f ${tmp_dir}/upload.log
        ls -l ${tmp_dir}
        clean_temp_dir
@@ -1095,14 +1084,14 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        printf  "%18s %25s %6s %8s %25s\n" "$(date +"%d.%m.%y %H:%m:%S")" $input $num_files $tot_size "${bucket_name}/${partial_path}" >> ${tmp_dir}/upload.log
   fi
 
-   
+
   # rclone md5sums can be calculated only for files that are smaller than 5GB
   if [[ $tmp_size -lt 5000000 ]]
   then
      if [[ $silent -eq 0 ]] ; then
         echo "Confirming upload..."
      fi
-     #checksums for local and lumio files 
+     #checksums for local and lumio files
      sum1=$(md5sum ${tmp_dir}/$tmp_file | awk '{print $1}')
      if [[ $partial_path == "" ]] ; then
         lumio_path="${storage_server}:${bucket_name}/$tmp_file"
@@ -1110,26 +1099,26 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         lumio_path="${storage_server}:${bucket_name}/${partial_path}/$tmp_file"
      fi
      lumio_path=$(echo "$lumio_path" | sed -e s/"\/\/"/"\/"/g)
-      
+
      sum2=$(rclone md5sum "$lumio_path" | awk '{print $1}')
-       
-     #check is checksums match 
+
+     #check is checksums match
      if [[ "$sum1" != "$sum2" ]]
-     then 
+     then
          echo "Upload of $input was not successful!"
          echo "Cleaning the failed upload"
          echo "Upload summary:"
          cat ${tmp_dir}/upload.log
          rclone deletefile "$lumio_path"
-         rm -f ${tmp_dir}/$tmp_file 
-         rm -f ${tmp_dir}/${tmp_file}_ameta
+         rm -f ${tmp_dir}/$tmp_file
+         rm -f ${tmp_dir}/${tmp_file}_ometa
          rm -f ${tmp_dir}/upload.log
 	 clean_temp_dir
          exit 1
      fi
-      
-  else  
-     if [[ $mode == "swift" ]]; then  
+
+  else
+     if [[ $mode == "swift" ]]; then
         #In case of big swift files Check that all segments are found
         if [[ $partial_path == "" ]] ; then
              seg_check=$(check_segment_sizes "${storage_server}" "${bucket_name}" "${tmp_file}")
@@ -1145,15 +1134,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
            echo "Sum of segment sizes match the object size. OK "
           fi
         fi
-     fi     
+     fi
   fi
-  
- 
+
+
   #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
   #update metadata
-  if [[ $include_ameta -eq 1 ]]; then
+  if [[ $include_ometa -eq 1 ]]; then
      if [[ $silent -eq 0 ]] ; then
        echo ""
        echo "Adding metadata for uploaded $input"
@@ -1161,24 +1150,24 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           echo ""
           echo "NOTE: The actual data will be encrypted, but the related metadata "
           echo "      object will not be encrypted!"
-          echo "      Metadata object ${tmp_file}_ameta will include the names of " 
+          echo "      Metadata object ${tmp_file}_ometa will include the names of "
           echo "      the uploaded files. This may be a security issue if file "
           echo "      names contain sensitive data."
-          echo "      You can use option --no-ameta to skip the creation of the meta data file." 
+          echo "      You can use option --no-ometa to skip the creation of the meta data file."
           echo ""
        fi
      fi
-     #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
+     #echo "rclone copy ./${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}"
      if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]||[[ $mode == "lumi" ]] ; then
          if [[ $silent -eq 0 ]] ; then
-             #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-             rclone copy -L --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+             #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}"
+             rclone copy -L --progress ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}
          else
-             rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
-         fi 
+             rclone copy -L ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+         fi
      fi
-  fi   
-  rm -f ${tmp_dir}/${tmp_file}_ameta
+  fi
+  rm -f ${tmp_dir}/${tmp_file}_ometa
 
   if [[ $silent -eq 0 ]] ; then
     echo ""
@@ -1202,7 +1191,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
   tmp_file=("not_defined")
 
-  if [[ $fixed_bucket -eq 0 ]]; then 
+  if [[ $fixed_bucket -eq 0 ]]; then
      bucket_name=("not_defined")
   fi
   filelist_level=$filelist_level_orig
@@ -1218,7 +1207,7 @@ if [[ $silent -eq 0 ]] ; then
 fi
 rm -f ${tmp_dir}/.sdx_key_tmp_$$
 rm -f ${tmp_dir}/tar_list
-rm -f ${tmp_dir}/upload.log 
+rm -f ${tmp_dir}/upload.log
 clean_temp_dir
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))

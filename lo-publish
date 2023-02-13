@@ -17,7 +17,7 @@ then
 fi
 
 # local variables
-include_ameta=0
+include_ometa=0
 index_mode="static" #static or dynamic
 tmp_file="not_defined"
 bucket_name="not_defined"
@@ -201,9 +201,9 @@ do
     exit 1
   fi
  
-  #check that file name does not end with _ameta
-  if [[ ${input:(-5):5} == "_ameta" ]]; then
-    echo "Found a file/directoryname which ends with _ameta"
+  #check that file name does not end with _ometa
+  if [[ ${input:(-5):5} == "_ometa" ]]; then
+    echo "Found a file/directoryname which ends with _ometa"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of lo-put."
@@ -242,12 +242,12 @@ do
   fi
 
   #collect and count metadata
-  if [[ include_ameta -eq 1 ]]; then
-    echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
-    echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
-    echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
+  if [[ include_ometa -eq 1 ]]; then
+    echo "user: $user" >> ${tmp_dir}/${tmp_file}_ometa
+    echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ometa
+    echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ometa
     echo ""
-    ls -l $input >>  ${tmp_dir}/${tmp_file}_ameta
+    ls -l $input >>  ${tmp_dir}/${tmp_file}_ometa
   fi  
 
   if [[ $tot_size -gt $max_size ]]
@@ -255,7 +255,7 @@ do
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to $storage_server"
-    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rm -f ${tmp_dir}/${tmp_file}_ometa
     clean_temp_dir
     exit 1
   fi 
@@ -280,8 +280,8 @@ do
         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
      fi
      rm -f ${tmp_dir}/$tmp_file 
-     if [[ $include_ameta -eq 1  ]]; then
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+     if [[ $include_ometa -eq 1  ]]; then
+       rm -f ${tmp_dir}/${tmp_file}_ometa
      fi
      clean_temp_dir
      exit 1
@@ -310,7 +310,7 @@ do
           rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
        fi
        rm -f ${tmp_dir}/$tmp_file 
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f ${tmp_dir}/${tmp_file}_ometa
        clean_temp_dir
        exit 1
      fi
@@ -321,14 +321,14 @@ do
   #echo "Removing temporary file"
   rm -f  ${tmp_dir}/$tmp_file
 
-  if [[ $include_ameta -eq 1 ]]; then
+  if [[ $include_ometa -eq 1 ]]; then
     #update metadata
     echo ""
     echo "Adding metadata for uploaded $input"
-    #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}" 
-    rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+    #echo "rclone copy ./${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}" 
+    rclone copy  ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}
   
-    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rm -f ${tmp_dir}/${tmp_file}_ometa
   fi
 
   echo "$input uploaded to ${bucket_name}"
@@ -355,7 +355,7 @@ if [[ $index_mode == "static" ]];then
   echo '<html>' >  ${tmp_dir}/index.html
   echo '<table>' >>  ${tmp_dir}/index.html
   echo "<h2>Contents of bucket $bucket_name<h2>" >>  ${tmp_dir}/index.html
-  rclone lsl ${storage_server}:$bucket_name | grep -v "_ameta" | awk '{print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td><b><a href=\"'${https_root}'/'$bucket_name'/"$4"\">"$4"</a></b></td><td><a href=\"'${https_root}'/'$bucket_name'/"$4"_ameta\" target=\"_self\" >info</a></td></tr>"}' >>  ${tmp_dir}/index.html
+  rclone lsl ${storage_server}:$bucket_name | grep -v "_ometa" | awk '{print "<tr><td>"$1"</td><td>"$2"</td><td>"$3"</td><td><b><a href=\"'${https_root}'/'$bucket_name'/"$4"\">"$4"</a></b></td><td><a href=\"'${https_root}'/'$bucket_name'/"$4"_ometa\" target=\"_self\" >info</a></td></tr>"}' >>  ${tmp_dir}/index.html
   echo '</table>'  >>  ${tmp_dir}/index.html
   echo '</html>' >>  ${tmp_dir}/index.html
 else

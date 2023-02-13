@@ -40,7 +40,7 @@ compression=0
 tar_extra_options=""
 encrypt=""
 all_keys=""
-include_ameta=1
+include_ometa=1
 sdx=0
 meta_message=""
 check_mode=0
@@ -154,8 +154,8 @@ do
                   shift
                 ;;
 
-                 '--no-ameta')
-                    include_ameta=0
+                 '--no-ometa')
+                    include_ometa=0
                     shift
                  ;;
                  '--follow-links' )
@@ -205,7 +205,7 @@ do
 		         echo "Please install crypt4gh if you want to use encryption."
 		         exit 1
 		    fi
-                    include_ameta=0
+                    include_ometa=0
                     encrypt="crypt4gh"
                     compression=0
                     sdx=1
@@ -289,7 +289,7 @@ lo-check command line options:
                             contains large amount of files. However, lo-find
                             can't be used to locate objects uploaded this way.
 
---no-ameta                  Don't create metadata objects ( _ameta ) for the
+--no-ometa                  Don't create metadata objects ( _ometa ) for the
                             stored data objects.
 
 -m, --message "your notes"  Add a one line text note to the metadata object.
@@ -448,9 +448,9 @@ do
     input=$(echo $input | cut -c 1-$sl)
   fi
 
-  #check that file name does not end with _ameta
-  if [[ ${input:(-6):6} == "_ameta" ]]; then
-    echo "Found a file/directory name which ends with _ameta"
+  #check that file name does not end with _ometa
+  if [[ ${input:(-6):6} == "_ometa" ]]; then
+    echo "Found a file/directory name which ends with _ometa"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of lo-put"

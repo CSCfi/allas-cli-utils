@@ -107,7 +107,7 @@ lo-put command line options:
                             contains large amount of files. However, lo-find 
                             can't be used to locate objects uploaded this way.
 
---no-ameta                  Don't create metadata objects ( _ameta ) for the 
+--no-ometa                  Don't create metadata objects ( _ometa ) for the 
                             stored data objects.
 
 -m, --message "your notes"  Add a one line text note to the metadata object.

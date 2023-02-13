@@ -146,9 +146,9 @@ Working with shared buckets:
 
                         When you list a contents of a bucket with lo-list, the command checks if the bucket used
                         belongs to the current project. If it does not belong to the project, the name of the shared
-                        bucket is stored to LUMI-O or Lumi-o ( into object project-number-lo-tools/buckets_shared_to).
+                        bucket is stored to LUMI-O ( into object project-number-lo-tools/buckets_shared_to).
                         When you check the available buckets with command lo-list, the command shows also the names of
-                        the shared buckets stored to LUMI-O or Lumi-o. NOTE that this option shows information about only about
+                        the shared buckets stored to LUMI-O. NOTE that this option shows information about only about
                         shared buckets that have previously been used by lo-list. Thus you can't use lo-list check if some
                         new buckets has been shared to you.
 
@@ -217,7 +217,7 @@ fi
 
 
 if [[ $dir_like -eq 1 ]]; then
-  rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
+  rclone lsf ${storage_server}:${full_name} | grep -v "_ometa$"
   exit 0
 fi
 
@@ -239,16 +239,16 @@ if [[ $bucket_name == "" ]]; then
 else
    if [[ $mode == "s3cmd"  ]] || [[ $mode == "lumi"  ]] ; then
      if [[ $long_listing -eq 0 ]]; then
-       rclone ls ${storage_server}:$bucket_name | grep -v "_ameta$" |  awk '{print "x " $0}' | tr -s ' ' | cut -d " " -f 3- | awk '{ print "'$bucket_name'/" $0}' | grep $full_name
-       #rclone ls ${storage_server}:$full_name  | grep -v "_ameta$" | awk '{print "'$full_name'/" $NF}'
+       rclone ls ${storage_server}:$bucket_name | grep -v "_ometa$" |  awk '{print "x " $0}' | tr -s ' ' | cut -d " " -f 3- | awk '{ print "'$bucket_name'/" $0}' | grep $full_name
+       #rclone ls ${storage_server}:$full_name  | grep -v "_ometa$" | awk '{print "'$full_name'/" $NF}'
      else
-       #rclone lsl ${storage_server}:$bucket_name  | grep -v "_ameta$" | awk '{print "x " $0}' | tr -s ' ' | cut -d " " -f 3- | awk '{ print "'$full_name'/ " $0}'
-       rclone lsl ${storage_server}:$full_name | grep -v "_ameta$"
+       #rclone lsl ${storage_server}:$bucket_name  | grep -v "_ometa$" | awk '{print "x " $0}' | tr -s ' ' | cut -d " " -f 3- | awk '{ print "'$full_name'/ " $0}'
+       rclone lsl ${storage_server}:$full_name | grep -v "_ometa$"
      fi
    else
      # listing in swift mode
      if [[ all -eq 0 ]]; then
-        swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
+        swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ometa$" | awk '{print "'$bucket_name'/" $0}'
      else
         swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | awk '{print "'$bucket_name'/" $0}'
      fi

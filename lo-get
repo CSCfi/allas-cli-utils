@@ -369,7 +369,7 @@ fi
 
 #If selected, extract to the same place were data was from.
 if [[ to_orig_dir -eq 1 ]]; then
-   orig_dir=$(dirname $(rclone cat  ${storage_server}:${object_name}_ameta | awk '{ if ( $1 == "original_location:" ) print $2}'))
+   orig_dir=$(dirname $(rclone cat  ${storage_server}:${object_name}_ometa | awk '{ if ( $1 == "original_location:" ) print $2}'))
    mkdir -p $orig_dir
    cd $orig_dir
 fi

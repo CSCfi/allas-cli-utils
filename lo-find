@@ -228,7 +228,7 @@ then
 
   for bn in $buckets
   do
-    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ameta$")
+    for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ometa$")
     do
         os_dirname=$(dirname "$metafile" )
         if [ $os_dirname == "." ]; then
@@ -236,7 +236,7 @@ then
         else
            os_dirname="/$os_dirname"
         fi
-        os_filename=$(basename "$metafile" _ameta)
+        os_filename=$(basename "$metafile" _ometa)
         os_object=("${bn}${os_dirname}/${os_filename}")
         echo $os_object
     done
@@ -260,7 +260,7 @@ do
     echo "----------------------------------------------"
     echo "Checking bucket: $bn"
   fi
-  rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print "x " $0}' | tr -s ' '|  cut -d " " -f 3- | grep -v "_ameta$" | grep "$query" > ./$$_find_tmp
+  rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print "x " $0}' | tr -s ' '|  cut -d " " -f 3- | grep -v "_ometa$" | grep "$query" > ./$$_find_tmp
   object_hits=$(cat ./$$_find_tmp | wc -l)
   if [[ $object_hits -gt 0 ]];then
     if [ $silent -eq 0 ]; then
@@ -276,7 +276,7 @@ do
 
   fi
 
-  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ameta$")
+  for metafile in $(rclone ls ${storage_server}:$bn 2> /dev/null | awk '{print $2}' | grep "_ometa$")
   do
      num_hits=$(rclone cat ${storage_server}:${bn}/$metafile | awk '{print $9}' | grep -c "$query")
      if [[ $num_hits -gt 0 ]]; then
@@ -286,7 +286,7 @@ do
         else
            os_dirname="/$os_dirname"
         fi
-        os_filename=$(basename "$metafile" _ameta)
+        os_filename=$(basename "$metafile" _ometa)
         os_object=("${bn}${os_dirname}/${os_filename}")
         if [ $show_filelist -eq 1 ]; then
            if [ $silent -eq 0 ]; then
@@ -300,7 +300,7 @@ do
         else
            if [ $silent -eq 0 ]; then
              echo ""
-             #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _ameta)"
+             #echo " Object:  ${bn}/$(dirname "$metafile")/$(basename $metafile _ometa)"
              echo " Object: $os_object"
              echo " includes $num_hits file names that that match query: $query"
              echo ""

@@ -117,11 +117,8 @@ while [[ $# -ge 1 ]]; do
         '-s'|'--silent')        echop=:;                 shift;;
         '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
         '-f'|'--force' )        force=true;              shift;;
-        '--swift-auth' )        auth_method=swift;       shift;;
-        '--openstack-project-list' )        project_list_method=openstack;       shift;;
         '--s3remove' )          mode=s3remove;           shift;;
         '--debug' )             debug=true;              shift;;
-        '--store-token' )       ood=true;                shift;;
         '--lumi')               mode="lumi";             shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
@@ -166,21 +163,20 @@ esac
 
 # Turn off lumi off default if configuration is not done for lumi
 if [[ mode != "lumi" ]]; then
-     if [[ -e $HOME/.a_tools_conf ]]; then
-        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
+     if [[ -e $HOME/.lo_tools_conf ]]; then
+        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.lo_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
            echo "Do you want to remove this setting and use LUMI-O a the defaut object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
-                grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
-                rm -f $HOME/.a_tools_conf
-                mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
+                grep -v "storage_service=" $HOME/.lo_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.lo_tools_conf_$$
+                rm -f $HOME/.lo_tools_conf
+                mv  $HOME/.lo_tools_conf_$$ $HOME/.lo_tools_conf
            fi
         fi
      fi
 fi
-
 
 # Setup commands for Lumi-O
 

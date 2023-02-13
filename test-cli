@@ -239,7 +239,7 @@ else
 fi 
   
 rclone lsl ${storage_server}:/${object_name}
-rclone cat ${storage_server}:/${object_name}_ameta
+rclone cat ${storage_server}:/${object_name}_ometa
 
 #Use curl to check is the bucket is public
 buc2=$(echo ${object_name} | awk -F "/" '{print $1}')

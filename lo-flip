@@ -144,9 +144,9 @@ do
     exit 1
   fi
 
-  #check that file name does not end with _ameta
-  if [[ ${input:(-5):5} == "_ameta" ]]; then
-    echo "Found a file/directoryname which ends with _ameta"
+  #check that file name does not end with _ometa
+  if [[ ${input:(-5):5} == "_ometa" ]]; then
+    echo "Found a file/directoryname which ends with _ometa"
     echo "  $input"
     echo ""
     echo "Please rename this file as it will mix up a the metadata management of lo-put"
@@ -187,18 +187,18 @@ do
   fi
 
   #collect and count metadata
-  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta
+  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ometa
+  echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ometa
   echo ""
-  ls -l $input >>  ${tmp_dir}/${tmp_file}_ameta
+  ls -l $input >>  ${tmp_dir}/${tmp_file}_ometa
 
   if [[ $tot_size -gt $max_size ]]
   then
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to lumio"
-    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rm -f ${tmp_dir}/${tmp_file}_ometa
     clean_temp_dir
     exit 1
   fi
@@ -209,7 +209,7 @@ do
 #    echo "$input contains $num_files files or directories that take ${tot_size}K of disk space"
 #    echo "Available free space is ${free_space}K"
 #    echo ""
-#    rm -f ${tmp_dir}/${tmp_file}_ameta
+#    rm -f ${tmp_dir}/${tmp_file}_ometa
 #    rmdir ${tmp_dir}
 #    exit 1
 #  fi
@@ -233,7 +233,7 @@ do
 
        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f ${tmp_dir}/${tmp_file}_ometa
        clean_temp_dir
        exit 1
   fi
@@ -253,7 +253,7 @@ do
        echo "Cleaning the failed upload"
        rclone deletefile ${storage_server}:${bucket_name}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f ${tmp_dir}/${tmp_file}_ometa
        clean_temp_dir
        exit 1
      fi
@@ -267,10 +267,10 @@ do
   #update metadata
   echo ""
   echo "Adding metadata for uploaded $input"
-  #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-  rclone copy  ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+  #echo "rclone copy ./${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}"
+  rclone copy  ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}
 
-  rm -f ${tmp_dir}/${tmp_file}_ameta
+  rm -f ${tmp_dir}/${tmp_file}_ometa
 
   echo "$input uploaded to ${bucket_name}"
   if [[ $mode == "swift" ]]; then
@@ -286,20 +286,20 @@ done
 
 #Clean old files from flip bucket
 
-for ameta_name in $(rclone lsl ${storage_server}:${bucket_name} | grep "_ameta$" | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
+for ameta_name in $(rclone lsl ${storage_server}:${bucket_name} | grep "_ometa$" | grep -v $(date +%Y-%m-%d ) | grep -v $(date -d "yesterday 13:00" +%Y-%m-%d) | awk '{ print $NF}')
 do
   #  echo "removing: ${object_name}."
   #remove ameta file
   rclone deletefile ${storage_server}:${bucket_name}/${ameta_name}
   #remove corresponding object or file
-  rclone deletefile ${storage_server}:${bucket_name}/${ameta_name%_ameta}
+  rclone deletefile ${storage_server}:${bucket_name}/${ameta_name%_ometa}
 done
 
 #Publish and rebuild index file
 
 echo '<html>' >  ${tmp_dir}/index.html
-#for i in $(swift list $bucket_name | grep -v '_ameta$' )
-for i in $(rclone ls  ${storage_server}:${bucket_name} | grep -v '_ameta$' | awk '{print "X "$0}' | tr -s " " | cut -d " " -f 3- )
+#for i in $(swift list $bucket_name | grep -v '_ometa$' )
+for i in $(rclone ls  ${storage_server}:${bucket_name} | grep -v '_ometa$' | awk '{print "X "$0}' | tr -s " " | cut -d " " -f 3- )
 do
   echo '<li><a href="'$i'">'$i'</a></li>' >> ${tmp_dir}/index.html
 done

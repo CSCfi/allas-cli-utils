@@ -282,9 +282,9 @@ else
   fi
 fi
 
-ameta_found=$(rclone ls ${storage_server}:/"${object_name}_ameta" 2> /dev/null | wc -l)
+ameta_found=$(rclone ls ${storage_server}:/"${object_name}_ometa" 2> /dev/null | wc -l)
 if [ $ameta_found -eq 1 ]; then
-   object_owner=$(rclone cat ${storage_server}:/"${object_name}_ameta" |grep "^user:" | awk '{print $2}')
+   object_owner=$(rclone cat ${storage_server}:/"${object_name}_ometa" |grep "^user:" | awk '{print $2}')
 
    if [[ $user != $object_owner ]]; then
      echo ""
@@ -299,7 +299,7 @@ fi
 if [[ $force -eq 1 ]]; then
    rclone deletefile ${storage_server}:/"${object_name}"
    if [ $ameta_found -eq 1 ]; then
-      rclone deletefile ${storage_server}:/"${object_name}_ameta"
+      rclone deletefile ${storage_server}:/"${object_name}_ometa"
    fi
 else
   echo ""
@@ -310,7 +310,7 @@ else
   if [[ $answer == "y" ]] || [[ $answer == "yes" ]]; then
      rclone deletefile ${storage_server}:/"${object_name}"
      if [ $ameta_found -eq 1 ]; then
-       rclone deletefile ${storage_server}:/"${object_name}_ameta"
+       rclone deletefile ${storage_server}:/"${object_name}_ometa"
      fi
      echo "${object_name} was deleted."
   else
