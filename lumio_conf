@@ -19,7 +19,7 @@ export OS_PROJECT_ID=""
 export OS_STORAGE_URL=""
 export OS_AUTH_TOKEN=""
 export OS_USERNAME=$(whoami)
-export OS_AUTH_URL=https://pouta.csc.fi:5001/v3
+export OS_AUTH_URL="" # go to https://auth.lumidata.eu
 export OS_USER_DOMAIN_NAME="Default"
 export OS_REGION_NAME="regionOne"
 export OS_INTERFACE=public
@@ -34,21 +34,7 @@ local usage="
 Usage: source lumio_conf [OPTIONS] [PROJECT]
 
     This bash script sets up the environment variables and the configuration
-    files for accessing LUMI-O or Lumi-O storage service.
-
-    LUMI-O
-
-    By default this script confgure swift based connection to LUMI-O (https://a3s.fi).
-
-    The program asks your CSC password before starting the configuration
-    process.
-
-    If the project name is not given as PROJECT argument, the available
-    project names are listed and you are asked to choose one.
-
-    By default, this tool sets up access tokens that are used by swift and
-    rclone connections.
-
+    files for accessing LUMI-O storage service.
 
     Lumi-O
 
@@ -57,7 +43,7 @@ Usage: source lumio_conf [OPTIONS] [PROJECT]
     to create authentication keys for Lumi-O. Authentication server provides key strings
     based of which this script creates configuration files for rclone, S3 and S3cmd.
 
-    Note that you can have active connection to both Lumi-O and LUMI-O in the same time
+    Note that you can have active connection to multiple object storage systems like LUMI-O in the same time
     but in that case you must indicate the stroage server to be used in the commands
     you are using.
 
@@ -111,10 +97,7 @@ local force=false
 #auth_method options are curl and swift
 local auth_method=curl
 #these are used in curl authentication
-local token_header_re='^[0-9:]*X-Subject-Token: '
-local storage_url_re='https://a3s.fi:443/swift'
 local storage_url_interface_re='"interface": "public"'
-local storage_url_sed='s+.*"\(https://a3s.fi:443/swift/[A-Za-z0-9/_]*\)".*+\1+'
 local s3remove=false
 local debug=false
 local devnull="/dev/null"
@@ -165,24 +148,13 @@ fi
 
 case "$mode" in
     's3cmd' | 's3' | 'S3' )
-        local use_swift=false
         local use_s3cmd=true
-        ;;
-    'both')
-        local use_swift=true
-        local use_s3cmd=true
-        ;;
-    'swift')
-        local use_swift=true
-        local use_s3cmd=false
         ;;
     's3remove')
-        local use_swift=false
         local use_s3cmd=false
         local s3remove=true
         ;;
     'lumi')
-        local use_swift=false
         local use_s3cmd=false
         ;;
     *)
@@ -198,7 +170,7 @@ if [[ mode != "lumi" ]]; then
         lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
-           echo "Do you want to remiove this setting and use LUMI-O a the defaut object storage server (y/n)?"
+           echo "Do you want to remove this setting and use LUMI-O a the defaut object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
                 grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
@@ -283,24 +255,24 @@ if [[ $mode == "lumi" ]]; then
    echo "signature_v2 = True" >> $HOME/.s3cfg
    echo "use_https = True" >> $HOME/.s3cfg
 
-   echo "Do you want to make Lumi-O the default storage service for a-commands (y/n)?"
+   echo "Do you want to make Lumi-O the default storage service for lo-commands (y/n)?"
    read lumi_as_default
    if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
     # define Lumi-o in customer defaults
-     if [[ -e $HOME/.a_tools_conf ]]; then
-        grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
-        rm -f $HOME/.a_tools_conf
-        mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
+     if [[ -e $HOME/.lp_tools_conf ]]; then
+        grep -v "storage_service=" $HOME/.lo_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.lo_tools_conf_$$
+        rm -f $HOME/.lp_tools_conf
+        mv  $HOME/.lp_tools_conf_$$ $HOME/.lo_tools_conf
      fi
-     echo "storage_service=lumi" >> $HOME/.a_tools_conf
-     echo "mode=lumi" >> $HOME/.a_tools_conf
-     echo "os_project_name=${lumi_project_number}" >> $HOME/.a_tools_conf
+     echo "storage_service=lumi" >> $HOME/.lo_tools_conf
+     echo "mode=lumi" >> $HOME/.lo_tools_conf
+     echo "os_project_name=${lumi_project_number}" >> $HOME/.lo_tools_conf
    else
      echo "Lumi-O connection is activated but it is not used by default"
-     echo "When using a-commands, add option:"
+     echo "When using lo-commands, add option:"
      echo "    --lumi"
      echo ""
-     echo "to the a-commands to use Lumi-O in stead of LUMI-O."
+     echo "to the lo-commands to use Lumi-O in stead of LUMI-O."
    fi
    return
 fi
@@ -467,10 +439,6 @@ if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev
 fi
 
 echo "Configuration will be done for project: $OS_PROJECT_NAME"
-echo "Protocols:"
-if $use_swift; then
-   echo "  swift"
-fi
 
 if $use_s3cmd; then
    echo "  S3"
@@ -484,76 +452,7 @@ fi
 
 
 # 6.2 s3cmd configuration
-
-if $use_s3cmd; then
-    if $debug ; then
-       devnull='&1'
-    fi
-    activePythonPath=$PYTHONPATH
-    unset PYTHONPATH
-
-    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-    openstack project show $OS_PROJECT_NAME
-
-    local ACCESS_KEY=$(
-       openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
-    if [ -z "$ACCESS_KEY" ]; then
-       openstack ec2 credentials create
-       local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
-    fi
-
-   local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
-
-   echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
-       s3cmd --configure \
-             --access_key=$ACCESS_KEY \
-             --secret_key=$SECRET_KEY \
-             --host=a3s.fi \
-             --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull
-   #replace default signurl_use_https
-   grep -v signurl_use_https $HOME/.s3cfg_$$ | grep -v public_url_use_https > $HOME/.s3cfg
-   rm -f  $HOME/.s3cfg_$$
-   echo "signurl_use_https = True" >> $HOME/.s3cfg
-   echo "public_url_use_https = True" >> $HOME/.s3cfg
-
-   echo ""
-   echo "s3cmd configuration ready."
-   echo ""
-
-   #aws.s3 conf
-   mkdir -m 0700 -p $HOME/.aws
-   echo '[default]' > $HOME/.aws/credentials
-   chmod go-rwx $HOME/.aws/credentials
-   echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials
-   echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
-   echo AWS_DEFAULT_REGION =" regionOne " >> $HOME/.aws/credentials
-
-   export PYTHONPATH=$activePythonPath
-
-   #s3lumio for rclone
-   rclone config delete s3lumio
-   mkdir -p  $HOME/.config/rclone/
-   echo "" >> $HOME/.config/rclone/rclone.conf
-   chmod go-rwx $HOME/.config/rclone/rclone.conf
-   echo '[s3lumio]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
-   echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
-   echo "secret_access_key = $SECRET_KEY" >> $HOME/.config/rclone/rclone.conf
-   echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
-   echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
-
-   echo "rclone remote s3lumio: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
-   echo ""
-
-
- #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
- #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
- #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg
-fi
-
+# Fix me  (fetch from auth.lumidata.eu)
 
 # Option to remove s3cmd key
 if $s3remove; then

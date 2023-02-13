@@ -21,9 +21,9 @@ all=0
 show_shared=1
 
 # read customer defaults
-if [[ -e $HOME/.a_tools_conf ]]; then
+if [[ -e $HOME/.lo_tools_conf ]]; then
    customized=1
-   source $HOME/.a_tools_conf
+   source $HOME/.lo_tools_conf
 else
    customized=0
 fi
@@ -92,7 +92,7 @@ done
 #Assign project to be used if not defined
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
-     echo "Customer settings read from $HOME/.a_tools_conf"
+     echo "Customer settings read from $HOME/.lo_tools_conf"
    fi
 fi
 

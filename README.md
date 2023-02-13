@@ -159,7 +159,7 @@ mv md5sum.macosx md5sum
 
 ## Configuring lo-commands
 
-You can define the default settings that the lo-tools use in two files: lo_env_conf and .a_tools_conf. These settings affect mostly to the lo-put data upload command.
+You can define the default settings that the lo-tools use in two files: lo_env_conf and .lo_tools_conf. These settings affect mostly to the lo-put data upload command.
 
 ### 1. lo_env_conf
 
@@ -168,11 +168,11 @@ The file *lo_env_conf*, that locates in the installation directory of _lumio-cli
    * _lumio_conf_path_ should define the location of _lumio_conf_ script in your system.
    * You may also want to change _tmp_root_ definition if you want use some other location than /tmp for temporary tiles.
 
-### 2. .a_tools_conf
+### 2. .lo_tools_conf
 
-A user can define her own default settings for lo-commands by making a configuration file named as **.a_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers too. In this file you can set default values for many of the functions that are defined with lo-put command options.
+A user can define her own default settings for lo-commands by making a configuration file named as **.lo_tools_conf** to her **home directory**. These user specific settings can be done as well at the CSC servers too. In this file you can set default values for many of the functions that are defined with lo-put command options.
 
-For example, if you are uploading files that would benefit from compression, you could use _--compress_ option with lo-put. If you want this to be default setting you could create .a_tools_conf file
+For example, if you are uploading files that would benefit from compression, you could use _--compress_ option with lo-put. If you want this to be default setting you could create .lo_tools_conf file
 that contains setting:
 
 ```text
@@ -187,7 +187,7 @@ Will compress the data during the upload process. However, you can still skip th
 ```text
 lo-put --nc my_data.b
 ```
-You can check most commonly used settings from this sample [.a_tools_conf](./.a_tools_conf) file. Copy the sample file to your home directory and uncomment and define the variables you wish to use.
+You can check most commonly used settings from this sample [.lo_tools_conf](./.lo_tools_conf) file. Copy the sample file to your home directory and uncomment and define the variables you wish to use.
 
 
 

@@ -22,9 +22,9 @@ object_with_bucket=(0)
 
 
 # read customer defaults
-if [[ -e $HOME/.a_tools_conf ]]; then
+if [[ -e $HOME/.lo_tools_conf ]]; then
    customized=1
-   source $HOME/.a_tools_conf
+   source $HOME/.lo_tools_conf
 else 
    customized=0
 fi

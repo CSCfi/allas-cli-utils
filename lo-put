@@ -48,9 +48,9 @@ check_mode=0
 max_files=1000000
 
 # read customer defaults
-if [[ -e $HOME/.a_tools_conf ]]; then
+if [[ -e $HOME/.lo_tools_conf ]]; then
    customized=1
-   source $HOME/.a_tools_conf
+   source $HOME/.lo_tools_conf
 else 
    customized=0
 fi
@@ -399,7 +399,7 @@ fi
 # note about customization 
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
-     echo "Customer settings read from $HOME/.a_tools_conf"
+     echo "Customer settings read from $HOME/.lo_tools_conf"
    fi
 fi 
 

@@ -25,9 +25,9 @@ defined_user="x"
 
 
 # read customer defaults
-if [[ -e $HOME/.a_tools_conf ]]; then
+if [[ -e $HOME/.lo_tools_conf ]]; then
    echo "Reading customer settings"
-   source $HOME/.a_tools_conf
+   source $HOME/.lo_tools_conf
 fi
 
 
