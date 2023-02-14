@@ -1,15 +1,15 @@
 # lumio-cli-utils - Utilities for LUMI-O command line access
 
-The LUMI-O object storage system can be used in multiple ways and for many purposes. 
-In many cases, effective usage of LUMI-O requires that the user knows the features of 
+The LUMI-O object storage system can be used in multiple ways and for many purposes.
+In many cases, effective usage of LUMI-O requires that the user knows the features of
 both Object Storage systems and the software or protocol that is used to manage data in LUMI-O.
 
-For those users, that just want to use LUMI-O for storing data that is in CSC computing environment, 
+For those users, that just want to use LUMI-O for storing data that is in CSC computing environment,
 CSC provides a set of commands (lo-tools ) for moving data between CSC computing environment and LUMI-O.
 
 ## Opening connection with lumio_conf
 
-Connection configuration tool: lumio_conf can be used to configure swift or S3 connections to LUMI-O. 
+Connection configuration tool: lumio_conf can be used to configure swift or S3 connections to LUMI-O.
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
 The basic syntax of this tool for swift protocol is:
 
@@ -24,7 +24,7 @@ and for S3 protocol:
 After successful connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
 or _s3cmd_ to manage data in lumio.
 
-## A_ -tools for easy access to LUMI-O
+## LO_ -tools for easy access to LUMI-O
 
 For those users, that just want to use LUMI-O for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and LUMI-O.
 
@@ -42,12 +42,12 @@ For those users, that just want to use LUMI-O for storing data that is in CSC co
 
 ## Other tools
 The available tools are:
-  
+
 |lo-command | Function |
 | :--- | :--- |
 | [lo-access](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-access)| Manage access permissions of your buckets in LUMI-O || [lo-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-check) | Command to check if lo-put command was successfully executed |
 | [lo-check](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-check) | Command to check if lo-put command was successfully executed |
-| [lo-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services | 
+| [lo-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services |
 | [lo-find](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-find)| Search and locate data that has been uploaded with lo-put |
 | [lo-flip](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-flip)| Upload a file to LUMI-O into a bucket that will keep the file temporarily available to the internet |
 | [lo-info](https://docs.csc.fi/data/LUMI-O/using_lumio/a_commands/#lo-info)| Display information about an object in LUMI-O |
@@ -55,7 +55,7 @@ The available tools are:
 
 
 
-   
+
 In addition to the above commands, there is separate tool to create incremental backups:
 
 *    `lumio-backup` : create a backup copy of a local dataset into a backup repository in LUMI-O
@@ -112,15 +112,15 @@ sudo apt-get install gcc
 sudo apt-get install restic
 curl https://rclone.org/install.sh | sudo bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash Miniconda3-latest-Linux-x86_64.sh 
+bash Miniconda3-latest-Linux-x86_64.sh
 bash
 git clone https://github.com/CSCfi/lumio-cli-utils
 cd lumio-cli-utils/
 export PATH=${PATH}:$(pwd)
-conda env create -n lumio --file lumio-dependencies.yaml 
+conda env create -n lumio --file lumio-dependencies.yaml
 conda activate lumio
 source lumio_conf -u csc-useraccount
-lo-list 
+lo-list
 ```
 Example: Installing lumio-cli-utils to CentOS 7 based virtual machine in cPouta
 
@@ -163,7 +163,7 @@ You can define the default settings that the lo-tools use in two files: lo_env_c
 
 ### 1. lo_env_conf
 
-The file *lo_env_conf*, that locates in the installation directory of _lumio-cli-utils_, defines some installation specific settings. Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you  want to change if you do a local lumio-cli-utils installation. 
+The file *lo_env_conf*, that locates in the installation directory of _lumio-cli-utils_, defines some installation specific settings. Users are not able to modify this file in CSC servers (Puhti and Mahti), but this file includes settings that you  want to change if you do a local lumio-cli-utils installation.
 
    * _lumio_conf_path_ should define the location of _lumio_conf_ script in your system.
    * You may also want to change _tmp_root_ definition if you want use some other location than /tmp for temporary tiles.
@@ -188,9 +188,3 @@ Will compress the data during the upload process. However, you can still skip th
 lo-put --nc my_data.b
 ```
 You can check most commonly used settings from this sample [.lo_tools_conf](./.lo_tools_conf) file. Copy the sample file to your home directory and uncomment and define the variables you wish to use.
-
-
-
-
-
-
