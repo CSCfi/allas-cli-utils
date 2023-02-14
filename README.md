@@ -9,9 +9,9 @@ CSC provides a set of commands (lo-tools ) for moving data between CSC computing
 
 ## Opening connection with lumio_conf
 
-Connection configuration tool: lumio_conf can be used to configure swift or S3 connections to LUMI-O.
+Connection configuration tool: lumio_conf can be used to configure S3 connections to LUMI-O.
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
-The basic syntax of this tool for swift protocol is:
+The basic syntax of this tool for is:
 
 ```text
    source lumio_conf --user your-CSC-user-account
@@ -21,7 +21,7 @@ and for S3 protocol:
    source lumio_conf --mode s3cmd --user your-CSC-user-account
 ```
 
-After successful connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
+After successful connection configuration you can start using tools like, _rclone_, _restic_, __A_tools__
 or _s3cmd_ to manage data in lumio.
 
 ## LO_ -tools for easy access to LUMI-O
@@ -85,22 +85,13 @@ I addition to the above, A_ -tools require:
 *   [crypt4gh](https://crypt4gh.readthedocs.io/en/latest/)
 
 
-Example: Installing lumio-cli-utils to a Ubuntu 16.04 server running in cPouta:
+Example: Installing lumio-cli-utils to a Ubuntu 16.04 server running in cloud environment ( as cPouta):
 
 ```text
-#install pip and openstack client
-sudo apt install python-pip python-dev
-sudo apt-get install python-setuptools
+#install pip
 pip install --upgrade pip
-pip install python-openstackclient
 pip install crypt4gh
 
-#install swift client
-sudo apt install python3-swiftclient
-curl https://rclone.org/install.sh | sudo bash
-git clone https://github.com/CSCfi/lumio-cli-utils
-cd  lumio-cli-utils/
-export PATH=${PATH}:$(pwd)
 ```
 
 Example: Installing lumio-cli-utils to Ubuntu 18.04 so that conda is used in the installation of dependencies.
@@ -142,8 +133,6 @@ conda create -n lumio
 conda activate lumio
 conda install -c condlo-forge zstd python pip s3cmd
 pip install --upgrade setuptools
-pip install python-openstackclient
-pip install python-swiftclient
 pip install crypt4gh
 source lumio_conf -u csc-useraccount                     # replace csc-useraccount with your personal CSC account
 lo-list
