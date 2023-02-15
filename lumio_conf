@@ -152,11 +152,10 @@ case "$mode" in
         local s3remove=true
         ;;
     'lumi')
-        local use_s3cmd=false
+        local use_s3cmd=true
         ;;
     *)
-        echo "Error: Wrong argument to '--mode' option $usage" >&2
-        return 1
+        local use_s3cmd=true
         ;;
 esac
 
@@ -325,14 +324,6 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 
-
-# Ask for CSC password
-
-if [ -z "$OS_PASSWORD" ]; then
-   echo "Please enter CSC password for account ${OS_USERNAME}: "
-   read -sr OS_PASSWORD
-   export OS_PASSWORD
-fi
 
 
 # Assign the project to be used.

@@ -25,32 +25,16 @@ function clean_temp_dir {
 
 }
 
-check_swift_connection () {
-  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-
-    if [[ $test -lt 1 ]]
-    then
-      if [[ -n "$OS_PASSWORD" ]]; then
-        if  [[ $silent -eq 0 ]] ; then
-          echo "Updating token"
-        fi
-        source $lumio_conf_path --user $user -k $OS_PROJECT_NAME  --mode $mode -f
-      fi
-      #test=$(swift stat 2> /dev/null | grep -c "Account:")
-      test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
-      if [[ $test -lt 1 ]]
-      then
-         echo "No connection to ${storage_name}!"
-         echo "Please try setting up the connection again."
-         exit 1
-      else
-         echo "swift connection updated"
-    fi
-  else
-     echo "swift connection OK"
-  fi
+function calculate_md5 {
+VAR1=$(uname)
+VAR2='Darwin'
+if  [[ "$VAR1" == "$VAR2" ]]; then
+  sum=$(md5 -q $1)
+  echo "$sum $1"
+else
+  md5sum $1
+fi
 }
-
 
 remove_slash_from_ends(){
 path_string=$1

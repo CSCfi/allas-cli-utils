@@ -127,8 +127,8 @@ fi
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 
-# check connection
-check_swift_connection
+# TODO check if connection  works
+
 
 #set read permissions
 

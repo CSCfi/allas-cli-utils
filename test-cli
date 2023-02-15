@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 
 #default user
@@ -31,7 +31,7 @@ testme () {
 echo $user
 make_temp_dir
 echo return is $?
-echo retval is $retval 
+echo retval is $retval
 echo tempme is $tempme
 echo tmp_dir is $tmp_dir
 echo deleting tmpdir
@@ -49,7 +49,7 @@ exit 0
 if [[ -e $HOME/.lo_tools_conf ]]; then
    customized=1
    source $HOME/.lo_tools_conf
-else 
+else
    customized=0
 fi
 
@@ -74,7 +74,7 @@ do
                   bucket=($2)
                   object_with_bucket=(2)
                   shift
-                  shift 
+                  shift
                 ;;
              '--help' | '-h' )
                   print_help=(1)
@@ -104,7 +104,7 @@ The basic syntax of the command is:
 
 Options:
 
--p, --project <project_ID>   Get information about objects form the buckets of the defined project instead of the currently configured project. 
+-p, --project <project_ID>   Get information about objects form the buckets of the defined project instead of the currently configured project.
 
 -b, --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 
@@ -113,23 +113,19 @@ Related commands: lo-put, lo-get, lo-delete, lo-find
 
 EOF
 exit 0
-fi 
+fi
 
 
 #source $HOME/.lumio_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
-#Check if connection works
-if [[ $mode == "swift" ]]; then
-    check_swift_connection 
-fi
- 
+
 if [[ $mode == "s3cmd" ]]; then
   storage_server="s3lumio"
-fi 
+fi
 
 
-if [[ $object_name == "" ]] ; then 
+if [[ $object_name == "" ]] ; then
   for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
   do
     echo "-------------------------------"
@@ -141,7 +137,7 @@ if [[ $object_name == "" ]] ; then
     fi
     echo ""
   done
-  echo "-------------------------------" 
+  echo "-------------------------------"
   echo ""
   echo "Total summary of data in ${storage_server}"
   rclone about ${storage_server}:
@@ -169,31 +165,31 @@ if [ $check_os -gt 0 ]; then
             echo "Public URL:  https://a3s.fi/$buc"
        fi
        echo ""
-       exit 
+       exit
   fi
 fi
 
 
-  
+
 
 # check if object name contains bucket (if not defined with bucket)
 if [[ $object_with_bucket == 0 ]]; then
   if [ $(echo $object_name | grep -c "${user}-${project_label}-MISC" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-MISC")
   fi
   if [ $(echo $object_name | grep -c "${user}-${project_label}-HOME" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-HOME")
   fi
   if [ $(echo $object_name | grep -c "${user}-${project_label}-SCRATCH" ) -eq 1 ]
-  then 
-    object_with_bucket=(1) 
+  then
+    object_with_bucket=(1)
     bucket=("${user}-${project_label}-HOME")
   fi
-fi 
+fi
 
 # check all buckets if the bucket is not defined
 if [ $object_with_bucket == 0 ]
@@ -203,7 +199,7 @@ then
 
   # go through the buckets
   for bn in $buckets
-  do 
+  do
     bucket_found=$(rclone ls ${storage_server}:$bn/$object_name 2> /dev/null | wc -l)
     if [ $bucket_found -eq 1 ]; then
        echo "Bucket: $bn contains object:$object_name"
@@ -211,7 +207,7 @@ then
       bucket=("$bn")
     fi
   done
-  
+
   if [[ $num_buckets -eq 0 ]]; then
      echo ""
      echo "Could not find object: $object_name "
@@ -223,7 +219,7 @@ then
      echo "Please include the bucket name in the object name"
      exit 1
   fi
-  
+
   #add bucket to the object name
   object_name=("$bucket/$object_name")
 else
@@ -236,8 +232,8 @@ else
      echo "You can list all the available objects with command:"
      echo "   lo-find"
   fi
-fi 
-  
+fi
+
 rclone lsl ${storage_server}:/${object_name}
 rclone cat ${storage_server}:/${object_name}_ometa
 
@@ -252,29 +248,3 @@ fi
 
 
 exit
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -15,7 +15,6 @@ object_name=""
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
-mode="swift"
 show_filelist=0
 query=""
 object_with_bucket=0
@@ -143,14 +142,9 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
 
 #Check if connection works
-if [[ $mode == "swift" ]]; then
- storage_server="lumio"
- storage_name="LUMI-O"
- check_swift_connection
-fi
 
 if [[ $mode == "s3cmd" ]]; then
- storage_server="s3lumio" 
+ storage_server="s3lumio"
  storage_name="LUMI-O"
 fi
 
@@ -319,4 +313,3 @@ else
 fi
 
 exit
-

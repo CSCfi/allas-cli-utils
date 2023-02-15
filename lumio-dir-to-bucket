@@ -199,9 +199,7 @@ if [[ $(which jq 2> /dev/null | wc -l ) -ne 1 ]];then
       exit 1
 fi
 
-#Check connection
-check_swift_connection
-token_time=$(date +%s)
+
 
 #Check bucket
 #echo "rclone size lumio:$bucket_name "
@@ -268,16 +266,9 @@ for file in $FILES_LARGE; do
     filesize=$(stat --printf="%s" $file)
     (( filesize_mb = filesize / 1000000 ))
     (( filesize_gb = filesize_mb / 1024 ))
-    start_time=$(date +%s)
     echo ""
     echo "${fn}/${num_large_files} Uploading file $file ${filesize_gb}GiB."
-    (( token_age = start_time - token_time ))
-    if [[ $token_age -gt 3600 ]]; then
-       check_swift_connection
-       token_time=$start_time
-    fi
-    # echo "start_time $start_time"
-    # echo "concurrent_rclone_rcat.sh $file $bucket_name"
+
     # Try 3 times to upload a large file
     i=0
     success=0
@@ -319,7 +310,6 @@ for file in $FILES_LARGE; do
 done
 
 # Upload the rest
-check_swift_connection
 
 echo ""
 echo "Starting to upload files that are smaller than 5 GB."
