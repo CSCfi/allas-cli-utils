@@ -822,6 +822,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   echo "original_location: $file_path " >> ${tmp_dir}/${tmp_file}_ometa
   if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]; then
      echo "protocol: S3 " >> ${tmp_dir}/${tmp_file}_ometa
+  fi
   if [[ $compression -eq 1 ]]; then
      echo "compression: zstd" >> ${tmp_dir}/${tmp_file}_ometa
   else
