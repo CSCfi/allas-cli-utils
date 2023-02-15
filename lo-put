@@ -1092,7 +1092,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         echo "Confirming upload..."
      fi
      #checksums for local and lumio files
-     sum1=$(md5sum ${tmp_dir}/$tmp_file | awk '{print $1}')
+     sum1=$(calculate_md5 ${tmp_dir}/$tmp_file | awk '{print $1}')
      if [[ $partial_path == "" ]] ; then
         lumio_path="${storage_server}:${bucket_name}/$tmp_file"
      else

@@ -139,13 +139,6 @@ lo-list
 
 ```
 
-
-In MacOS X systems md5sum command may be missing. To fix that, there is simple replacement script (md5sum.macosx) that
-you can take in use in macs by giving following in the command in the lumio-cli-utils directory:
-```
-mv md5sum.macosx md5sum
-```
-
 ## Configuring lo-commands
 
 You can define the default settings that the lo-tools use in two files: lo_env_conf and .lo_tools_conf. These settings affect mostly to the lo-put data upload command.

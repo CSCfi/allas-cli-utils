@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 
 #default user
@@ -77,7 +77,7 @@ do
                      echo "creating $index_mode index"
                   else
                      echo "Unknown index mode: $index_mode"
-                     echo "Should be: static or dynamic" 
+                     echo "Should be: static or dynamic"
                      exit 1
                   fi
                   shift
@@ -86,11 +86,11 @@ do
               '--input-list')
                   list_file=$2
                   if [[ -e $list_file ]];then
-                    input_def=("$(cat $list_file)")                
-                  else  
+                    input_def=("$(cat $list_file)")
+                  else
                     echo "Import file list $list_file not found"
-                    exit 1  
-                  fi 
+                    exit 1
+                  fi
                   shift
                   shift
                 ;;
@@ -108,12 +108,12 @@ done
 if [ $print_help -eq 1 ]; then
 cat <<EOF
 
-lo-publish copies a file to LUMI-O into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the 
-uploaded data object can read and download the data with a web browser or tools like wget and curl. 
-lo-publish works mostly like lo-put but there are some differences: 
+lo-publish copies a file to LUMI-O into a bucket that can be publicly accessed. Thus, anyone with the address (URL) of the
+uploaded data object can read and download the data with a web browser or tools like wget and curl.
+lo-publish works mostly like lo-put but there are some differences:
 
-1) lo-publish can upload only files, not directories. 
-2) files are not compressed but they uploaded as they are. 
+1) lo-publish can upload only files, not directories.
+2) files are not compressed but they uploaded as they are.
 3) the access control of the target bucket is set so that it is available in read-only mode to the internet.
 
 The basic syntax of the command is:
@@ -121,7 +121,7 @@ The basic syntax of the command is:
   lo-publish file_name
 
 By default, the file is uploaded to a bucket username-projectNumber-pub. You can define other bucket names too using option -b
-but you should note that this command will make all data in the bucket publicly accessible, 
+but you should note that this command will make all data in the bucket publicly accessible,
 including data that has been previously uploaded to the bucket.
 
 The public URL to a data object is:
@@ -133,23 +133,23 @@ An object uploaded with lo-publish can be removed from LUMI-O with command lo-de
 lo-publish options:
 
  -b, --bucket       Use the defined bucket instead of the default bucket name
- -o, --os_file      Define alternative name for the object that will be created  
- -i, --index        (static/dynamic).  By default lo-publish creates a static index 
-                    file that includes the objects that are in the target bucket when 
+ -o, --os_file      Define alternative name for the object that will be created
+ -i, --index        (static/dynamic).  By default lo-publish creates a static index
+                    file that includes the objects that are in the target bucket when
                     the command is executed.
-                    With setting --index dynamic the command adds a JavaScript based 
-                    index file to the bucket. With this option the index.html page 
-                    lists the objects that are available in the bucket in the time when 
+                    With setting --index dynamic the command adds a JavaScript based
+                    index file to the bucket. With this option the index.html page
+                    lists the objects that are available in the bucket in the time when
                     this page is accessed. This dynamic indexing tool can list
                     only up to 1000 files.
- --input-list       List of files to be uploaded.    
- 
+ --input-list       List of files to be uploaded.
+
 
 EOF
 
-exit 
+exit
 
-fi 
+fi
 
 #Check if connection works
 if [[ $mode == "swift" ]]
@@ -157,11 +157,11 @@ then
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
-  then 
+  then
     echo "No connection to LUMI-O!"
     echo "Please try setting up the connection again."
     exit 1
-  fi 
+  fi
 fi
 
 
@@ -172,7 +172,7 @@ project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 if [[ "$bucket_name" == "not_defined" ]]
 then
    bucket_name=("${user}-${project_label}-pub")
-fi 
+fi
 
 #In case of lumi the bucket must be cereated
 if [[ $mode == "lumi" ]]; then
@@ -188,19 +188,19 @@ echo "Bucket: $bucket_name"
 
 
 for input in $input_def
-do 
+do
   echo "Processing: $input"
   if [ ! -e $input ] ; then
     echo "File: $input does not exist!"
     exit 1
   fi
-  
+
   if [[ $(file -b $input | grep -c directory ) -eq 1 ]]
   then
     echo "This command can only be used to publish files, not directories."
     exit 1
   fi
- 
+
   #check that file name does not end with _ometa
   if [[ ${input:(-5):5} == "_ometa" ]]; then
     echo "Found a file/directoryname which ends with _ometa"
@@ -230,7 +230,7 @@ do
     echo "A file/directory with the same name has already been uploaded into"
     echo "bucket $bucket_name in $storage_server"
     echo ""
-    rclone lsl ${storage_server}:${bucket_name}/$tmp_file  
+    rclone lsl ${storage_server}:${bucket_name}/$tmp_file
     echo ""
     echo "Do you wish to overwrite the existing old object? [y/n]"
     read overwrite_old
@@ -248,17 +248,17 @@ do
     echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ometa
     echo ""
     ls -l $input >>  ${tmp_dir}/${tmp_file}_ometa
-  fi  
+  fi
 
   if [[ $tot_size -gt $max_size ]]
-  then 
+  then
     echo "This file or directory is too big for this tool"
     echo "Total size: ${tot_size}K"
     echo "Please use swift or rclone command to upload the data to $storage_server"
     rm -f ${tmp_dir}/${tmp_file}_ometa
     clean_temp_dir
     exit 1
-  fi 
+  fi
 
   ln -s ${file_path} ${tmp_dir}/$tmp_file
 
@@ -266,7 +266,7 @@ do
   #if [[ $mode == "swift" ]]
   #then
   # For less than 5GB files rclone is used for uploading
-    
+
   echo "Uploading data to lumio."
   # echo "rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
   rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
@@ -279,7 +279,7 @@ do
      else
         rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
      fi
-     rm -f ${tmp_dir}/$tmp_file 
+     rm -f ${tmp_dir}/$tmp_file
      if [[ $include_ometa -eq 1  ]]; then
        rm -f ${tmp_dir}/${tmp_file}_ometa
      fi
@@ -291,17 +291,17 @@ do
   if [[ $tot_size -lt 5000000 ]]
   then
      echo "Confirming upload..."
-     #checksums for local and lumio files 
-     sum1=($(md5sum ${tmp_dir}/$tmp_file))
-       
+     #checksums for local and lumio files
+     sum1=($(calculate_md5 ${tmp_dir}/$tmp_file))
+
      if [[ $partial_path == "" ]]; then
         sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
-     else  
+     else
         sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/${partial_path}/$tmp_file))
      fi
-     #check if checksums match 
+     #check if checksums match
      if [[ ${sum1[0]} !=  ${sum2[0]} ]]
-     then 
+     then
        echo "Upload of $input was not successful!"
        echo "Cleaning the failed upload"
        if [[ $partial_path == "" ]]; then
@@ -309,7 +309,7 @@ do
        else
           rclone deletefile ${storage_server}:${bucket_name}/${partial_path}/$tmp_file
        fi
-       rm -f ${tmp_dir}/$tmp_file 
+       rm -f ${tmp_dir}/$tmp_file
        rm -f ${tmp_dir}/${tmp_file}_ometa
        clean_temp_dir
        exit 1
@@ -325,9 +325,9 @@ do
     #update metadata
     echo ""
     echo "Adding metadata for uploaded $input"
-    #echo "rclone copy ./${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}" 
+    #echo "rclone copy ./${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}"
     rclone copy  ${tmp_dir}/${tmp_file}_ometa ${storage_server}:${bucket_name}/${partial_path}
-  
+
     rm -f ${tmp_dir}/${tmp_file}_ometa
   fi
 
@@ -340,9 +340,9 @@ do
      https_root="https://${os_project_name}.lumidata.eu"
   fi
 
-  if [[ $partial_path == "" ]]; then 
+  if [[ $partial_path == "" ]]; then
      echo "Public link: ${https_root}/${bucket_name}/$tmp_file"
-  else 
+  else
      echo "Public link: ${https_root}/${bucket_name}/${partial_path}/$tmp_file"
   fi
   tmp_file=("not_defined")
