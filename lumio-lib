@@ -26,13 +26,13 @@ function clean_temp_dir {
 }
 
 function calculate_md5 {
-VAR1=$(uname)
-VAR2='Darwin'
-if  [[ "$VAR1" == "$VAR2" ]]; then
-  sum=$(md5 -q $1)
-  echo "$sum $1"
-else
-  md5sum $1
+if [[ "$OSTYPE" = "darwin"* ]]; then
+   # Mac OSX
+	   sum=$(md5 -q $1)
+	   echo "$sum $1"
+	 else
+   # Linux or similar
+	   md5sum $1
 fi
 }
 
