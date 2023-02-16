@@ -1,0 +1,12 @@
+#Common settings for a_ -tools
+storage_server="lumio"
+local_host="$(hostname)"
+lumio_log="/dev/null"
+
+#change here your lumio_conf location
+lumio_conf_path="/some/path/lumio-cli-utils/lumio_conf"
+max_size=5000000000
+max_files=100000
+
+#change here the directory that will be used for temporary files
+tmp_root="/tmp"

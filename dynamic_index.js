@@ -19,7 +19,7 @@
                        'size' : eValue(c, 'Size'),
                        'date' : eValue(c, 'LastModified')}))
                  .filter(c =>
-                     ! c.name.match(/.*_ameta$/))
+                     ! c.name.match(/.*_ometa$/))
                  .map(c =>
                      `<tr>
                         <td><a href="${c.name}">${c.name}</a></td>

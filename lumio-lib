@@ -1,0 +1,105 @@
+
+# make secure temp dir and set the global tmp_dir to it
+function make_temp_dir {
+# test if os is Darwin derivative
+
+VAR1=$(uname)
+VAR2='Darwin'
+if  [[ "$VAR1" == "$VAR2" ]]; then
+	if ! [ -x "$(command -v gmktemp)" ]; then
+  	echo 'Error: gmktemp is not installed. This can be found from Coreutils in https://brew.sh/ ' >&2
+  	exit 1
+		else
+  	tmp_dir=$(gmktemp -d -p ${tmp_root} lumio-cli-tools-XXXXXX)
+		fi
+else
+	tmp_dir=$(mktemp -d -p ${tmp_root} lumio-cli-tools-XXXXXX)
+fi
+}
+
+# remove tmp_dir if it exists
+function clean_temp_dir {
+	if [ -n "${tmp_dir}" -a -d "${tmp_dir}" ]; then
+		rm -rf ${tmp_dir}
+	fi
+
+}
+
+function calculate_md5 {
+if [[ "$OSTYPE" = "darwin"* ]]; then
+   # Mac OSX
+	   sum=$(md5 -q $1)
+	   echo "$sum $1"
+	 else
+   # Linux or similar
+	   md5sum $1
+fi
+}
+
+remove_slash_from_ends(){
+path_string=$1
+if [[ ${path_string:(-1)} == "/" ]]; then
+    path_string=${path_string%/}
+fi
+
+if [[  ${path_string:0:1} == "/" ]]; then
+    tlen=${#path_string}
+    path_string=${path_string:1:tlen}
+fi
+
+echo $path_string
+}
+
+
+# This function returns the difference between the sum of segment sizes and
+# and the expected size. This is needed for lumio-health-check
+check_segments(){
+  local segment_server="$1"
+  local segments_bucket="${2}_segments"
+  local check_object=$3
+  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | grep -v "slo/" | sed  s/"^ "/""/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
+  if [[ ${#segsizes[@]} -eq 2 ]]; then
+     local ssizesum=${segsizes[0]}
+     local ssizeval=${segsizes[1]}
+     (( check_value = ssizesum - ssizeval ))
+     echo $check_value
+  else
+     #No segments found. Assuming OK
+      echo 0
+  fi
+}
+
+
+
+
+
+check_segment_sizes(){
+  local segment_server="$1"
+  local segments_bucket="${2}_segments"
+  local check_object=$3
+  local segsizes=($(rclone ls ${segment_server}:${segments_bucket}/${check_object}/ | tr "/" " " | awk '{ a = a + $1}END{ print a" "$3 }'))
+
+  if [[ ${#segsizes[@]} -eq 2 ]]; then
+     if [[ ${segsizes[0]} -eq  ${segsizes[1]} ]]; then
+         echo "OK"
+     else
+         if [[ ${segsizes[0]} -lt  ${segsizes[1]} ]]; then
+           local m="ERROR.
+Total size of segments ${segsizes[0]} is less that original file size ${segsizes[1]}.
+Some segments are missing?"
+           echo $m
+         fi
+         if [[ ${segsizes[0]} -gt  ${segsizes[1]} ]]; then
+local m="ERROR. Total size of segments ${segsizes[0]} is more than original file size ${segsizes[1]}.
+Check the segments bucket ${segments_bucket} for object ${check_object}."
+           echo $m
+         fi
+
+     fi
+  else
+     #No segments found. Assuming OK
+      echo "OK"
+  fi
+}
+
+abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }

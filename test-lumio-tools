@@ -1,0 +1,63 @@
+#!/bin/bash
+
+mkdir test_$$
+
+echo "aaa" > test_$$/a.txt
+echo "bbb" > test_$$/b.txt
+echo "ccc" > test_$$/c.txt
+
+test_bucket="lumiotest$$"
+
+#lo-put
+
+object=$(lo-put -b $test_bucket test_$$ -s 2> /dev/null | tail -1 | tr -d "\n")
+if [[ $object == "$test_bucket/test_$$.tar" ]] ; then
+  echo "lo-put OK"
+else
+  echo "lo-put FAILED"
+  echo $object
+ # exit 1
+fi
+ 
+#lo-list
+t1=$(lo-list $test_bucket | tr -d "\n" )
+if [[ $t1 == "$test_bucket/test_$$.tar" ]]; then
+  echo "lo-list OK"
+else
+  echo "lo-list FAILED"
+  echo "lo-list  $test_bucket"
+  lo-list $test_bucket
+  exit
+fi
+
+#lo-info
+
+if [[ $(lo-info $object | grep -c "test_") -eq 8 ]]; then
+  echo "lo-info OK"
+else
+  echo "lo-info FAILED"
+  echo "lo-info $object"
+  exit
+fi
+
+rm -rf test_$$
+
+#lo-get
+lo-get $object > /dev/null
+if [[ $(ls  test_$$ | grep -c .txt) -eq 3 ]]; then
+  echo "lo-get OK"
+else
+  echo "lo-get FAILED"
+fi
+
+lo-delete -f  $object > /dev/null
+lo-delete --rmb $test_bucket -f > /dev/null
+
+rm -rf test_$$
+
+a=$(lo-list $test_bucket 2>&1 | awk '{print $(NF-1)" "$NF}' )
+if [[ $a == "not found" ]]; then
+   echo "lo-delete OK"
+else
+   echo "lo-delete FAILED"
+fi

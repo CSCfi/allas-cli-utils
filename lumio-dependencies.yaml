@@ -1,0 +1,14 @@
+name: lumio
+channels:
+  - condlo-forge
+  - defaults
+dependencies:
+  - zstd
+  - python
+  - pip
+  - s3cmd
+  - rclone
+  - restic
+  - pip:
+    - python-rclone
+    - crypt4gh

@@ -1,13 +1,11 @@
 #!/bin/bash
 
-
 #default user
 user=($USER)
 
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-#inst_root=$(dirname $(readlink -f $0))
 source $inst_root/lo_env_conf
 source $inst_root/lumio-lib
 
@@ -16,34 +14,12 @@ object_name=("")
 print_help=(0)
 os_project_name=("none")
 input_def=("")
-mode=("swift")
-tmp_dir=("${tmp_root}/a_get_$$_tmp")
+mode=("")
+#tmp_dir=("${tmp_root}/a_get_$$_tmp")
 show_filelist=(0)
 query=("")
 object_with_bucket=(0)
 
-
-testme () {
-	echo "foobar"
-}
-
-
-echo $user
-make_temp_dir
-echo return is $?
-echo retval is $retval
-echo tempme is $tempme
-echo tmp_dir is $tmp_dir
-echo deleting tmpdir
-ls -la $tmp_dir
-clean_temp_dir
-ls -la $tmp_dir
-echo end
-tass=""
-echo tass is $tass
-tass=$(testme foobar)
-echo tass is $tass
-exit 0
 
 # read customer defaults
 if [[ -e $HOME/.lo_tools_conf ]]; then
@@ -79,7 +55,23 @@ do
              '--help' | '-h' )
                   print_help=(1)
                   shift
-                ;;
+                 ;;
+             '--lumio' | '-A' )
+                  mode="s3cmd"
+                  shift
+                 ;;
+             '--s3lumio' )
+                  mode="s3cmd"
+                  shift
+                 ;;
+
+             '--lumi' | '-L' )
+                  mode="lumi"
+                  shift
+                 ;;
+
+
+
              *)
                    if [[ $object_name != "" ]]; then
                       echo "unknown option: $1"
@@ -119,9 +111,14 @@ fi
 #source $HOME/.lumio_default
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
+#Check if connection works
 
 if [[ $mode == "s3cmd" ]]; then
   storage_server="s3lumio"
+fi
+
+if [[ $mode == "lumi" ]]; then
+  storage_server="lumi-o"
 fi
 
 
@@ -150,7 +147,7 @@ if [[ $object_with_bucket == 2 ]]; then
      object_with_bucket=(1)
 fi
 
-#echo "this checks if objectname contains bucket name"
+#echo this checks if objectname contains bucket name"
 check_os=$(rclone ls ${storage_server}:$object_name 2> /dev/null | wc -l)
 if [ $check_os -gt 0 ]; then
   object_with_bucket=(1)
@@ -234,7 +231,41 @@ else
   fi
 fi
 
+#
+#Here we print the actual output
+#
+
+# name and size
 rclone lsl ${storage_server}:/${object_name}
+
+#in case of swift protocol, we can print metadata if swift command is available
+if [[ $mode == "swift" ]];then
+   if command -v swift >/dev/null 2>&1; then
+      echo "-----------------------------------------------------"
+      echo "Metadata for ${object_name}:"
+       bucket_name=$(echo $object_name | awk -F / '{print $1}')
+       #split bucket and object
+       if [[ $bucket_name != $object_name ]]; then
+            swift_object=$(echo $object_name | sed -e s/"${bucket_name}\/"/""/)
+            swift stat $bucket_name $swift_object
+       fi
+   else
+       echo "Detailed metadata can't be printed as swift command is not available"
+   fi
+fi
+#in case of S3 protocol, we can print metadata if s3cmd command is available
+if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]  ;then
+  if command -v s3cmd >/dev/null 2>&1; then
+      echo "-----------------------------------------------------"
+      echo "Metadata for ${object_name}:"
+      s3cmd info "s3://${object_name}"
+  else
+      echo "Detailed metadata can't be printed as s3cmd command is not available"
+  fi
+fi
+#
+echo ""
+echo "--------------------------------------"
 rclone cat ${storage_server}:/${object_name}_ometa
 
 #Use curl to check is the bucket is public
@@ -243,7 +274,6 @@ if [[ $(curl https://a3s.fi/$buc2 2>/dev/null | grep -c '</Name>') -gt 0 ]]
 then
  echo "Public URL:  https://a3s.fi/${object_name}"
 fi
-
 
 
 

@@ -7,10 +7,10 @@
 #
 # This uses s3 access to list the objects. As segmented objects are reported
 # as size 0 objects, script uses "rclone lsl" to get the correct size.
-# You must have a rclone configuration with remote s3allas.
+# You must have a rclone configuration with remote s3lumio.
 # With option -d the script uses "rclone lsl" for objects ls'ed smaller than 10k.
 #
-# Note: simply running "rclone lsl s3allas:bucket" for a lot of objects
+# Note: simply running "rclone lsl s3lumio:bucket" for a lot of objects
 #       would be unusable slow. Also if there are a lot of size 0 objects
 #       (or size<10k) or segmented objects, this script will be very slow.
 
@@ -28,11 +28,11 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-rclone ls s3allas:"$1" | while IFS= read -r line
+rclone ls s3lumio:"$1" | while IFS= read -r line
 do
 	if [ "${line:0:$FIX_LEN}" == "$FIX_STR" ]; then
 		name=`echo $line|sed 's/ *[0-9]* \(.*\)/\1/'`
-		rclone lsl s3allas:"$1"/"$name" | awk '{printf "%9s", $1}'
+		rclone lsl s3lumio:"$1"/"$name" | awk '{printf "%9s", $1}'
 		echo " $name"
 	else
 		echo "$line"

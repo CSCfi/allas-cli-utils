@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+
+# Script expects a sourced Openstack project (openrc) file and configured
+# rclone remote for Swift
+
+# Script expects rclone remote for swift object store in $RCLONE_DESTINATION
+
+# Can configure maximum simultaneous uploads in $MAX_PROCESSES environment
+# variable – recommended is amount of threads
+
+# $1 is the location to be copied, $2 is the destination container
+
+# TODO: Check if 500k file limit in bucket is exceeded
+
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
+
+RCLONE_DESTINATION=${storage_server}
+MAX_PROCESSES=4
+input=""
+bucket_name=""
+user=$(whoami)
+print_help=0
+check_md5=0
+
+if [[ $# -lt 1 ]]; then
+   print_help=1
+fi
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--bucket' | '-b' )
+                  bucket_name="$2"
+                  #Remove the trailing / if it exist
+                  bucket_name=$(remove_slash_from_ends $bucket_name)
+                  shift
+                  shift
+              ;;
+              '--directory' | '-d' )
+                  input="$2"
+                  #Remove the trailing / if it exist
+                  input=$(remove_slash_from_ends $input)
+                  shift
+                  shift
+              ;;
+              '--stream' | '-s' )
+                  export MAX_PROCESSES=$2
+                  shift
+                  shift
+              ;;
+              '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;
+               '-h' | '--help' )
+                  print_help=1
+                  shift
+                ;;
+                '--md5' | '-m' )
+                   check_md5=1
+                  shift
+                ;;
+
+              *)
+                   if [[ $input == "" ]]; then
+                      input="$1"
+                      if [[ ! -e $input ]] ; then
+                           echo "File or directory $input does not exist!"
+                           exit 1
+                      fi
+                   else
+                      if [[ $bucket_name == "" ]]; then
+                         bucket_name="$1"
+                      else
+                         echo "Unknown option: $1"
+                         exit 1
+                      fi
+                   fi
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+if [[ $print_help -eq 1 ]]; then
+cat <<EOF
+
+DESCRIPTION
+
+This tool is used to upload on content of a directory or a file to a bucket in
+LUMI-O. Upload is done with rclone.
+
+The upload is done so that the content between the source directory in your local
+computer and the target bucket in LUMI-O is synchronized. This means that in addition to
+copying data from the local directory to the bucket in LUMI-O, the objects
+in LUMI-O, that don't match files in the local directory, are removed.
+
+Because of that you should mainly use this tool to upload data to
+a new empty bucket in LUMI-O. If the target bucket does not exist, it will be
+automatically created.
+
+In LUMI-O, files larger than 5 GiB will be stored as 5GiB segments.
+This tool utilizes this segmentation to speed up the upload process
+by uploading several segments of a large file simultaneously.
+Smaller files will be uploaded using normal rclone copy command.
+
+USAGE
+
+The basic syntax of the command is:
+
+   lumio-dir-to-bucket source-directory  target-bucket
+
+You can also define source directory and target bucket with
+command line options.
+
+The files will be uploaded to the defined bucket and the object names
+will include the source directory name. For example if we have a directory
+"data1" containing files sample_1.dat and sample_2.dat, then command:
+
+  lumio-dir-to-bucket data1  p20001234_backup
+
+Will create bucket:
+
+   p20001234_backup
+
+That contains objects:
+
+  data1/sample_1.dat
+  data1/sample_2.dat
+
+
+COMMAND LINE OPTIONS
+
+lumio-dir-to-bucket command line options:
+
+-d, --directory' <dir_name> Name of the directory or file to be uploaded to LUMI-O.
+
+-b, --bucket <bucket_name>  Define a name of the bucket into
+                            which the data is uploaded.
+
+-s, --stream <number>         Number of simultaneous upload streams.
+                            Default 4.
+
+-m, --md5                   Check md5 sums of uploaded segments.
+
+-u, --user <csc-user-name>  Define username liked to the data to be uploaded
+                            (default: current username).
+
+-h, --help                  Print this help.
+
+EOF
+
+fi
+
+
+if [[ -z "$OS_PASSWORD" ]]; then
+   echo "OS_PASSWORD not defined!"
+   echo "lumio-dir-to-bucket needs to have your LUMI-O password stored in an environment variable."
+   echo "Please setup you LUMI-O connection with a command that sets this variable."
+   echo ""
+   echo ""
+   echo " In Other servers use: "
+   echo "      source lumio_conf -k -u <your-csc-user-account>"
+   exit 1
+fi
+
+
+if [[ $input == "" ]]; then
+  echo "Input directory not defined."
+  exit 1
+fi
+
+if [[ $bucket_name == "" ]];	then
+  echo "Target bucket not defined."
+  exit 1
+fi
+
+
+
+#Check if rclone is available
+if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+fi
+
+#Check if jq is available
+if [[ $(which jq 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "jq is not available!"
+      echo "Please install jq."
+      exit 1
+fi
+
+
+
+#Check bucket
+#echo "rclone size lumio:$bucket_name "
+bucket_check=$(rclone size ${storage_server}:$bucket_name 2> /dev/null | wc -l)
+
+if [[ $bucket_check -lt 2 ]]; then
+      bucket_elsewhere=$(rclone size ${storage_server}:$bucket_name 2>&1 | grep -c "forbidden" )
+      if [[ $bucket_elsewhere -ne 0 ]]; then
+         echo ""
+         echo "Bucket name $bucket_name is already used by some other project and you don't have access to it."
+         echo "Please use some other bucket name"
+         exit 1
+      fi
+      rclone mkdir ${storage_server}:$bucket_name
+else
+   echo ""
+   echo "Bucket $bucket_name already exists!"
+   echo "Do you want to use this bucket [yes/no]"
+   read ans
+   if [[ $ans == "y" || $ans == "yes" ]]; then
+     old_objects=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "objects:" | awk '{print $NF}')
+     old_size=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "size:" | awk '{print $3" "$4}')
+
+     if [[ $old_objects -gt 0 ]]; then
+           echo	""
+           echo	"Are you really sure?"
+           echo "LUMI-O location $bucket_name/${input} contains $old_objects objects "
+           echo "that include $old_size of data."
+           echo "This data will be overwritten or removed by this upload process."
+           echo "Do you	want to	use LUMI-O location ${bucket_name}/${input} [yes/no]"
+           read ans2
+           if [[ $ans2 == "y" || $ans2 == "yes" ]]; then
+              echo "Target bucket:  ${bucket_name}"
+              echo "Target directory: ${input}"
+              echo ""
+              echo "Removing old data"
+              rclone delete ${storage_server}:${bucket_name}/${input}
+              rclone delete ${storage_server}:${bucket_name}_segments/${input}
+           else
+              exit
+           fi
+     fi
+   else
+      exit
+   fi
+fi
+
+
+
+
+echo "Uploading data from directory: $input to bucket: $bucket_name"
+
+# Get files that are larger than 5GiB
+FILES_LARGE=$(find $input -type f -size +5368709120c)
+num_large_files=$(echo $FILES_LARGE | wc -w )
+echo "Directory $input contains $num_large_files files that are larger than 5 GiB"
+
+
+# Upload large files – the speed benefit varies, but seems consistently faster
+# in testing
+fn=0
+for file in $FILES_LARGE; do
+    (( fn = fn + 1 ))
+    filesize=$(stat --printf="%s" $file)
+    (( filesize_mb = filesize / 1000000 ))
+    (( filesize_gb = filesize_mb / 1024 ))
+    echo ""
+    echo "${fn}/${num_large_files} Uploading file $file ${filesize_gb}GiB."
+
+    # Try 3 times to upload a large file
+    i=0
+    success=0
+    while [ $success -ne 1 ]; do
+       concurrent_rclone_rcat.sh $file $bucket_name $check_md5
+       if [[ $? -ne 0 ]]; then
+         echo "Data upload failed!"
+       fi
+
+      end_time=$(date +%s)
+      (( duration = end_time - start_time ))
+      (( speed = filesize_mb / duration ))
+      #check size of uploaded file
+      lumio_size=$(rclone ls $RCLONE_DESTINATION:$bucket_name/$file | awk '{print $1}')
+      lumio_segments_size=$(rclone ls $RCLONE_DESTINATION:${bucket_name}_segments/${file}| awk '{ a = a + $1 }END{print a}')
+      #echo lumio_size  $lumio_size
+      #echo lumio_segments_size    $lumio_segments_size
+      #echo filesize $filesize
+
+      if [[ $filesize -eq $lumio_size && $lumio_size -eq $lumio_segments_size ]]; then
+          echo "Upload was done in ${duration}s. ( $speed MB/s )"
+          success=1
+      else
+         echo "Data upload failed!"
+         (( i = i + 1 ))
+         if [[ $i -gt 2 ]]; then
+            echo "Too many failed upload attempts"
+            failed_uploads=(${failed_uploads[@]} "$file")
+            success=1
+         else
+            echo "Retrying to upload $file"
+         fi
+         if [[  $file != "" ]]; then
+            rclone delete $RCLONE_DESTINATION:$bucket_name/$file
+            rclone delete $RCLONE_DESTINATION:${bucket_name}_segments/$file
+         fi
+      fi
+   done
+done
+
+# Upload the rest
+
+echo ""
+echo "Starting to upload files that are smaller than 5 GB."
+
+ftype=$(file $input | awk '{print $NF}')
+
+if [[ $ftype == "directory" ]] ; then
+   rclone --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
+else
+   rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
+fi
+
+echo "DONE uploading ${1}"
+
+if [[ ${#failed_uploads[@]} -gt 0 ]]; then
+  echo "NOTE! Not all files were successfully uploaded!"
+  echo "Upload failed for following files:"
+  for value in "${failed_uploads[@]}"
+  do
+       echo $value
+  done
+
+fi

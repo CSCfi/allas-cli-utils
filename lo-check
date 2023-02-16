@@ -1,0 +1,728 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]
+then
+  echo "Please give the name of a directory or file to be uploaded to lumio as an argument of this command."
+  echo "For more information, give command:"
+  echo " lo-put -h "
+  echo ""
+  exit 1
+fi
+
+start_time=$(date +%s)
+
+#default user
+user="$USER"
+
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/lo_env_conf
+source $inst_root/lumio-lib
+
+#local variables
+bucket_name="not_defined"
+fixed_bucket=0
+tmp_file="not_defined"
+print_help=0
+os_project_name="$OS_PROJECT_NAME"
+input_def=""
+mode="swift"
+silent=0
+#tmp_dir="${tmp_root}/a_put_$$_tmp"
+user_answer="x"
+free_space_check=1
+filelist_level=0
+cumulative_size=0
+override_mode=0
+asis_mode=0
+compression=0
+tar_extra_options=""
+encrypt=""
+all_keys=""
+include_ometa=1
+sdx=0
+meta_message=""
+check_mode=0
+max_files=100000
+
+# read customer defaults
+if [[ -e $HOME/.lo_tools_conf ]]; then
+   customized=1
+   source $HOME/.lo_tools_conf
+else
+   customized=0
+fi
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--bucket' | '-b' )
+                  bucket_name="$2"
+                  #Remove the trailing / if it exist
+                  bucket_name=$(remove_slash_from_ends $bucket_name)
+                  fixed_bucket=1
+                  shift
+                  shift
+                ;;
+             '--project' | '-p' )
+                  os_project_name=($2)
+                  shift
+                  shift
+                ;;
+             '--object' | '-o' )
+                  tmp_file="$2"
+                  slashcheck=$(echo $tmp_file | grep -c "/")
+                  if [[ $slashcheck -gt 0 ]]; then
+                     echo "Slash characters (/) are not allowed when object name is defined with -o option"
+                     echo "If you want to use slash characters to define a pseudo folder path, add that part of"
+                     echo "object name to the bucket definition (-b):"
+                     echo
+                     echo "     lo-put -b bucket-name/pseudo/folder/path -o rest-of-object-name "
+                     exit 1
+                  fi
+
+                  shift
+                  shift
+                ;;
+            '--s3cmd' | '--s3' | '-S' )
+                  mode=("s3cmd")
+                  shift
+                ;;
+             '--compress' | '-c')
+                  compression=1
+                  shift
+                ;;
+             '--nc' | '-n' )
+                  compression=0
+                  free_space_check=0
+                  shift
+                ;;
+             '-s' | '--silent' )
+                  silent=(1)
+                  shift
+                ;;
+             '-h' | '--help' )
+                  print_help=1
+                  shift
+                ;;
+             '--user' | '-u' )
+                  user=("$2")
+                  shift
+                  shift
+                ;;
+             '--tmpdir' | '-t' )
+                  tmp_root=("$2")
+                  shift
+                  shift
+                ;;
+              '-x')
+                  free_space_check=0
+                  shift
+                ;;
+              '--skip-filelist')
+                 filelist_level=2
+                 shift
+                ;;
+              '--override')
+                 override_mode=1
+                 shift
+                ;;
+               '--input-list')
+                  list_file=$2
+                  if [[ -e $list_file ]];then
+                    input_def=("$(cat $list_file)")
+                  else
+                    echo "Import file list $list_file not found"
+                    exit 1
+                  fi
+                  shift
+                  shift
+                ;;
+                '--asis' | '-a' )
+                   compression=0
+                   free_space_check=0
+                   asis_mode=1
+                   fnum=0
+                 shift
+                 ;;
+                 '-m' | '--message' )
+                   meta_message=$2
+                  shift
+                  shift
+                ;;
+
+                 '--no-ometa')
+                    include_ometa=0
+                    shift
+                 ;;
+                 '--follow-links' )
+                 tar_extra_options="-h"
+                 shift
+                 ;;
+                 '-e' | '--encrypt' )
+                 if [[ $2 == "c4gh" || $2 == "crypt4gh" ]];then
+                    if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		       echo ""
+		       echo "crypt4gh is not available!"
+		       echo "Please install crypt4gh if you want to use encryption."
+		       exit 1
+		    fi
+                    encrypt="crypt4gh"
+                 fi
+                 if [[ $2 == "gpg" ]];then
+                    if [[ $(which  gpg 2> /dev/null | wc -l ) -ne 1 ]];then
+	         	 echo ""
+		         echo "gpg is not available!"
+		         echo "Please install crypt4gh if you want to use encryption."
+		         exit 1
+		    fi
+                    encrypt="gpg"
+                 fi
+                 shift
+                 shift
+                 ;;
+                 '--pk' | '--public-key' )
+                 # query file
+                 public_key=$(abspath "$2")
+                 if [[ -e $public_key ]];then
+                    echo Public key: "$public_key"
+                    all_keys=$(echo -en  "$all_keys\t--recipient_pk\t$public_key\t")
+                    echo $all_keys
+                 else
+                    echo "Public key $public_key not found"
+                    exit 1
+                 fi
+                 shift
+                 shift
+                 ;;
+                 '--sdx' )
+                    if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
+		         echo ""
+		         echo "crypt4gh is not available!"
+		         echo "Please install crypt4gh if you want to use encryption."
+		         exit 1
+		    fi
+                    include_ometa=0
+                    encrypt="crypt4gh"
+                    compression=0
+                    sdx=1
+                    asis_mode=1
+                    fnum=0
+                 shift
+                 ;;
+
+             *)
+                   if [[ $input_def == "" ]]; then
+                      input_def=("$1")
+                      num_inputs=1
+                   else
+                      input_def=("$input_def $1")
+                      (( num_inputs = num_inputs + 1 ))
+                   fi
+                   shift                       # No more switches
+                ;;
+    esac
+done
+
+
+if [[ $print_help -eq 1 ]]; then
+cat <<EOF
+
+
+
+This tool is used to check if LUMI-O already includes objects that would matching objects
+that lo-put would create. This command can be use check the success of a data upload process
+done with lo-put. Alternatively, the results can be used to list objects that need to be removed
+or renamed, before uploading a new version of a dataset to LUMI-O
+For example, if you have uploaded a directory to LUMI-O using command:
+   lo-put datadir/*
+You can use command:
+   lo-check datadir/*
+To check if all the directories and files have corresponding objects in LUMI-O.
+If you have defined a bucket with option -b, you must include this option
+in the lo-check command too:
+  lo-put -b 123_bucket datadir/*
+Checking:
+  lo-check -b 123_bucket datadir/*
+
+Note that the checking is done only based on the names of files, directories and objects.
+The contents of the files and objects are not checked!
+lo-check command line options:
+
+-b, --bucket <bucket_name>  Define a name of the bucket into
+                            which the data is uploaded.
+
+-p, --project <project_ID>  Upload data into buckets of the defined
+                            project instead of the currently
+                            configured project.
+
+-o, --object <object_name>  Define a name for the new object to be
+                            created.
+
+-S, --s3cmd                 Use S3 protocol instead of swift protocol
+                            for upload.
+
+-n, --nc                    Do not compress the data that will be uploaded.
+                            (This is now the default mode thus this option is
+                            no longer needed).
+
+-c, --compress              The data is compressed using zstdmt command before
+                            upload.
+
+-h, --help                  Print this help.
+
+-t, --tmpdir                Define a directory that will be used to store
+                            temporary files of the upload process.
+
+-s, --silent                Less output
+
+-u, --user                  Define username liked to the data to be uploaded
+                            (default: current username)
+
+--skip-filelist             Do not collect information about the files that
+                            the object contains to the metadata file.
+                            Using this option speeds up the upload process
+                            significantly if the directory to be uploaded
+                            contains large amount of files. However, lo-find
+                            can't be used to locate objects uploaded this way.
+
+--no-ometa                  Don't create metadata objects ( _ometa ) for the
+                            stored data objects.
+
+-m, --message "your notes"  Add a one line text note to the metadata object.
+
+--override                  Allow overwriting existing objects.
+
+--input-list <list_file>    Give a file that lists the files or directories
+                            to be uploaded to LUMI-O.
+                            Each item will be stored as one object.
+
+-a, --asis                  Copy the given file or content of a directory to LUMI-O
+                            without compression and packing so that each file in the
+                            directory will be copied to LUMI-O as an individual object.
+                            The object name contains the relative path of the file to
+                            be copied.
+
+--follow-links              When uploading a directory, include linked files as real files
+                            instead of links.
+
+-e, --encrypt <method>     Options: gpg and c4gh. Encrypt data with gpg or crypt4gh.
+
+--pk, --public-key          Public key used for crypt4gh encryption.
+
+--sdx                       Upload data to LUMI-O in format format that is compatible with
+                            the CSC Sensitive data services: The files are encrypted with
+                            crypt4gh using CSC public key after which the files are imported
+                            to LUMI-O as individual objects as in --asis format.
+                            With --public-key you can do the encryption with both
+                            CSC and your own public key. By default data is stored to bucket with name:
+                            your-project-number_SD-CONNECT,
+
+
+Related commands: lo-find, lo-get, lo-delete, lo-info
+EOF
+
+exit
+
+fi
+
+make_temp_dir
+
+# note about customization
+if [[ $silent -eq 0 ]]; then
+   if [[ $customized -eq 1 ]]; then
+     echo "Customer settings read from $HOME/.lo_tools_conf"
+   fi
+fi
+
+##Assign project to be used if not defined
+#if [[ $os_project_name == "" ]]
+#then
+#  if [ -e $HOME/.lumio_default ]
+#  then
+#     source $HOME/.lumio_default
+#  else
+#     echo "Default project is not defined"
+#     source $lumio_conf_path -user $user
+#     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
+#     echo "Default lumio project is stored to  \$HOME/.lumio_default"
+#     echo ""
+#  fi
+#  source $HOME/.lumio_default
+#fi
+
+
+#Check if zstdmt is needed and available
+if [[ $compression -eq 1 ]]; then
+   if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo "Compression command: zstdmt is not available"
+      echo "Please install zstdmt or use lo-put without compression"
+      exit 1
+   fi
+fi
+
+#Check if rclone is available
+if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""
+      echo "rclone is not available!"
+      echo "Please install rclone."
+      exit 1
+fi
+
+# s3cmd mode
+if [[ $mode == "s3cmd" ]]; then
+   storage_server="s3lumio"
+fi
+
+
+#check free space in tmpdir
+if [[ $free_space_check -eq 1 ]]; then
+  if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
+      free_space=$(list-dir-quota $tmp_root | tail -1 | tr "/" " " | awk '{ a=$3-$2}{print a}')
+  else
+      free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
+  fi
+else
+    free_space=10000000000
+fi
+
+if [[ $silent -eq 0 ]] ; then
+ echo "Files or directories to be uploaded: $input_def"
+fi
+
+
+#Create file list in case of asis
+if [[ $asis_mode -eq 1 ]];then
+   if [[ $num_inputs -gt 1 ]]; then
+      echo "In asis and sensitive data mode you can define only one file or directory to be imported."
+      exit 1
+   fi
+   #For field separator changed to allow spaces in file names
+   #IFS contains the default field separator
+   SAVEIFS="$IFS"
+   #input_def=($(echo $input_def))
+   IFS=$(echo -en "\t\n\b")
+   #parse the file names from the target directory
+   input_def=("$(find $input_def -type f)")
+   #IFS=$SAVEFS
+   num_to_import=($(echo "$input_def" | wc -l ))
+   #IFS=$(echo -en " \n\b")
+   if [[ $num_to_import -lt 1 ]]; then
+          echo "Input definition: $one_input_def"
+          echo "don't return any files to input"
+          exit 1
+   fi
+fi
+
+printf "%18s %25s %6s %8s %25s\n" "Date" "Name" "Files" "Size(kB)" "Location in LUMI-O" >> ${tmp_dir}/upload.log
+
+
+for input in $input_def
+do
+  ##Check if connection works and update if needed and possible
+
+  filelist_level_orig=$filelist_level
+  if [[ $silent -eq 0 ]] ; then
+     echo "Processing: $input"
+  fi
+  if [[ ! -e $input ]] ; then
+    echo "File or directory $input does not exist!"
+    exit 1
+  fi
+
+  #Remove the trailing / if it exist
+  if [ $(echo -n $input | tail -c 1) == "/" ]
+  then
+    sl=$(expr ${#input} - 1)
+    input=$(echo $input | cut -c 1-$sl)
+  fi
+
+  #check that file name does not end with _ometa
+  if [[ ${input:(-6):6} == "_ometa" ]]; then
+    echo "Found a file/directory name which ends with _ometa"
+    echo "  $input"
+    echo ""
+    echo "Please rename this file as it will mix up a the metadata management of lo-put"
+    exit 1
+  fi
+
+  file_path=$(abspath $input)
+  if [[ $silent -eq 0 ]] ; then
+     echo "Checking total size of $input. Please wait."
+  fi
+  tot_size=$(du -s $input | cut -f1)
+  (( cumulative_size = cumulative_size + tot_size ))
+  #echo $tot_size
+
+  #tmp file name. Depends on compression and if file is a directory
+  if [  $tmp_file == "not_defined" ]
+  then
+    if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
+    then
+       if [[ $compression -eq 1 ]]; then
+          tmp_file=($(basename "$input" | tr " " "_" )".zst")
+       else
+          tmp_file=($(basename "$input" | tr " " "_" ))
+       fi
+    else
+       if [[ $compression -eq 1 ]]; then
+          tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
+       else
+          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+       fi
+    fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
+  else
+   if [[ $(file -b "$input" | grep -c directory ) -ne 1 ]]
+   then
+       if [[ $compression -eq 1 ]]; then
+          if [[ ${tmp_file: -4} != ".zst" ]]; then
+               tmp_file="${tmp_file}.zst"
+          fi
+       fi
+    else
+       if [[ $compression -eq 1 ]]; then
+         if [[ ${tmp_file: -8} != ".tar.zst" ]]; then
+           tmp_file="${tmp_file}.tar.zst"
+         fi
+       else
+         if [[ ${tmp_file: -4} != ".tar" ]]; then
+            tmp_file="${tmp_file}.tar"
+         fi
+       fi
+    tmp_file=$(remove_slash_from_ends $tmp_file)
+   fi
+  fi
+
+  # encryption name includes gpg
+  if [[ $encrypt == "gpg" ]];then
+     tmp_file="${tmp_file}.gpg"
+  fi
+
+
+  # encryption name includes c4gh
+  if [[ $encrypt == "crypt4gh" ]];then
+     tmp_file="${tmp_file}.c4gh"
+     if [[ $sdx -eq 0 ]]; then
+       if [[ $all_keys == "" ]];then
+          echo "Encryption key not defined"
+          echo "Use option --public-key to define the encryption key"
+          exit
+       fi
+     else
+       # Create key for sdx encryption
+       echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
+dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
+-----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
+     fi
+  fi
+
+
+  #In case of asis-upload, partial_path is the relative path
+  if [[ $asis_mode -eq 1 ]]; then
+      partial_path=$(dirname $input )
+      partial_path=$(remove_slash_from_ends $partial_path)
+      if [[ $partial_path == "." ]]; then
+          partial_path=""
+      fi
+      if [[ $silent -eq 0 ]] ; then
+        (( fnum = fnum + 1 ))
+        echo "$fnum/$num_to_import"
+      fi
+  fi
+
+
+  #Tarkista ollaanko koti vai työhakemistossa ja valitse ämpäri
+  #sen perusteella
+  project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+  # Default bucket for sdx mode
+  if [[ $sdx -eq 1 ]]; then
+    if [[ $bucket_name == "not_defined" ]]; then
+       bucket_name=("${project_label}-SD_CONNECT")
+    fi
+  fi
+
+  if [[ $bucket_name == "not_defined" ]]; then
+     #default
+     bucket_name=("${user}-${project_label}-MISC")
+
+     ## Puhti and Mahti
+     # In Puhti and Mahti we check if puhti-project and LUMI-O project match
+     #Puhti scratch
+     if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/scratch\/$puhti_project"/""/g)
+     fi
+     #FMI Puhti scratch
+     if [ $(echo $file_path  | cut -c1-12) == "/fmi/scratch" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in Scratch area of project: $puhti_project"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo ""
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/fmi\/scratch\/$puhti_project"/""/g)
+     fi
+
+     #Puhti and Mahti projappl
+     if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
+        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/projappl\/$puhti_project"/""/g)
+     fi
+
+     #Puhti FMI-projappl
+     if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
+     then
+        puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
+        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/fmi\/projappl\/$puhti_project"/""/g)
+     fi
+
+
+    #Puhti-NVME disk area
+    if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
+    then
+        puhti_project=$SLURM_JOB_ACCOUNT
+        bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
+        if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
+          echo ""
+          echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"
+          echo "But it will be stored to LUMI-O under project: $os_project_name"
+          echo "Bucket to be used is: $bucket_name"
+          echo "Is this OK (y/n)?"
+          read user_answer
+          if [[ $user_answer != "y" ]]; then
+             echo "Exiting, data not uploaded."
+             exit 0
+          fi
+        fi
+        partial_path=$(dirname $file_path | sed -e s/"\/run\/nvme\/job_$SLURM_JOB_ID\/data"/""/g)
+    fi
+    partial_path=$(remove_slash_from_ends $partial_path)
+  fi
+
+  #the name of the object to be created
+  if [[ $partial_path == "" ]]; then
+        target_location="${bucket_name}/${tmp_file}"
+  else
+        target_location="${bucket_name}/${partial_path}/$tmp_file"
+  fi
+
+
+  #Check if the object already exists
+  is_uploaded=0
+  if [[ $mode == "swift" ]];then
+    if [[ $partial_path == "" ]]; then
+      if [[ $(rclone ls ${storage_server}:${bucket_name}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
+      then
+          is_uploaded=1
+          lumio_object="${bucket_name}/${tmp_file}"
+          if [[ $quick_check -eq 0 ]]; then
+            ainfo=$(swift stat --lh ${bucket_name}  $tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+          else
+            ainfo="quick mode: Object details not checked"
+          fi
+      fi
+    else
+      if [[ $(rclone ls ${storage_server}:${bucket_name}/${partial_path}/$tmp_file 2> /dev/null | wc -c) -gt 0 ]]
+      then
+          is_uploaded=1
+          lumio_object="${bucket_name}/${partial_path}/${tmp_file}"
+          if [[ $quick_check -eq 0 ]]; then
+              ainfo=$(swift stat --lh ${bucket_name}  ${partial_path}/$tmp_file | grep "Length:\|Modified:" | awk -F ":" '{ print $2":"$3}' | tr -d "\n" )
+          else
+              ainfo="quick mode: Object details not checked"
+          fi
+      fi
+    fi
+  fi
+  #Print results
+  if [[ $is_uploaded -eq 1 ]]; then
+    printf "%45s %80s %25s %s\n" "$input" "$lumio_object" "$ainfo" "GMT"
+   else
+    printf  "%45s %80s\n" "$input" "No matching object in LUMI-O!"
+    echo "$input" >>  ${tmp_dir}/missing_files.txt
+  fi
+
+  tmp_file=("not_defined")
+
+done
+if [[ -e "${tmp_dir}/missing_files.txt" ]];then
+  echo "-----------------------------------------------------------------"
+  echo ""
+  echo "Following local files or directories do not have a matching object in LUMI-O:"
+  cat ${tmp_dir}/missing_files.txt
+  cp  ${tmp_dir}/missing_files.txt ./missing_${bucket_name}_$$
+  echo ""
+  echo "The names of missing files or directories, listed above, are stored to file:"
+  echo "     missing_${bucket_name}_$$"
+  echo "-----------------------------------------------------------------"
+else
+  echo "-----------------------------------------------------------------"
+  echo ""
+  echo "All files or directories matching to the input definition have a matching object in LUMI-O"
+  echo "Note that the check is based only on the names of files and directories."
+  echo "The actual content of the objects is not checked!"
+
+fi
+
+rm -f ${tmp_dir}/missing_files.txt
+rm -f ${tmp_dir}/upload.log
+clean_temp_dir
+
+exit 0
