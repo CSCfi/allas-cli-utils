@@ -556,7 +556,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [ $(echo $file_path  | cut -c1-8) == "/scratch" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
-        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        bucket_name=("${project_label}-SCRATCH")
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
@@ -576,7 +576,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [ $(echo $file_path  | cut -c1-12) == "/fmi/scratch" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
-        bucket_name=("${project_label}-${local_host}-SCRATCH")
+        bucket_name=("${project_label}-SCRATCH")
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in Scratch area of project: $puhti_project"
@@ -597,7 +597,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [ $(echo $file_path  | cut -c1-9) == "/projappl" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $3}')
-        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        bucket_name=("${project_label}-PROJAPPL")
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
@@ -617,7 +617,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
      then
         puhti_project=$(echo $file_path/ |awk -F "/" '{print $4}')
-        bucket_name=("${project_label}-${local_host}-PROJAPPL")
+        bucket_name=("${project_label}-PROJAPPL")
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in ProjAppl area of project: $puhti_project"
@@ -638,7 +638,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     if [ $(echo $file_path  | cut -c1-9) == "/run/nvme" ]
     then
         puhti_project=$SLURM_JOB_ACCOUNT
-        bucket_name=("${project_label}-${local_host}-LOCAL_SCRATCH")
+        bucket_name=("${project_label}-LOCAL_SCRATCH")
         if [[  $os_project_name  != $puhti_project ]] && [[ $user_answer != "y" ]] ; then
           echo ""
           echo "NOTE: data locates in LOCAL_SCRATCH area of project: $puhti_project"

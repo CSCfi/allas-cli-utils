@@ -51,14 +51,6 @@ Usage: source lumio_conf [OPTIONS] [PROJECT]
     OPTIONS
     -------
 
-     -m, --mode S3            Configure S3 API (default: S3)
-
-
-     --lumi, --mode lumi      Configure Lumi-O connection.
-
-     -u, --user USER          Storage server username (default: $USER)
-
-
      -c, --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
                               SIZE, in MB, are automatically uploaded
                               multithread-multipart  (default: 5000)
@@ -71,17 +63,6 @@ Usage: source lumio_conf [OPTIONS] [PROJECT]
                               sourced correctly. This option needs to be used in batch jobs.
 
      --s3remove               Remove S3 access key for an LUMI-O project.
-
-    DEPENDENCIES
-    ------------
-
-    This script uses openstack and swift/s3cmd utilities, which in
-    CSC servers are available using
-
-        module load lumi-o
-
-    On other machines these need to be installed separately, see README.md
-    for example.
 "
 
 local storage_service=("lumio")
@@ -110,16 +91,13 @@ local project_list_method=curl
 while [[ $# -ge 1 ]]; do
     case "$1" in
         '-h'|'-help'|'--help')  echo "$usage";           return 0;;
-        '-m'|'--mode')          mode="$2";               shift 2;;
         '-w'|'--show_keys')     show_keys=true;          shift;;
-        '-u'|'--user'|'-user')  export OS_USERNAME="$2"; shift 2;;
         '-k'|'--keeppasswd')    keep_password=true;      shift;;
         '-s'|'--silent')        echop=:;                 shift;;
         '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
         '-f'|'--force' )        force=true;              shift;;
         '--s3remove' )          mode=s3remove;           shift;;
         '--debug' )             debug=true;              shift;;
-        '--lumi')               mode="lumi";             shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -142,42 +120,18 @@ if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
     echo "Error: lumio_conf should not be executed directly. $usage" >&2
     exit 1
 fi
-
 case "$mode" in
-    's3cmd' | 's3' | 'S3' )
-        local use_s3cmd=true
-        ;;
     's3remove')
         local use_s3cmd=false
         local s3remove=true
         ;;
-    'lumi')
-        local use_s3cmd=true
-        ;;
     *)
         local use_s3cmd=true
+        mode=lumi
         ;;
 esac
 
 
-# Turn off lumi off default if configuration is not done for lumi
-if [[ mode != "lumi" ]]; then
-     if [[ -e $HOME/.lo_tools_conf ]]; then
-        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.lo_tools_conf)
-        if [[ $lumi_mode_check  -ne 0 ]]; then
-           echo "Lumi-o is set as the default object storage server in your local configuration file"
-           echo "Do you want to remove this setting and use LUMI-O a the defaut object storage server (y/n)?"
-           read ansver
-           if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
-                grep -v "storage_service=" $HOME/.lo_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.lo_tools_conf_$$
-                rm -f $HOME/.lo_tools_conf
-                mv  $HOME/.lo_tools_conf_$$ $HOME/.lo_tools_conf
-           fi
-        fi
-     fi
-fi
-
-# Setup commands for Lumi-O
 
 echo "Mode $mode"
 
@@ -239,7 +193,7 @@ if [[ $mode == "lumi" ]]; then
    echo ""
 
    #S3cmd parameters
-   rm $HOME/.s3cfg
+   rm -f $HOME/.s3cfg
    echo '[lumi-'${lumi_project_number}']' > $HOME/.s3cfg
    echo "access_key   = $S3_ACCESS_KEY_ID" >> $HOME/.s3cfg
    echo "secret_key   = $S3_SECRET_ACCESS_KEY"  >> $HOME/.s3cfg
@@ -250,9 +204,6 @@ if [[ $mode == "lumi" ]]; then
    echo "signature_v2 = True" >> $HOME/.s3cfg
    echo "use_https = True" >> $HOME/.s3cfg
 
-   echo "Do you want to make Lumi-O the default storage service for lo-commands (y/n)?"
-   read lumi_as_default
-   if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
     # define Lumi-o in customer defaults
      if [[ -e $HOME/.lp_tools_conf ]]; then
         grep -v "storage_service=" $HOME/.lo_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.lo_tools_conf_$$
@@ -262,13 +213,6 @@ if [[ $mode == "lumi" ]]; then
      echo "storage_service=lumi" >> $HOME/.lo_tools_conf
      echo "mode=lumi" >> $HOME/.lo_tools_conf
      echo "os_project_name=${lumi_project_number}" >> $HOME/.lo_tools_conf
-   else
-     echo "Lumi-O connection is activated but it is not used by default"
-     echo "When using lo-commands, add option:"
-     echo "    --lumi"
-     echo ""
-     echo "to the lo-commands to use Lumi-O in stead of LUMI-O."
-   fi
    return
 fi
 
@@ -285,31 +229,12 @@ fi
 
 
 
-# Check availability of command line tools
-
-if [[ $mode != "lumi" ]]; then
-  if [ -z "$OS_PROJECT_NAME" ] && ! command -v openstack >/dev/null 2>&1; then
-      echo -e "\nError: openstack command not found!" >&2
-      return 1
-  fi
-fi
 
 if $use_s3cmd && ! command -v s3cmd >/dev/null 2>&1; then
         echo -e "\nError: s3cmd command not found!" >&2
         return 1
 fi
 
-if [[ $auth_method == "swift" ]];then
-   if ! command -v swift >/dev/null 2>&1; then
-      echo -e "\nError: swift command not found!" >&2
-      return 1
-   fi
-else
-   if ! command -v curl >/dev/null 2>&1; then
-      echo -e "\nError: curl command was not found."
-      return 1
-   fi
-fi
 
 if ! command -v rclone >/dev/null 2>&1; then
     echo "NOTE: rclone command was not found."
