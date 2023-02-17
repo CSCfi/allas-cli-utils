@@ -1,0 +1,226 @@
+#!/bin/bash
+
+
+# check if this is executed as sourced command
+shell_check=`ps -hp $$|awk '{print $5}'| grep -c bash `
+
+
+if [[ $shell_check -ne 1 ]]; then
+   echo " lumio_conf is written for bash shell."
+   my_shell=`ps -hp $$|awk '{print $5}'`
+   echo " You are using $my_shell shell."
+   echo " This may cause this command to fail."
+   sleep 3
+fi
+
+
+export OS_PROJECT_NAME=""
+export OS_USERNAME=$(whoami)
+
+
+
+lumio_conf_scope () {
+
+local usage="
+
+Usage: lumio-conf [OPTIONS] [PROJECT]
+
+    This bash script sets up the environment variables and the configuration
+    files for accessing LUMI-O storage service.
+
+    OPTIONS
+    -------
+
+     -c, --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
+                              SIZE, in MB, are automatically uploaded
+                              multithread-multipart  (default: 5000)
+
+     -p, --project            Define LUMI-project to be used.
+
+     -s, --silent             Less output
+
+     --s3remove               Remove S3 access key
+"
+
+local storage_service=("lumio")
+local silent_mode=false
+local active_mode=false
+local echop=echo
+local chunk_size=5000
+local rconf=$HOME/.config/rclone/rclone.conf
+#these are used in curl authentication
+local s3remove=false
+local debug=false
+local devnull="/dev/null"
+
+# Process command line arguments
+
+while [[ $# -ge 1 ]]; do
+    case "$1" in
+        '-h'|'-help'|'--help')  echo "$usage";           return 0;;
+        '-s'|'--silent')        echop=:;                 shift;;
+        '-c'|'--chunksize')     chunk_size="$2";         shift 2;;
+        '--s3remove' )          s3remove=true;           shift;;
+        '--debug' )             debug=true;              shift;;
+        '-p'|'--project' )
+          if [[ -z $2 ]]; then
+              if [[ ${2::1} != "-" ]];then
+                export OS_PROJECT_NAME="$2"
+                shift
+              else
+                export OS_PROJECT_NAME=""
+              fi
+          else
+              export OS_PROJECT_NAME=""
+          fi
+          shift
+          ;;
+        *) export OS_PROJECT_NAME="$1";                  shift;;
+    esac
+done
+
+# Fix me  (fetch from auth.lumidata.eu)
+# Option to remove s3cmd key
+if $s3remove; then
+
+    echo "s3 access key removal requested" 
+    echo "Key management from the command line is not currently possible go to https://auth.lumidata.eu to manage keys".
+    echo "To revoke access on this machine only, remove the access_key and secret_key entires from ~/.config/rclone/rclone.conf and ~/.s3cfg "
+    exit 1
+
+fi
+
+
+echo "Please login to  https://auth.lumidata.eu/"
+echo "In the web interface, choose first the project you wish to use."
+echo "Next generate a new key or use existing valid key"
+echo "Open the Key details view and based on that give following information"
+if [[ -z $OS_PROJECT_NAME ]];then
+ echo "Lumi Project Number: "
+ read lumi_project_number
+else
+    lumi_project_number=$OS_PROJECT_NAME
+fi
+ lumi_project_number=$(echo $lumi_project_number | tr -d " ")
+echo "Access key:"
+read lumi_access_key
+lumi_access_key=$(echo $lumi_access_key | tr -d " ")
+echo "Secret key:"
+read lumi_secret_key
+lumi_secret_key=$(echo $lumi_secret_key | tr -d " ")
+
+#S3 parameters
+export AWS_ACCESS_KEY_ID="$lumi_access_key"
+export AWS_SECRET_ACCESS_KEY="$lumi_secret_key"
+export S3_ACCESS_KEY_ID="$lumi_access_key";
+export S3_SECRET_ACCESS_KEY="$lumi_secret_key";
+export S3_HOSTNAME=lumidata.eu;
+storage_service="lumi"
+export OS_PROJECT_NAME=$lumi_project_number
+
+#rclone parameters
+rclone config delete lumi-o
+rclone config delete lumi-pub
+mkdir -p  $HOME/.config/rclone/
+echo "" >> $HOME/.config/rclone/rclone.conf
+chmod go-rwx $HOME/.config/rclone/rclone.conf
+echo '[lumi-o]' >>  $HOME/.config/rclone/rclone.conf
+#echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
+echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
+echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
+echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
+echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf
+echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
+echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
+echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
+
+echo ""	
+echo "rclone remote lumi-o: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
+echo ""
+echo ""  >>  $HOME/.config/rclone/rclone.conf
+echo '[lumi-pub]' >>  $HOME/.config/rclone/rclone.conf
+#echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
+echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
+echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
+echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
+echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf
+echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
+echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
+echo 'acl = public-read' >>  $HOME/.config/rclone/rclone.conf
+
+echo "rclone remote lumi-pub: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
+echo -e "\t Data pushed here is publicly available using the URL: https://462000140.lumidata.eu/<bucket_name>/<object>"
+
+#S3cmd parameters
+rm -f $HOME/.s3cfg
+echo '[lumi-'${lumi_project_number}']' > $HOME/.s3cfg
+echo "access_key   = $S3_ACCESS_KEY_ID" >> $HOME/.s3cfg
+echo "secret_key   = $S3_SECRET_ACCESS_KEY"  >> $HOME/.s3cfg
+echo "host_base    = https://lumidata.eu" >> $HOME/.s3cfg
+echo "host_bucket  = https://lumidata.eu" >> $HOME/.s3cfg
+echo "human_readable_sizes = True" >> $HOME/.s3cfg
+echo "enable_multipart = True" >> $HOME/.s3cfg
+echo "signature_v2 = True" >> $HOME/.s3cfg
+echo "use_https = True" >> $HOME/.s3cfg
+
+ # define Lumi-o in customer defaults
+  if [[ -e $HOME/.lp_tools_conf ]]; then
+     grep -v "storage_service=" $HOME/.lo_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.lo_tools_conf_$$
+     rm -f $HOME/.lp_tools_conf
+     mv  $HOME/.lp_tools_conf_$$ $HOME/.lo_tools_conf
+  fi
+  echo "storage_service=lumi" >> $HOME/.lo_tools_conf
+  echo "mode=lumi" >> $HOME/.lo_tools_conf
+  echo "os_project_name=${lumi_project_number}" >> $HOME/.lo_tools_conf
+return
+
+
+
+if [[ "$chunk_size" -lt 5 || "$chunk_size" -gt 5000 || \
+          ! "$chunk_size" =~ ^[0-9]+$ ]]; then
+    echo "\nError: Invalid chuck size. $usage" >&2
+    return 1
+fi
+
+_tools=(s3cmd rclone restic)
+for t in "${_tools[@]}";do
+    if ! command -v $t >/dev/null 2>&1; then
+        echo "NOTE: $t command was not found."
+    fi
+done
+
+#rclone configuration file check
+if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]; then
+       mkdir -p  $HOME/.config/rclone/
+       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf
+       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf
+       echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
+       if [[ $silent_mode = "false" ]]; then
+           echo ""
+           echo "$storage_service service added to the rclone configuration file."
+       fi
+fi
+
+echo "Configuration will be done for project: $OS_PROJECT_NAME"
+
+
+## 7. Create lumio_default and unset some variables
+#reset lumio_default
+echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.lumio_default
+echo "user=$OS_USERNAME" >>  $HOME/.lumio_default
+
+# unset variables unnecessary for token access or user/project info for the user
+# These need to be kept if you want to use openstack
+
+}
+
+function rclone() {
+  if [[ "$1" = 'info' ]]; then
+    echo 'Do not use rclone command "info"' >&2
+    else command rclone "$@"
+  fi
+}
+
+
+lumio_conf_scope "$@"
+unset -f lumio_conf_scope
