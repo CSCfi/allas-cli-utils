@@ -8,21 +8,22 @@ source $inst_root/a_env_conf
 #allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
-bucket_name=("${project_label}-BACKUP")
-repository=("swift:${bucket_name}:/backup")
-rpath=("")
-input=("")
-options=("")
-target=(./)
-help=(0)
+bucket_name="${project_label}-BACKUP"
+repository="swift:${bucket_name}:/backup"
+rpath=""
+input=""
+get_file=""
+options=""
+target="./"
+help=0
 
-if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" || $1 == "files" ]]
+if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ]]
 then
-   task=("$1")
+   task="$1"
    shift
 else
    if [[ -e $1 ]] ;then
-     task=("add")
+     task="add"
      input=$1
    else
       help=(1)
@@ -36,7 +37,7 @@ do
   case "$1" in
               '-b' | '-bucket')
                 bucket_name="$2"
-                repository=("swift:${bucket_name}:/backup")
+                repository="swift:${bucket_name}:/backup"
                 shift
                 shift
                 ;;
@@ -46,21 +47,26 @@ do
                 shift
               ;;
               '-project')
-                os_project_name=($2)
+                os_project_name="$2"
                 shift
                 shift
               ;;
                '-path')
-                options=("$options --path $2")
+                options="$options --path $2"
                 shift
                 shift
               ;;
                '-last')
-                options=("$options --last")
+                options="$options --last"
                 shift
               ;;
               '-target')
-                target=("$2")
+                target="$2"
+                shift
+                shift
+              ;;
+              '-file')
+                get_file="$2"
                 shift
                 shift
               ;;
@@ -126,10 +132,10 @@ allas-backup can be used for following five operations:
 
   allas-backup <file_name>  or
   allas-backup add <file_name>       Add a new backup version (snapshot) of the given file 
-                                 or directory to the back up repository.
+                                     or directory to the back up repository.
 
   allas-backup list                  Lists the snapshots saved to the repository. 
-                                 Option: -last lists only the latest versions of different snapshots.
+                                     Option: -last lists only the latest versions of different snapshots.
  
   allas-backup files <snapshot_id>   List the files that the snapshot includes.
 
@@ -140,6 +146,10 @@ allas-backup can be used for following five operations:
                                  defined with -target option.
 
   allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
+
+  allas-backup dump <snapshot_id> -f <file>   Retrieve contents of a file in the snapshot.
+
+  allas-backup unlock                Remove Restic lock files.
 
   Extra options:
  
@@ -244,14 +254,32 @@ fi
   
 if [[ $task == "delete" ]]
 then
+  restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
+fi 
+
+
+if [[ $task == "unlock" ]]
+then
+  restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
+fi 
+
+
+
+if [[ $task == "dump" ]]
+then
+  if [[ $get_file == "" ]];then 
+     echo "No file name defined. Please give the file name using command line option: -file."
+     echo ""
+     exit 1
+  fi
+
   if [[ $input == "" ]]; then
      echo "No snapshot name defined. Please give the snapshot name as a command line argument."
      echo ""
      exit 1
   fi
-  restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input 
+  restic dump --repo $repository -p $HOME/.backup_passwd_${project_label} $input $get_file
 fi 
-
 
 #Execute log creation
 message="$0 $(date) allas-backup $task "
