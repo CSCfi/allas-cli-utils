@@ -251,13 +251,18 @@ then
   fi
   restic restore --repo $repository -p $HOME/.backup_passwd_${project_label} $input --target $target $options
 fi
-  
+ 
+
 if [[ $task == "delete" ]]
 then
-  restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
+  if [[ $input == "" ]]; then
+     echo "No snapshot name defined. Please give the snapshot name as a command line argument."
+     echo ""
+     exit 1
+  fi
+  restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input 
 fi 
-
-
+ 
 if [[ $task == "unlock" ]]
 then
   restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
