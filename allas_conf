@@ -576,8 +576,9 @@ if $use_s3cmd; then
     fi
 
    local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
-
-   echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
+   
+   if [[ $debug == "true" ]];then
+      echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
        s3cmd --configure \
              --access_key=$ACCESS_KEY \
              --secret_key=$SECRET_KEY \
@@ -585,6 +586,15 @@ if $use_s3cmd; then
              --multipart-chunk-size-mb=$chunk_size \
              --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull
    #replace default signurl_use_https
+   else 
+       echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
+       s3cmd --configure \
+             --access_key=$ACCESS_KEY \
+             --secret_key=$SECRET_KEY \
+             --host=a3s.fi \
+             --multipart-chunk-size-mb=$chunk_size \
+             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull >$devnull
+   fi
    grep -v signurl_use_https $HOME/.s3cfg_$$ | grep -v public_url_use_https > $HOME/.s3cfg
    rm -f  $HOME/.s3cfg_$$
    echo "signurl_use_https = True" >> $HOME/.s3cfg
