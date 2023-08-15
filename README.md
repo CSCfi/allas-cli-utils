@@ -151,7 +151,7 @@ a-list
 ```
 
 
-In MacOS X systems md5sum command may be missing. To fix that, there is simple replacement script (md5sum.macosx) that
+allas_conf and basic a- commands now support MacOS (but you still must use bash in MacOS to run them). In case md5 cheksum command still fails, there is simple replacement script (md5sum.macosx) that
 you can take in use in macs by giving following in the command in the allas-cli-utils directory:
 ```
 mv md5sum.macosx md5sum
