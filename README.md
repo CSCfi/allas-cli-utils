@@ -157,6 +157,21 @@ you can take in use in macs by giving following in the command in the allas-cli-
 mv md5sum.macosx md5sum
 ```
 
+Example commands in macOS to install python3 libraries in to atools-venv directory for allas-cli-utilities using bash in macOS (note that you also need binaries like rclone and allas-cli-utilities itself from github):
+```
+python3 -m venv atools-venv
+source atools-venv/bin/activate
+pip3 install --upgrade pip
+pip3 install openstackclient
+pip3 install s3cmd
+```
+
+Then the "normal" way to start using Allas in macOS in a bash session would be like (exact details would depend on how you want to manage your PATH etc):
+```
+source atools-venv/bin/activate
+source allas_conf
+```
+
 ## Configuring a-commands
 
 You can define the default settings that the a-tools use in two files: a_env_conf and .a_tools_conf. These settings affect mostly to the a-put data upload command.
