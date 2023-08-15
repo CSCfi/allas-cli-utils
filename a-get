@@ -104,6 +104,11 @@ do
                   shift
                   shift
                 ;;
+             '--tmpdir' | '-T' )
+                  tmp_root="$2"
+                  shift
+                  shift
+                ;;
              '-h' | '--help' )
                   print_help=1
                   shift
@@ -148,6 +153,10 @@ Options:
 --asis                        Download the object without unpacking tar files and decompressing zst compressed data.
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
+
+-T, --tmpdir                  Define a directory that will be used to store 
+                              temporary files of the download process.
+
 
 --allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
                               Normally this (Allas with swft) is the default and this option is not needed,
@@ -369,6 +378,8 @@ fi
 
 #If selected, extract to the same place were data was from.
 if [[ to_orig_dir -eq 1 ]]; then
+   echo "orig dir:"
+   rclone cat  ${storage_server}:${object_name}_ameta | awk '{ if ( $1 == "original_location:" ) print $2}'
    orig_dir=$(dirname $(rclone cat  ${storage_server}:${object_name}_ameta | awk '{ if ( $1 == "original_location:" ) print $2}'))
    mkdir -p $orig_dir
    cd $orig_dir
