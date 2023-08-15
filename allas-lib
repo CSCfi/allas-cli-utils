@@ -1,7 +1,21 @@
 
+# local file checksum
+checksum_tmpdir_tmpfile () {
+	if [ $(uname -s) == 'Darwin' ]; then
+		sum=$(md5 -r ${tmp_dir}/$tmp_file | awk '{print $1}')
+	else
+		sum=$(md5sum ${tmp_dir}/$tmp_file | awk '{print $1}')
+	fi
+	echo "$sum"
+}
+
 # make secure temp dir and set the global tmp_dir to it
 function make_temp_dir {
-	tmp_dir=$(mktemp -d -p ${tmp_root} allas-cli-tools-XXXXXX)
+	if [ $(uname -s) == 'Darwin' ]; then
+		tmp_dir=$(mktemp -d -t allas-cli-tools)
+	else
+		tmp_dir=$(mktemp -d -p ${tmp_root} allas-cli-tools-XXXXXX)
+	fi
 }
 
 # remove tmp_dir if it exists

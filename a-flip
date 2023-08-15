@@ -243,7 +243,7 @@ do
   then
      echo "Confirming upload..."
      #checksums for local and allas files
-     sum1=($(md5sum ${tmp_dir}/$tmp_file))
+     sum1=$(checksum_tmpdir_tmpfile)
      sum2=($(rclone md5sum  ${storage_server}:${bucket_name}/$tmp_file))
 
      #check is checksums match

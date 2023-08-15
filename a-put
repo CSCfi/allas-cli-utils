@@ -1114,7 +1114,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         echo "Confirming upload..."
      fi
      #checksums for local and allas files 
-     sum1=$(md5sum ${tmp_dir}/$tmp_file | awk '{print $1}')
+     sum1=$(checksum_tmpdir_tmpfile)
      if [[ $partial_path == "" ]] ; then
         allas_path="${storage_server}:${bucket_name}/$tmp_file"
      else

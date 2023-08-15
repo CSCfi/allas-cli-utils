@@ -2,12 +2,14 @@
 
 
 # check if this is executed as sourced command
-shell_check=`ps -hp $$|awk '{print $5}'| grep -c bash `
+PS_ARG_NUM=5
+if [ $(uname -s) == 'Darwin' ]; then PS_ARG_NUM=4; fi
+shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| grep -c bash)
 
 
 if [[ $shell_check -ne 1 ]]; then
    echo " allas_conf is written for bash shell."
-   my_shell=`ps -hp $$|awk '{print $5}'`
+   my_shell=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}')
    echo " You are using $my_shell shell."
    echo " This may cause this command to fail."
    sleep 3
