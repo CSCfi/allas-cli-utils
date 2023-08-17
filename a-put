@@ -1042,14 +1042,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      # synchronization needed to get correct size with du
      #sync
      crypt_size=$(du ${tmp_dir}/$tmp_file.tmp | awk '{print $1}')
-     #if [[ $crypt_size -lt $tmp_size ]]; then
+     if [[ $crypt_size -lt 1 ]]; then
+         echo "Encryption failed"
      #   echo "Error: Encryption produced a file that is smaller than the original file!"
-     #   echo "Chech that crypt4gh works properly and that you have enough free spcace in $tmp_root"
-     #   exit 1
-     #fi
-     if [[ $silent -eq 0 ]] ; then
-        echo "Size of the encrypted file is: ${crypt_size}K"
+         echo "Chech that crypt4gh works properly and that you have enough free spcace in $tmp_root"
+         exit 1
      fi
+     #if [[ $silent -eq 0 ]] ; then
+     #   echo "Size of the encrypted file is: ${crypt_size}K"
+     #fi
      rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
      tmp_size=$crypt_size
