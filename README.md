@@ -94,6 +94,7 @@ sudo apt-get install python-setuptools
 pip install --upgrade pip
 pip install python-openstackclient
 pip install crypt4gh
+pip install s3cmd
 
 #install swift client
 sudo apt install python3-swiftclient

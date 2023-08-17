@@ -396,6 +396,8 @@ exit
 
 fi 
 
+add_os_tar_extra_options
+
 # note about customization 
 if [[ $silent -eq 0 ]]; then
    if [[ $customized -eq 1 ]]; then
@@ -956,11 +958,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         #compress data
         if [[ $silent -eq 0 ]] ; then
            echo "Collecting data from directory $input to archive file: $tmp_file"
-           tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
+           tar $tar_extra_options -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file
            exitcode=$?
        	   (( packing_failed = packing_failed + exitcode ))
         else
-           tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
+           tar $tar_extra_options -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 ) | zstdmt -T2 > ${tmp_dir}/$tmp_file 2> /dev/null
            exitcode=$?
        	   (( packing_failed = packing_failed + exitcode ))
         fi
@@ -979,11 +981,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          #Hakeisto tar-pakettina      
          if [[ $silent -eq 0 ]] ; then
              echo "Collecting data from directory $input to archive file: $tmp_file"
-             tar "$tar_extra_options" -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
+             tar $tar_extra_options -cvf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file
              exitcode=$?
              (( packing_failed = packing_failed + exitcode ))
          else
-             tar "$tar_extra_options" -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
+             tar $tar_extra_options -cf - "$input"  2> >(tee ${tmp_dir}/tar_list  >&2 )  > ${tmp_dir}/$tmp_file 2> /dev/null
              exitcode=$?
              (( packing_failed = packing_failed + exitcode ))
          fi
