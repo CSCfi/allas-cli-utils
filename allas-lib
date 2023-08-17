@@ -1,4 +1,11 @@
 
+# OS spesific tar_extra_options
+add_os_tar_extra_options () {
+	if [ $(uname -s) == 'Darwin' ]; then
+		tar_extra_options="$tar_extra_options --exclude *.DS_Store"
+	fi
+}
+
 # local file checksum
 checksum_tmpdir_tmpfile () {
 	if [ $(uname -s) == 'Darwin' ]; then
