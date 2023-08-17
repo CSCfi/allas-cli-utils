@@ -112,7 +112,7 @@ local silent_mode=false
 local active_mode=false
 local echop=echo
 local chunk_size=5000
-local rconf=$HOME/.config/rclone/rclone.conf
+local rconf=${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}
 local mode=swift
 local force=false
 #auth_method options are curl and swift
@@ -249,31 +249,31 @@ if [[ $mode == "lumi" ]]; then
    #rclone parameters
    rclone config delete lumi-o
    rclone config delete lumi-pub
-   mkdir -p  $HOME/.config/rclone/
-   echo "" >> $HOME/.config/rclone/rclone.conf
-   chmod go-rwx $HOME/.config/rclone/rclone.conf
-   echo '[lumi-o]' >>  $HOME/.config/rclone/rclone.conf
-   #echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
-   echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
-   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
-   echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
-   echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
+   mkdir -p  "${rconf%/*}"
+   echo "" >> "$rconf"
+   chmod go-rwx "$rconf"
+   echo '[lumi-o]' >>  "$rconf"
+   #echo '['$storage_service']' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Ceph' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> "$rconf"
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> "$rconf"
+   echo 'endpoint = https://lumidata.eu' >>  "$rconf"
+   echo 'acl = private' >>  "$rconf"
 
    echo "rclone remote lumi-o: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
    echo ""  
-   echo ""  >>  $HOME/.config/rclone/rclone.conf
-   echo '[lumi-pub]' >>  $HOME/.config/rclone/rclone.conf
-   #echo '['$storage_service']' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
-   echo 'provider = Ceph' >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $S3_ACCESS_KEY_ID" >> $HOME/.config/rclone/rclone.conf 
-   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf
-   echo 'endpoint = https://lumidata.eu' >>  $HOME/.config/rclone/rclone.conf
-   echo 'acl = public-read' >>  $HOME/.config/rclone/rclone.conf
+   echo ""  >>  "$rconf"
+   echo '[lumi-pub]' >>  "$rconf"
+   #echo '['$storage_service']' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Ceph' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> "$rconf"
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> "$rconf"
+   echo 'endpoint = https://lumidata.eu' >>  "$rconf"
+   echo 'acl = public-read' >>  "$rconf"
 
    echo "rclone remote lumi-pub: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
    echo ""  
@@ -462,11 +462,11 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 fi
 
 #rclone configuration file check
-if [[ $(grep -c "\[$storage_service\]"  $HOME/.config/rclone/rclone.conf 2> /dev/null ) -lt 1 ]]; then
-       mkdir -p  $HOME/.config/rclone/
-       echo '['"$storage_service"']' >> $HOME/.config/rclone/rclone.conf 
-       echo 'type = swift' >>  $HOME/.config/rclone/rclone.conf 
-       echo 'env_auth = true'  >>  $HOME/.config/rclone/rclone.conf
+if [[ $(grep -c "\[$storage_service\]"  "$rconf" 2> /dev/null ) -lt 1 ]]; then
+       mkdir -p  "${rconf%/*}"
+       echo '['"$storage_service"']' >> "$rconf"
+       echo 'type = swift' >>  "$rconf"
+       echo 'env_auth = true'  >>  "$rconf"
        if [[ $silent_mode = "false" ]]; then
            echo ""
            echo "$storage_service service added to the rclone configuration file."
@@ -618,17 +618,17 @@ if $use_s3cmd; then
 
    #s3allas for rclone
    rclone config delete s3allas
-   mkdir -p  $HOME/.config/rclone/
-   echo "" >> $HOME/.config/rclone/rclone.conf
-   chmod go-rwx $HOME/.config/rclone/rclone.conf
-   echo '[s3allas]' >>  $HOME/.config/rclone/rclone.conf
-   echo 'type = s3' >>  $HOME/.config/rclone/rclone.conf
-   echo 'provider = Other' >>  $HOME/.config/rclone/rclone.conf
-   echo 'env_auth = false' >>  $HOME/.config/rclone/rclone.conf
-   echo "access_key_id = $ACCESS_KEY" >> $HOME/.config/rclone/rclone.conf 
-   echo "secret_access_key = $SECRET_KEY" >> $HOME/.config/rclone/rclone.conf
-   echo 'endpoint = a3s.fi' >>  $HOME/.config/rclone/rclone.conf
-   echo 'acl = private' >>  $HOME/.config/rclone/rclone.conf
+   mkdir -p  "${rconf%/*}"
+   echo "" >> "$rconf"
+   chmod go-rwx "$rconf"
+   echo '[s3allas]' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Other' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $ACCESS_KEY" >> "$rconf"
+   echo "secret_access_key = $SECRET_KEY" >> "$rconf"
+   echo 'endpoint = a3s.fi' >>  "$rconf"
+   echo 'acl = private' >>  "$rconf"
 
    echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
    echo ""
