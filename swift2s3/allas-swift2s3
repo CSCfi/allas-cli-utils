@@ -1,0 +1,126 @@
+#!/bin/sh
+
+# copy Allas swift bucket objects to s3 bucket
+
+if [ $# -lt 4 -o $# -gt 5 -o "$1" == "-h" ]; then
+cat <<EOF
+
+usage: allas-swift2s3 [-h|-1|-2] source-bucket destination-bucket tmp-dir tmp-object-dir
+
+Copies Allas swift bucket objects to s3 bucket. Does not copy metadata.
+
+Requires valid both swift and s3 authentication, easiest with
+"allas-conf --mode both". Requires rclone, python3, aws (python client),
+boto3 (aws python lib).
+
+If there are segmented objects, requires at least size of the biggest object
+free space in the tmp-object-dir. In addition to free space for possible
+segmented object, tmp-dir needs some space for object listings.
+
+Optional args:
+  -h = This help.
+  -1 = Run only the info retrieving (phase 1).
+       Requires valid both swift and s3 authentication.
+       Saves info in to tmp-dir.
+  -2 = Run only the object copying (phase 2).
+       Requires valid s3 authentication.
+       Also requires tmp files from phase 1 tmp-dir.
+EOF
+exit 1
+fi
+
+RUN_INFO=true
+RUN_COPY=true
+if [ "$1" == "-1" ]; then RUN_COPY=false; shift; fi
+if [ "$1" == "-2" ]; then RUN_INFO=false; shift; fi
+
+BUCKET="$1"
+DEST_BUCKET="$2"
+LIST_DIR=$(echo "$3" | sed 's/\/$//')
+TMP_FILE_DIR=$(echo "$4" | sed 's/\/$//')
+
+if [ ! -d "$LIST_DIR" ]; then
+	echo "error: directory \"$LIST_DIR\" not found" >&2
+	exit 1
+fi
+if [ "$RUN_COPY" == true -a ! -d "$TMP_FILE_DIR" ]; then
+	echo "error: directory \"$TMP_FILE_DIR\" not found" >&2
+	exit 1
+fi
+
+INST_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# phase 1
+
+if [ "$RUN_INFO" == true ]; then
+	echo $(date +%Y%m%d-%H%M%S)" Retrieving information about source objects..."
+
+	"$INST_ROOT"/s2s3-retrieve-info.py "$BUCKET" "$LIST_DIR/"
+fi
+
+if [ "$RUN_COPY" == false ]; then
+	echo $(date +%Y%m%d-%H%M%S)" Done"
+	exit
+fi
+
+# phase 2
+
+COUNT=$(wc -l "$LIST_DIR/$BUCKET" 2>/dev/null | awk '{print $1}')
+if [ "$COUNT" == "" ]; then
+	echo "error: could not read \"$LIST_DIR/$BUCKET\"" >&2
+	exit 1
+fi
+if [ "$COUNT" == "0" ]; then
+	echo "No non-segmented objects in the source bucket" >&2
+else
+	echo $(date +%Y%m%d-%H%M%S)" Copying $COUNT non-segmented objects..."
+	rclone copy --files-from-raw "$LIST_DIR/$BUCKET" s3allas:"$BUCKET" s3allas:"$DEST_BUCKET"
+fi
+
+COUNT_SEGMENTED=$(wc -l "$LIST_DIR/${BUCKET}_segmented" 2>/dev/null | awk '{print $1}')
+if [ "$COUNT_SEGMENTED" == "" ]; then
+	echo "error: could not read \"$LIST_DIR/${BUCKET}_segmented\"" >&2
+	exit 1
+fi
+if [ "$COUNT_SEGMENTED" == "0" ]; then
+	echo "No segmented objects in the source bucket" >&2
+	echo $(date +%Y%m%d-%H%M%S)" Done"
+	exit 0
+fi
+
+echo $(date +%Y%m%d-%H%M%S)" Copying $COUNT_SEGMENTED segmented objects..."
+
+BUCKET_SEGMENTS=""
+
+# copy loop
+
+cat "${LIST_DIR}/${BUCKET}_segmented" | while read line
+do
+	FILE_PATH=$(echo "$line" | awk -F$'\t' '{print $1}')
+	FILE=$(echo "$FILE_PATH" | sed 's/.*\///')
+	BUCKET_SEGMENTS=$(echo "$line" | awk -F$'\t' '{print $2}')
+	SEGMENT_PREFIX=$(echo "$line" | awk -F$'\t' '{print $3}')
+
+	rclone copy --ignore-checksum s3allas:"${BUCKET}/${FILE_PATH}" "$TMP_FILE_DIR"
+
+	if [ "$BUCKET_SEGMENTS" != "" -a "$SEGMENT_PREFIX" != "" ]; then
+		OUT=$(aws --endpoint=https://a3s.fi s3api list-objects-v2 --bucket "$BUCKET_SEGMENTS" --prefix "$SEGMENT_PREFIX")
+		if [ "$?" == "0" -a "$OUT" != "" ]; then
+			echo "$OUT" | "$INST_ROOT"/s2s3-segment-check.py "$TMP_FILE_DIR/$FILE"
+		else
+			echo "error: failed to get segment information for file: $FILE_PATH" >&2
+			echo "$OUT" >&2
+		fi
+	else
+		echo "warning: can't check segment checksums for file: $FILE_PATH" >&2
+	fi
+
+	DEST_PATH=$(echo "$FILE_PATH" | sed 's/[^\/]*$//')
+	rclone copy "$TMP_FILE_DIR/$FILE" s3allas:"${DEST_BUCKET}/${DEST_PATH}"
+
+	rm "$TMP_FILE_DIR/$FILE"
+
+done
+
+echo $(date +%Y%m%d-%H%M%S)" Done"
+
