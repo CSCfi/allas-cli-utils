@@ -1238,6 +1238,9 @@ rm -f ${tmp_dir}/upload.log
 clean_temp_dir
 end_time=$(date +%s)
 (( kesto = end_time - start_time ))
+if [[ $kesto -lt 1 ]]; then
+   kesto=1
+fi
 (( nopeus = cumulative_size / kesto ))
 (( nopeusmbs = nopeus / 1000 ))
 
