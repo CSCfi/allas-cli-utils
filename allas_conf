@@ -128,6 +128,7 @@ local devnull="/dev/null"
 local ood=false
 #project_list_method options are curl and openstack
 local project_list_method=curl
+local sd_connect=false
 
 # Process command line arguments
 
@@ -147,6 +148,7 @@ while [[ $# -ge 1 ]]; do
         '--debug' )             debug=true;              shift;;
         '--store-token' )       ood=true;                shift;;
         '--lumi')               mode="lumi";             shift;;
+        '--sd' )                sd_connect=true; keep_password=true;      shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -551,10 +553,29 @@ if $use_swift; then
             #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi
     fi
-   if $ood; then
-     echo "OS_AUTH_TOKEN=$OS_AUTH_TOKEN" > $HOME/.allas_connection
-     echo "OS_STORAGE_URL=$OS_STORAGE_URL" >> $HOME/.allas_connection
-   fi
+    if $ood; then
+       echo "OS_AUTH_TOKEN=$OS_AUTH_TOKEN" > $HOME/.allas_connection
+       echo "OS_STORAGE_URL=$OS_STORAGE_URL" >> $HOME/.allas_connection
+    fi
+    if $sd_connect; then
+         sd_server=https://sd-connect.sd.csc.fi 
+         export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
+         
+         if [[ $SD_CONNECT_API_TOKEN == "" ]]; then
+             export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
+             echo "Please give your SD Connect API token"
+             echo "If you don't hava a valid API token, login to $sd_server"
+             echo "In the web interface, select: Support and then: Create API tokens."
+             echo " "
+             echo "SD Connect API token:"
+             read SD_CONNECT_API_TOKEN   
+             export SD_CONNECT_API_TOKEN
+         fi 
+         export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+         echo "Using $sd_server"
+         echo "With project $OS_PROJECT_NAME"
+         echo "And token: $SD_CONNECT_API_TOKEN"
+    fi
 fi
 
 
