@@ -39,6 +39,11 @@ DEST_BUCKET="$2"
 LIST_DIR=$(echo "$3" | sed 's/\/$//')
 TMP_FILE_DIR=$(echo "$4" | sed 's/\/$//')
 
+if [ "$BUCKET" == "$DEST_BUCKET" ]; then
+	echo "error: source-bucket and destination-bucket must be different" >&2
+	exit 1
+fi
+
 if [ ! -d "$LIST_DIR" ]; then
 	echo "error: directory \"$LIST_DIR\" not found" >&2
 	exit 1
