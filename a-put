@@ -1041,10 +1041,11 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      # Use file size to check that all data is encrypted
      # synchronization needed to get correct size with du
      #sync
-     crypt_size=$(du ${tmp_dir}/$tmp_file.tmp | awk '{print $1}')
-     if [[ $crypt_size -lt 1 ]]; then
+     original_size=$(du --apparent-size ${tmp_dir}/$tmp_file | awk '{print $1}')
+     crypt_size=$(du --apparent-size ${tmp_dir}/$tmp_file.tmp | awk '{print $1}')
+     if [[ $crypt_size -lt $original_size ]]; then
          echo "Encryption failed"
-     #   echo "Error: Encryption produced a file that is smaller than the original file!"
+         echo "Error: Encryption produced a file that is smaller than the original file!"
          echo "Chech that crypt4gh works properly and that you have enough free spcace in $tmp_root"
          exit 1
      fi
