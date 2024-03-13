@@ -1049,9 +1049,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          echo "Chech that crypt4gh works properly and that you have enough free spcace in $tmp_root"
          exit 1
      fi
-     #if [[ $silent -eq 0 ]] ; then
-     #   echo "Size of the encrypted file is: ${crypt_size}K"
-     #fi
+     if [[ $silent -eq 0 ]] ; then
+        echo "Encryption successfull."
+     fi
      rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
      tmp_size=$crypt_size
