@@ -3,6 +3,8 @@
 # Usage: source this_script [-h] [oldtoken [projectid]]
  
 # Script to get new token from Allas with the help of existing and valid project token
+# Note that the expiration time of the new token will be the same as the old token
+
 # If the script is run as a script, then the new token is echoed to stdout
 # If the script is sourced, then the new token replaces the old token in the environment variable OS_AUTH_TOKEN
 # By default the script uses OS_AUTH_TOKEN for old token and OS_STORAGE_URL to get the project id
@@ -34,7 +36,7 @@ else
         # authenticate and get return values
         OUT=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 <<< "$OS_AUTH_TOKEN_DATA"`
         CURL_EXIT="$?"
-        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 ' | wc -l | tr -d ' '`
         if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
             echo "FAILED" >&2
             echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
