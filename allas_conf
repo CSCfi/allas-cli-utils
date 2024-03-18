@@ -507,7 +507,7 @@ if $use_swift; then
       #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
       curl_out=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "${OS_AUTH_URL}/auth/tokens" 2>&1 <<< "$os_auth_data")
       curl_exit="$?"
-      curl_status=`echo "$curl_out" | grep '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+      curl_status=`echo "$curl_out" | grep -i '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
             echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
