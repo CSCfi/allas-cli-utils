@@ -725,8 +725,9 @@ if [[ $show_powershell ]]; then
    echo ""
    echo "--------------------------------------------------------------" 
    echo "Allas autentication parameters in Windows PowerShell format."
-   echo "If your Windows mahcine has Rclone installed and allas endpoint"
-   echo "configured. Use the commands below to activate your allas endpoint."
+   echo "If your Windows machine has Rclone installed and allas: endpoint"
+   echo "configured, you can use the commands below to activate "
+   echo "Allas connection in your Windows machine."
    echo ""
    echo "--------------------------------------------------------------"
    env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
