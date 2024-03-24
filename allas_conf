@@ -93,8 +93,12 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
   
      --s3remove               Remove S3 access key for an Allas project.
       
-     --show-powershell        After configuration, show swift authentication related environment 
-                              variables in format that can be used to enable Rclone
+     --show-shell             After configuration, show bash / zsh commands that set swift authentication 
+                              related environment variables. These commands can be used to enable Rclone
+                              connection to Allas in bash or zsh shell.
+
+     --show-powershell        After configuration, show PowerShell commands that set swift authentication 
+                              related environment variables. These commnads can be used to enable Rclone
                               connection to Allas in Windows PowerShell.
                               
 
@@ -135,6 +139,7 @@ local ood=false
 local project_list_method=curl
 local sd_connect=false
 local show_powershell=false
+local show_shell=false
 
 # Process command line arguments
 
@@ -156,6 +161,7 @@ while [[ $# -ge 1 ]]; do
         '--lumi')               mode="lumi";             shift;;
         '--sd' )                sd_connect=true; keep_password=true;      shift;;
         '--show-powershell' )   show_powershell=true;    shift;;
+	'--show-shell' )        show_shell=true;         shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -732,6 +738,22 @@ if [[ $show_powershell ]]; then
    echo "--------------------------------------------------------------"
    env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
 fi  
+
+
+# Show OS_ environment variables in bash/zsh format
+if [[ $show_shell ]]; then
+   echo ""
+   echo "--------------------------------------------------------------" 
+   echo "Allas autentication parameters in bash and zsh compatible format."
+   echo "If your machine has Rclone installed, and allas: endpoint has been"
+   echo "configured, you can use the commands below to activate "
+   echo "Allas connection in your machine."
+   echo ""
+   echo "--------------------------------------------------------------"
+   env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
+fi  
+
+
 
 
 
