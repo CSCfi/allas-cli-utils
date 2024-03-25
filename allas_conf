@@ -727,7 +727,7 @@ fi
 
 
 # Show OS_ environment variables in Windows PowerShell format
-if [[ $show_powershell ]]; then
+if $show_powershell; then
    echo ""
    echo "--------------------------------------------------------------" 
    echo "Allas autentication parameters in Windows PowerShell format."
@@ -741,7 +741,7 @@ fi
 
 
 # Show OS_ environment variables in bash/zsh format
-if [[ $show_shell ]]; then
+if $show_shell; then
    echo ""
    echo "--------------------------------------------------------------" 
    echo "Allas autentication parameters in bash and zsh compatible format."
