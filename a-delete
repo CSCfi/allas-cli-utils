@@ -289,7 +289,7 @@ if [ $ameta_found -eq 1 ]; then
    if [[ $user != $object_owner ]]; then
      echo ""
      echo "Your username ($user) is not matching to the username assigned to the object ($object_owner)"
-     echo "You can use option -user to enforce the deletion tool to use a specific user name"
+     echo "You can use option --user to enforce the deletion tool to use a specific user name"
      echo "${object_name} was not deleted"
      exit 1
    fi
