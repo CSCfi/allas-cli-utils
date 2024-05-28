@@ -26,7 +26,20 @@ Options:
 
 --sk <secret key>             Secret key to open crypt4gh encryption.
 
---s3cmd                       Use S3 protocol and s3cmd command for data retrieval instead of Swift protocol and rclone.
+-T, --tmpdir                  Define a directory that will be used to store 
+                              temporary files of the download process.
+
+
+--allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
+                              Normally this (Allas with swft) is the default and this option is not needed,
+                              but if you have set e.g. Lumi-O as the default storage server, this option can be
+                              used to get data from Allas without changing the default storage server.
+                              
+--s3cmd                       Use Allas with S3 protocol.
+
+--lumi                        Get data from Lumi-O with S3 protocol in stead of the default storage server. 
+                              If Lumi-O is defined to be the default storage server and this option is not needed.
+                           
 
 Related commands: a-put, a-find, a-info, a-delete
 

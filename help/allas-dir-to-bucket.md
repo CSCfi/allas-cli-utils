@@ -64,9 +64,10 @@ allas-dir-to-bucket command line options:
                             (default: current username).
 
 -h, --help                  Print this help.
-
+ 
+OS_PASSWORD not defined!
 allas-dir-to-bucket needs to have your Allas password stored in an environment variable.
-To do this, you need to setup you Allas connection with a command that sets this variable.
+Please setup you Allas connection with a command that sets this variable.
 
  In Puhti and Mahti use:
       allas-conf -k

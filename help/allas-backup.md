@@ -21,10 +21,10 @@ allas-backup can be used for following five operations:
 
   allas-backup <file_name>  or
   allas-backup add <file_name>       Add a new backup version (snapshot) of the given file 
-                                 or directory to the back up repository.
+                                     or directory to the back up repository.
 
   allas-backup list                  Lists the snapshots saved to the repository. 
-                                 Option: -last lists only the latest versions of different snapshots.
+                                     Option: -last lists only the latest versions of different snapshots.
  
   allas-backup files <snapshot_id>   List the files that the snapshot includes.
 
@@ -35,6 +35,10 @@ allas-backup can be used for following five operations:
                                  defined with -target option.
 
   allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
+
+  allas-backup dump <snapshot_id> -f <file>   Retrieve contents of a file in the snapshot.
+
+  allas-backup unlock                Remove Restic lock files.
 
   Extra options:
  

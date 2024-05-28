@@ -22,8 +22,6 @@
  
 [a-put](./a-put.md)
  
-[a-put-batch](./a-put-batch.md)
- 
 [a-stream](./a-stream.md)
  
 [allas-add-S3-permissions](./allas-add-S3-permissions.md)
@@ -39,4 +37,6 @@
 [allas-mount](./allas-mount.md)
  
 [allas-share-bucket](./allas-share-bucket.md)
+ 
+[allas-swift-md5-diff.py](./allas-swift-md5-diff.py.md)
  
