@@ -9,13 +9,13 @@ source $inst_root/a_env_conf
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
 bucket_name="${project_label}-BACKUP"
-repository="swift:${bucket_name}:/backup"
 rpath=""
 input=""
 get_file=""
 options=""
 target="./"
 help=0
+mode="swift"
 
 if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ]]
 then
@@ -37,7 +37,6 @@ do
   case "$1" in
               '-b' | '-bucket')
                 bucket_name="$2"
-                repository="swift:${bucket_name}:/backup"
                 shift
                 shift
                 ;;
@@ -73,8 +72,23 @@ do
               '-h' | '--help' | '-help')
                 help=("1")
                 shift
-              ;;
+		;;
 
+              '-mode' )
+                  if [[ $2 == "s3cmd" || $2 == "S3" || $2 == "s3" ]]; then
+                      mode="s3cmd"
+		  fi
+		  if [[ $2 == "swift" ]]; then
+		      mode="swift"
+		  fi
+		  shift
+		  shift
+		  ;;
+	      
+              '--s3cmd' | '-s3' | '-S3' )
+                  mode="s3cmd"
+                  shift
+                ;;
 
                *)
                 if [[ $input == "" ]]
@@ -157,28 +171,49 @@ allas-backup can be used for following five operations:
                                      Allas-backup to use different separate repository instead of
                                      the default one.
 
+  -S3, -s3                           Use S3 based backup repository
+
+  -mode swift/S3                     Define if S3 or swift based repository is in use.
+
 EOF
 exit 0
 fi
 
 
-# update connection is allas-conf -k is in use      
-if [[ -n "$OS_PASSWORD" ]]; then   
+# Check connecting in case of swift
+if [[ $mode == "swift" ]]; then 
+   # update connection is allas-conf -k is in use      
+   if [[ -n "$OS_PASSWORD" ]]; then   
       echo "Updating token"
       source $allas_conf_path --user $USER -k $OS_PROJECT_NAME -f 
+   fi
+   test=$(rclone about ${storage_server}: | wc -l)
+   # test=$(swift stat 2> /dev/null | grep -c "Account:")
+   if [[ $test -lt 1 ]]
+   then
+     echo ""
+     echo "Allas connection is not set up or has expired!"
+     echo "Please run command:"
+     echo "   source $allas_conf_path"
+     exit 1
+   fi
+   repository="swift:${bucket_name}:/backup"
 fi
 
-
-test=$(rclone about ${storage_server}: | wc -l)
-# test=$(swift stat 2> /dev/null | grep -c "Account:")
-if [[ $test -lt 1 ]]
-then
-   echo ""
-   echo "Allas connection is not set up or has expired!"
-   echo "Please run command:"
-   echo "   source $allas_conf_path"
-   exit 1
-fi
+### Settings in case of S3
+if [[ $mode == "s3cmd" ]]; then
+  echo "S3 mode inn use"   
+  if [[ -e  $HOME/.aws/credentials ]]; then
+     export AWS_DEFAULT_REGION=""
+     export $(grep AWS_ACCESS_KEY_ID  $HOME/.aws/credentials)
+     export $(grep AWS_SECRET_ACCESS_KEY $HOME/.aws/credentials)
+  else
+     echo "Unable to find S3 credentials for Allas."
+     exit 1
+  fi
+  bucket_name="${project_label}-s3backup"
+  repository="s3:a3s.fi/${bucket_name}"  
+fi    
 
 
 if [[ ! -e $HOME/.backup_passwd_${project_label} ]]
@@ -188,14 +223,12 @@ fi
 
 
 
-
-
 #check if restic repository already exists
 #snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots 2> /dev/null | wc -l)
 snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} check 2> /dev/null | grep -c "no errors were found")
 if [[ $snum -lt 1 ]]
 then
-   restic init --repo $repository -p $HOME/.backup_passwd_${project_label} $options
+   restic init --repo $repository -p $HOME/.backup_passwd_${project_label} 
 fi 
 
 
