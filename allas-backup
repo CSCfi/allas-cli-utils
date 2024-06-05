@@ -201,8 +201,7 @@ if [[ $mode == "swift" ]]; then
 fi
 
 ### Settings in case of S3
-if [[ $mode == "s3cmd" ]]; then
-  echo "S3 mode inn use"   
+if [[ $mode == "s3cmd" ]]; then  
   if [[ -e  $HOME/.aws/credentials ]]; then
      export AWS_DEFAULT_REGION=""
      export $(grep AWS_ACCESS_KEY_ID  $HOME/.aws/credentials)
@@ -211,6 +210,12 @@ if [[ $mode == "s3cmd" ]]; then
      echo "Unable to find S3 credentials for Allas."
      exit 1
   fi
+  if [[ -z "${OS_PROJECT_NAME}" ]]; then
+      echo "Allas project not defined!"
+      echo "Please set environment variable: OS_PROJECT_NAME"
+      echo "to define the Allas project"
+      exit 1
+  fi    
   bucket_name="${project_label}-s3backup"
   repository="s3:a3s.fi/${bucket_name}"  
 fi    
