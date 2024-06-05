@@ -46,4 +46,8 @@ allas-backup can be used for following five operations:
                                      Allas-backup to use different separate repository instead of
                                      the default one.
 
+  -S3, -s3                           Use S3 based backup repository
+
+  -mode swift/S3                     Define if S3 or swift based repository is in use.
+
 ```
