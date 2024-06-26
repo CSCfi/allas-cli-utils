@@ -397,7 +397,13 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    #unset pythonpath temporarily
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
- 
+
+   # Curl method for getting project list has difficulties in case passwors has some pecial characters
+   if [[ $OS_PASSWORD =~ '$' || $OS_PASSWORD =~ '!' || $OS_PASSWORD =~ '&' ||  $OS_PASSWORD =~ '*' ]]; then
+       project_list_method="openstack"
+   fi
+       
+   
    if [[ $project_list_method == "curl" ]];  then
       ## This section replaces openstack based project listing
       ##
@@ -619,7 +625,7 @@ if $use_s3cmd; then
              --secret_key=$SECRET_KEY \
              --host=a3s.fi \
              --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull
+             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 
    #replace default signurl_use_https
    else 
        echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \

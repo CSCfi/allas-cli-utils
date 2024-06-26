@@ -12,7 +12,7 @@ do
   echo "[${a}](./${a}.md)" >>help/index.md
   echo " ">>help/index.md
 done
-for a in $(ls -l allas-* | grep '\-x\.' | awk '{print $NF}'| grep -v "\.md" | grep -v token2token )
+for a in $(ls -l allas-* | grep '\-x.' | awk '{print $NF}'| grep -v "\.md" | grep -v token2token )
 do 
   echo $a
   echo '# '$a > help/${a}.md
