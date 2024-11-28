@@ -235,6 +235,7 @@ do
 		         exit 1
 		    fi
                     sdc=1
+		    include_ameta=0
 		    compression=0
                     fnum=0
                     asis_mode=1
