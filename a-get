@@ -591,7 +591,6 @@ else
 	       locked_path=$(dirname "$object_name")
 	       echo "Copying encrypted data"
 	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
-	       ls
 	       echo "Decrypting $locked-file"
 	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"

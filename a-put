@@ -231,6 +231,7 @@ do
 		         echo ""
 		         echo "sd-lock-util is not available!"
 		         echo "Please install sd-lock-util if you want to use SD Connect based encryption."
+                         echo "    https://github.com/CSCfi/sd-lock-util/"
 		         exit 1
 		    fi
                     sdc=1
