@@ -534,8 +534,8 @@ if [[ $is_tar_file -eq 1 ]]; then
 	 sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
 	 exitcode=$?
          unlocked_file="${locked_file:0:(-5)}"
-	 if [[ -e $ unlocked_file ]]; then
-            mv $unlocked_file  a-get_download_$$_tmp.zst
+	 if [[ -e "$unlocked_file" ]]; then
+            mv "$unlocked_file"  a-get_download_$$_tmp.zst
             rm -f "$locked_file"
 	 else
              echo "Decryption of $unlocked_file failed."
@@ -602,10 +602,15 @@ else
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
 	       exitcode=$?
                unlocked_file="${locked_file:0:(-5)}"
-	       if [[  "$unlocked_file" != "$target_name" ]]; then
-	           cat "$unlocked_file" | zstdmt -d >  "$target_name"
-                   rm -r "$unlocked_file"
-	       fi   
+	       if [[ -e "$unlocked_file" ]]; then
+	         if [[  "$unlocked_file" != "$target_name" ]]; then
+	             cat "$unlocked_file" | zstdmt -d >  "$target_name"
+                     rm -r "$unlocked_file"
+	         fi
+	       else
+		  echo "Decrypting $unlocked_file failed"
+		  exitcode=1 
+	       fi	 
 	       rm -f "$locked_file"	       
 	   else
              rclone cat "${storage_server}:$object_name" | zstdmt -d >  $target_name
@@ -633,7 +638,7 @@ else
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
 	       exitcode=$?
                unlocked_file="${locked_file:0:(-5)}"
-               if [[ -e $unlocked_file ]]; then
+               if [[ -e "$unlocked_file" ]]; then
          	   if [[  "$unlocked_file" != "$target_name" ]]; then
 	               mv "$unlocked_file" "$target_name"
 	           fi
