@@ -43,6 +43,7 @@ encrypt=""
 all_keys=""
 include_ameta=1
 sdx=0
+sdc=0
 meta_message=""
 check_mode=0
 max_files=1000000
@@ -63,7 +64,7 @@ do
              '--bucket' | '-b' )
                   bucket_name="$2"
                   #Remove the trailing / if it exist
-                  bucket_name=$(remove_slash_from_ends $bucket_name)
+                  bucket_name=$(remove_slash_from_ends $bucket_name)		  
                   fixed_bucket=1
                   shift
                   shift
@@ -225,6 +226,20 @@ do
                  shift
                  ;;
 
+        	 '--sdc' )
+                    if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+		         echo ""
+		         echo "sd-lock-util is not available!"
+		         echo "Please install sd-lock-util if you want to use SD Connect based encryption."
+		         exit 1
+		    fi
+                    sdc=1
+		    compression=0
+                    fnum=0
+                    asis_mode=1
+                 shift
+                 ;;
+	 
              *)
                    if [[ $input_def == "" ]]; then
                       input_def=("$1")
@@ -371,7 +386,7 @@ a-put command line options:
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
-                            the CSC Sensitive data services: The files are encrypted with 
+                            the old verision of CSC Sensitive data services: The files are encrypted with 
                             crypt4gh using CSC public key after which the files are imported 
                             to Allas. 
                             With --public-key you can do the encryption with both
@@ -379,6 +394,11 @@ a-put command line options:
                             your-project-number_SD-CONNECT.
 
 
+--sdc                       Upload data to Allas in format format that is compatible with
+                            the SD Connect and SD Desktop services. Note that to use this feature
+                            you must set up the allas connection with option --sdc that will guide you 
+                            to import project specific SD Connect token that this process needs.               
+ 
 -A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
                             Normally this (Allas with swift) is the default and this option is not needed,
                             but if you have set e.g. Lumi-O as the default storage server, this option can be
@@ -445,6 +465,21 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
       echo "Please install rclone."
       exit 1
 fi
+
+
+#chek SD Connect settings if that is used
+if [[ $sdc -eq 1 ]]; then
+    sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+    if [[ $sdc_check -ne 1 ]]; then
+	echo "Connection to SD Connect service is not working."
+	echo "Please open or refresh the connection"
+	echo "by running command:"
+        echo ""
+        echo "   source $allas_conf_path -sdc"
+        exit 1	
+    fi
+fi
+
 
 # s3cmd mode
 if [[ $mode == "s3cmd" ]]; then 
@@ -611,8 +646,12 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 -----END CRYPT4GH PUBLIC KEY-----" > $tmp_dir/.sdx_key_tmp_$$
      fi
   fi
- 
 
+#  #SD connect case
+#  if [[ $sdc --eq 1 ]];then
+#     tmp_file="${tmp_file}.c4gh" 
+#  fi
+ 
   #In case of asis-upload, partial_path is the relative path
   if [[ $asis_mode -eq 1 ]]; then
       partial_path=$(dirname $input )
@@ -632,7 +671,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 
   # Default bucket for sdx mode
-  if [[ $sdx -eq 1 ]]; then
+  if [[ $sdx -eq 1 || $sdc -eq 1 ]]; then
     if [[ $bucket_name == "not_defined" ]]; then
        bucket_name=("${project_label}-SD_CONNECT")
     fi
@@ -750,10 +789,6 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         partial_path=$(dirname $file_path | sed -e s/"\/flash\/$puhti_project"/""/g)
      fi
 
-
-
-
-
      #Puhti FMI-projappl
      if [ $(echo $file_path  | cut -c1-13) == "/fmi/projappl" ]
      then
@@ -803,6 +838,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   else
         target_location="${bucket_name}/${partial_path}/$tmp_file"
   fi
+  if [[ $sdc -eq 1 ]]; then
+      target_location="${target_location}.c4gh"
+  fi    
   
 
   #Check if the object already exists  
@@ -836,36 +874,47 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
  
 
   #collect and count metadata
-  echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "host_name: $local_host" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "input: $input" >> ${tmp_dir}/${tmp_file}_ameta
-  echo "original_location: $file_path " >> ${tmp_dir}/${tmp_file}_ameta
+  ameta_file="${tmp_dir}/${tmp_file}_ameta"
+  if [[ $sdc -eq 1 ]]; then
+      ameta_file="${tmp_dir}/${tmp_file}.c4gh_ameta"
+  fi
+  
+  echo "user: $user" >> "${ameta_file}"
+  echo "host: $(hostname)" >> "${ameta_file}"
+  echo "host_name: $local_host" >> "${ameta_file}"
+  echo "input: $input" >>  "${ameta_file}"
+  echo "original_location: $file_path " >>  "${ameta_file}"
   if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]; then
-     echo "protocol: S3 " >> ${tmp_dir}/${tmp_file}_ameta
+     echo "protocol: S3 " >> "${ameta_file}"
   else
-     echo "protocol: swift" >> ${tmp_dir}/${tmp_file}_ameta
+     echo "protocol: swift" >> "${ameta_file}"
   fi
   if [[ $compression -eq 1 ]]; then
-     echo "compression: zstd" >> ${tmp_dir}/${tmp_file}_ameta
+     echo "compression: zstd" >> "${ameta_file}"
   else
-     echo "compression: none" >> ${tmp_dir}/${tmp_file}_ameta 
+     echo "compression: none" >> "${ameta_file}"
   fi 
 
   if [[ $encrypt == "gpg" ]]; then
      gpg_version="$(gpg --version |head -2 | tr  "\n" " ")"
-     echo "encryption: $gpg_version AES256" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "encryption: $gpg_version AES256" >>  "${ameta_file}"
   fi 
 
   if [[ $encrypt == "crypt4gh" ]]; then
      crypt4gh_version="$(crypt4gh -v)"
-     echo "encryption: $crypt4gh_version" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "encryption: $crypt4gh_version" >> "${ameta_file}"
   fi 
   if [[ $sdx -eq 1 ]]; then
-     echo "sd_connect: yes" >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "sd_connect: yes" >> "${ameta_file}"
   fi
+
+  if [[ $sdc -eq 1 ]]; then
+     echo "sd-lock: ${target_location}" >> "${ameta_file}"
+  fi
+
+  
   if [[ $meta_message != "" ]]; then
-     echo "Note: $meta_message"  >>  ${tmp_dir}/${tmp_file}_ameta
+     echo "Note: $meta_message"  >>  "${ameta_file}"
   fi
   num_files=0
 
@@ -892,13 +941,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     #Print file list
     if [[ $num_check -gt 0 ]]; then
         #echo "find "$input" -type f -print0 | xargs -0 ls -l"
-        find "$input" -type f -print0 | xargs -0 ls -l >>  ${tmp_dir}/${tmp_file}_ameta    
+        find "$input" -type f -print0 | xargs -0 ls -l >>  "${ameta_file}"    
     else
-        echo "Empty directory" >>  ${tmp_dir}/${tmp_file}_ameta
+        echo "Empty directory" >>   "${ameta_file}"
     fi
   else
       num_files="unknown_number"
-      echo "File listing skipped with --skip-filelist option." >> ${tmp_dir}/${tmp_file}_ameta
+      echo "File listing skipped with --skip-filelist option." >>  "${ameta_file}" 
   fi
 
   #check if there is enough space for temporary data
@@ -907,7 +956,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      echo "This file or directory is too big for this tool"
      echo "Total size: ${tot_size}K"
      echo "Please use swift or rclone command to upload the data to allas"
-     rm -f ${tmp_dir}/${tmp_file}_ameta
+     rm -f  "${ameta_file}" 
      clean_temp_dir
      exit 1
   fi 
@@ -926,7 +975,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
     echo "If you don't have enough free space, upload some data from WRKDIR/scratch with using option --nc."
     echo "With --nc option, data is not compressed and thus temporary storage space is not needed." 
 
-    rm -f ${tmp_dir}/${tmp_file}_ameta
+    rm -f  "${ameta_file}" 
     clean_temp_dir
     exit 1
   fi
@@ -952,7 +1001,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        	  (( packing_failed = packing_failed + exitcode ))
         fi
         if [[ $filelist_level -eq 1 ]]; then      
-           ls $input >> ${tmp_dir}/${tmp_file}_ameta
+           ls $input >> "${ameta_file}" 
         fi 
      else
         #compress data
@@ -968,7 +1017,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         fi
         
         if [[ $filelist_level -eq 1 ]]; then      
-           grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
+           grep -v '/$' ${tmp_dir}/tar_list  >>  "${ameta_file}" 
         fi   
      fi
   else
@@ -991,7 +1040,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          fi
 
 	 if [[ $filelist_level -eq 1 ]]; then      
-             grep -v '/$' ${tmp_dir}/tar_list  >> ${tmp_dir}/${tmp_file}_ameta
+             grep -v '/$' ${tmp_dir}/tar_list  >> "${ameta_file}" 
 	 fi   
 
        fi
@@ -1056,8 +1105,51 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      rm  ${tmp_dir}/$tmp_file
      mv ${tmp_dir}/${tmp_file}.tmp ${tmp_dir}/$tmp_file
      tmp_size=$crypt_size
-  fi 
+  fi
 
+  #sd-lock
+  if [[ $sdc -eq 1 ]]; then  
+     if [[ $silent -eq 0 ]] ; then
+        echo "SD lock encryption started."
+     fi
+     sd_lock_bucket=$(echo "${bucket_name}" | awk -F "/" '{print $1}')
+     sd_lock_partial_path=$( echo "${bucket_name}" | sed -e s/"$sd_lock_bucket"/""/ )
+     sd_lock_partial_path=$(remove_slash_from_ends $sd_lock_partial_path)
+     if [[ ${partial_path} != "" ]]; then
+         partial_path=$(remove_slash_from_ends $partial_path)
+	 sd_lock_partial_path="${sd_lock_partial_path}/${partial_path}"
+     fi
+     sd_lock_partial_path=$(remove_slash_from_ends $sd_lock_partial_path)
+     currdir=$(pwd)
+     # move to the directory where the file is and encrypt it, then return.
+     cd $(dirname ${tmp_dir}/$tmp_file)
+     if [[ $sd_lock_partial_path == "" ]]; then
+	 echo " sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"" >> $ameta_file
+	 sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"
+     else
+	 echo "sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload $tmp_file" >> $ameta_file
+         sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload "$tmp_file"
+     fi 
+     cd $currdir
+     
+     # Use fi ${tmp_dir}/$tmp_filele size to check that all data is encrypted
+     original_size=$(du --apparent-size ${tmp_dir}/$tmp_file | awk '{print $1}')
+     crypt_size=$(du --apparent-size ${tmp_dir}/$tmp_file.c4gh | awk '{print $1}')
+     # comparing sizes to check that encryption was successfull
+     # zero size files provides small sizes for links
+     if [[ $crypt_size -lt $original_size && $original_size -gt 2 ]]; then
+         echo "Encryption failed"
+         echo "Error: Encryption produced a file that is smaller than the original file! $crypt_size $original_size  "
+         echo "Chech that sd-lock-util works properly and that you have enough free spcace in $tmp_root"
+         exit 1
+     fi
+     if [[ $silent -eq 0 ]] ; then
+        echo "Encryption successfull."
+     fi
+     rm  ${tmp_dir}/$tmp_file
+     tmp_file="${tmp_file}.c4gh"
+     tmp_size=$crypt_size
+  fi 
 
  
   if [[ $silent -eq 0 ]] ; then
@@ -1104,7 +1196,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
        cat ${tmp_dir}/upload.log
        rclone deletefile ${storage_server}:${bucket_name}${partial_path}/$tmp_file
        rm -f ${tmp_dir}/$tmp_file 
-       rm -f ${tmp_dir}/${tmp_file}_ameta
+       rm -f "${ameta_file}"
        rm -f ${tmp_dir}/upload.log
        ls -l ${tmp_dir}
        clean_temp_dir
@@ -1140,7 +1232,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
          cat ${tmp_dir}/upload.log
          rclone deletefile "$allas_path"
          rm -f ${tmp_dir}/$tmp_file 
-         rm -f ${tmp_dir}/${tmp_file}_ameta
+         rm -f "${ameta_file}"
          rm -f ${tmp_dir}/upload.log
 	 clean_temp_dir
          exit 1
@@ -1190,13 +1282,13 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]||[[ $mode == "lumi" ]] ; then
          if [[ $silent -eq 0 ]] ; then
              #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-             rclone copy -L --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}
+             rclone copy -L --progress ${ameta_file} ${storage_server}:${bucket_name}/${partial_path}
          else
-             rclone copy -L ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+             rclone copy -L ${ameta_file} ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          fi 
      fi
   fi   
-  rm -f ${tmp_dir}/${tmp_file}_ameta
+  rm -f "${ameta_file}"
 
   if [[ $silent -eq 0 ]] ; then
     echo ""

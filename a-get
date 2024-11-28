@@ -29,6 +29,7 @@ exe_dir=$(pwd)
 start_time=$(date +%s)
 encrypt=""
 secret_key=""
+sdc=0
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -108,7 +109,18 @@ do
                   tmp_root="$2"
                   shift
                   shift
-                ;;
+                  ;;
+	     '--sdc' )
+		 sdc=1
+                 if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+		       echo ""
+		       echo "sd-lock-util is not available!"
+		       echo "Please install sd-lock-util if you want to use SD Connect based encryption."
+		       echo "   https://github.com/CSCfi/sd-lock-util "
+		       exit 1
+		 fi
+		 shift
+		;;
              '-h' | '--help' )
                   print_help=1
                   shift
@@ -213,6 +225,20 @@ if [[ $mode == "swift" ]]
   fi 
 fi
 
+
+#chek SD Connect settings if that is used
+if [[ $sdc -eq 1 ]]; then
+    sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+    if [[ $sdc_check -ne 1 ]]; then
+	echo "Connection to SD Connect service is not working"
+	echo "Please open or refresh the connection"
+	echo "by running command:"
+        echo ""
+        echo "   source $allas_conf_path -sdc"
+        exit 1	
+    fi
+fi
+
 #Rclone through s3
 if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
@@ -315,18 +341,43 @@ if [[ ${object_name:(-4):4} == ".gpg" ]]; then
   object_name=${object_name:0:-4}
   echo "GPG encrypted object"
 fi
+
 if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
   encrypt="crypt4gh"
   object_name=${object_name:0:-5}
   echo "Crypt4gh encrypted object"
-  if [[ $secret_key == "" && $asis_mode -eq 0 ]]; then
-        echo "The secret key for decompression is not defined"  
-        echo "Define the key file with option: --sk "
-        exit
+  if [[ $sdc -eq 0 && $asis_mode -eq 0 ]]; then
+     if [[ $secret_key == "" ]]; then
+         #echo "Secret key not defied for Crypt4gh encrypted file."
+         #echo "Checking if this is a SD Connect file"
+	 sdc=1
+         #check sd-locku-util is istalled
+	 if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+	    echo ""
+	    echo "sd-lock-util is not available!"
+	    echo "Please define the secretkey with option --sk if you are using normal Crypt4gh encryption ,"
+	    echo "or install sd-lock-util if you are using SD Connect based encryption."
+	    echo "   https://github.com/CSCfi/sd-lock-util "
+	    exit 1
+	 fi
+	 # check that sd-lock connecton is wroking
+             sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+         if [[ $sdc_check -ne 1 ]]; then
+	    echo "Decryption is not possible."
+	    echo "If you are using using normal Crypt4gh encryption, define the secretkey with option:"
+            echo "   --sk your-secret-key"
+	    echo ""
+	    echo "If you are using SD Connect based encryption, refresh the sd-lock-util connection by running command:"
+            echo ""
+            echo "   source $allas_conf_path -sdc"
+            exit 1	
+         fi		 
+     fi
   fi
 fi
 
 is_compressed=0
+
 if [[ ${object_name:(-4):4} == ".zst" ]]; then
   is_compressed=1
   #check if zstdmt is available
@@ -354,7 +405,6 @@ if [[ ${object_name:(-4):4} == ".tar" ]]; then
   is_compressed=(0)
 fi 
 
-
 if [[ $target_name == "" ]];then 
    if [[ $is_tar_file -eq 1 ]]; then
       if [[ $is_compressed -eq 1 ]]; then
@@ -371,7 +421,8 @@ if  [[ $encrypt == "gpg" ]]; then
   #return .gpg to the name
   object_name=${object_name}.gpg
 fi
-if  [[ $encrypt == "crypt4gh" ]]; then
+
+if  [[ $encrypt == "crypt4gh" || $sdc -eq 1 ]]; then
   #return .c4gh to the name
   object_name=${object_name}.c4gh
 fi
@@ -411,7 +462,7 @@ else
 fi
   
 
-if [[ -n "$OS_PASSWORD" ]]; then 
+if [[ -n "$OS_PASSWORD" && $sdc -eq 0 ]]; then 
    if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token"
    fi
@@ -461,12 +512,32 @@ if [[ $is_tar_file -eq 1 ]]; then
         rm -f a-get_download_$$_tmp.zst
         mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
      fi
-     if [[ $encrypt == "crypt4gh" ]]; then
+     if [[ $encrypt == "crypt4gh" && $sdc -eq 0 ]]; then
         crypt4gh decrypt --sk "$secret_key" < a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
         exitcode=$?
-        rm -f a-get_download_$$_tmp.zst
-        mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+        if [[ $exitcode -ne 0 ]]; then
+            # if decryption failed continue to check if this is SD
+	    rm -f download_$$_tmp.zst.tmp
+            sdc=1
+	    
+	else
+	    #renaming successfully decrypted file.
+            rm -f a-get_download_$$_tmp.zst
+            mv a-get_download_$$_tmp.zst.tmp a-get_download_$$_tmp.zst
+	fi
      fi
+     if [[ $sdc -eq 1 ]]; then
+	 locked_file=$(basename "$object_name")
+	 locked_path=$(dirname  "$object_name")
+         mv  a-get_download_$$_tmp.zst "$locked_file"
+	 echo "Decrypting $locked-file"
+	 sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
+	 exitcode=$?
+         unlocked_file="${locked_file:0:(-5)}"
+         mv $unlocked_file  a-get_download_$$_tmp.zst
+	 rm -f "$locked_file"
+     fi
+	 
      if [[ $exitcode -ne 0 ]]; then
         echo "Decryption failed!"
         rm -f  a-get_download_$$_tmp.zst
@@ -512,10 +583,26 @@ else
            if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:$object_name" | gpg -d | zstdmt -d >  $target_name
              exitcode=$?
-           elif [[  $encrypt == "crypt4gh" ]]; then
+           elif [[  $encrypt == "crypt4gh" || $sdc -eq 0  ]]; then
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" | zstdmt -d >  $target_name
              exitcode=$?
-           else
+	   elif [[ $sdc -eq 1 ]]; then
+               locked_file=$(basename "$object_name")
+	       locked_path=$(dirname "$object_name")
+	       echo "Copying encrypted data"
+	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
+	       ls
+	       echo "Decrypting $locked-file"
+	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
+	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
+               unlocked_file="${locked_file:0:(-5)}"
+	       if [[  "$unlocked_file" != "$target_name" ]]; then
+	           cat "$unlocked_file" | zstdmt -d >  "$target_name"
+                   rm -r "$unlocked_file"
+	       fi   
+	       rm -f "$locked_file"	       
+             sd-lock-util unlock 
+	   else
              rclone cat "${storage_server}:$object_name" | zstdmt -d >  $target_name
              exitcode=$?
            fi
@@ -527,10 +614,24 @@ else
        #if [[ $mode == "swift" ]]; then 
 	   if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:$object_name" | gpg -d >  $target_name
-           elif [[  $encrypt == "crypt4gh" ]]; then
+           elif [[  $encrypt == "crypt4gh" && $sdc -eq 0 ]]; then
              #echo "rclone cat ${storage_server}:$object_name  crypt4gh decrypt --sk $secret_key"
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
              exitcode=$?
+           elif [[ $sdc -eq 1 ]]; then
+	       locked_file=$(basename "$object_name")
+	       locked_path=$(dirname "$object_name")
+	       echo "Copying encrypted data"
+	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
+	       ls
+	       echo "Decrypting $locked-file"
+	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
+	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
+               unlocked_file="${locked_file:0:(-5)}"
+	       if [[  "$unlocked_file" != "$target_name" ]]; then
+	           mv "$unlocked_file" "$target_name"
+	       fi   
+	       rm -f "$locked_file"
            else
              if [[ ${target_name:0:1} != "/" ]]; then
                 #this is needed to cope with file names containing :
@@ -585,7 +686,7 @@ end_time=$(date +%s)
 (( kesto = end_time - start_time ))
 
 #Execute log creation
-message="$0 $(date) $bucket_name  $kesto s"
+message="$0 $(date) $kesto s"
 printf '{"version": "1.1", "host": "%s", "short_message": "utility log", "full_message": "%s", "level": 6, "_user": "%d"}' $(hostname) "$message" $(id -u) >> $allas_log
 
 
