@@ -592,15 +592,15 @@ else
 	       echo "Copying encrypted data"
 	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
 	       echo "Decrypting $locked-file"
-	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
+	       #echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
+	       exitcode=$?
                unlocked_file="${locked_file:0:(-5)}"
 	       if [[  "$unlocked_file" != "$target_name" ]]; then
 	           cat "$unlocked_file" | zstdmt -d >  "$target_name"
                    rm -r "$unlocked_file"
 	       fi   
 	       rm -f "$locked_file"	       
-             sd-lock-util unlock 
 	   else
              rclone cat "${storage_server}:$object_name" | zstdmt -d >  $target_name
              exitcode=$?
@@ -616,7 +616,7 @@ else
            elif [[  $encrypt == "crypt4gh" && $sdc -eq 0 ]]; then
              #echo "rclone cat ${storage_server}:$object_name  crypt4gh decrypt --sk $secret_key"
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" >  $target_name
-             exitcode=$?
+             exitcode=$?	     
            elif [[ $sdc -eq 1 ]]; then
 	       locked_file=$(basename "$object_name")
 	       locked_path=$(dirname "$object_name")
@@ -625,11 +625,15 @@ else
 	       echo "Decrypting $locked-file"
 	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
+	       exitcode=$?
                unlocked_file="${locked_file:0:(-5)}"
 	       if [[  "$unlocked_file" != "$target_name" ]]; then
 	           mv "$unlocked_file" "$target_name"
 	       fi   
 	       rm -f "$locked_file"
+	       if [[ $exitcode -ne 0 ]]; then
+		   echo "SD connect based decryption failed"
+	       fi
            else
              if [[ ${target_name:0:1} != "/" ]]; then
                 #this is needed to cope with file names containing :
