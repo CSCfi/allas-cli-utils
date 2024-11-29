@@ -238,7 +238,6 @@ do
 		    include_ameta=0
 		    compression=0
                     fnum=0
-                    asis_mode=1
                  shift
                  ;;
 	 
