@@ -46,6 +46,7 @@ sdx=0
 sdc=0
 meta_message=""
 check_mode=0
+rclone_copy_options=""
 max_files=1000000
 
 # read customer defaults
@@ -193,6 +194,10 @@ do
 		    fi
                     encrypt="gpg"
                  fi
+		 if [[ $encrypt == "" ]]; then
+                     echo "$2 is not a valid encryption method"
+		     exit 1
+		 fi  
                  shift                          
                  shift
                  ;;
@@ -486,6 +491,7 @@ fi
 if [[ $mode == "s3cmd" ]]; then 
    storage_server="s3allas"
    storage_name="Allas"
+   rclone_copy_options="--s3-chunk-size 10000"
 fi
 if [[ $mode == "lumi" ]]; then 
    storage_server="lumi-o"
@@ -562,12 +568,13 @@ do
   fi 
 
   #Remove the trailing / if it exist
-  if [ $(echo -n $input | tail -c 1) == "/" ]
+  if [[ $(echo -n "$input" | tail -c 1) == "/" ]]
   then
-    sl=$(expr ${#input} - 1)
-    input=$(echo $input | cut -c 1-$sl)
+    input=${input%/} 
   fi
- 
+
+
+  
   #check that file name does not end with _ameta
   if [[ ${input:(-6):6} == "_ameta" ]]; then
     echo "Found a file/directory name which ends with _ameta"
@@ -599,7 +606,11 @@ do
        if [[ $compression -eq 1 ]]; then
           tmp_file=($(basename "$input" | tr " " "_" )".tar.zst")
        else
-          tmp_file=($(basename "$input" | tr " " "_" )".tar")
+           tmp_file=($(basename "$input" | tr " " "_" )".tar")
+	   #This tires to fix a situation where a directory contains both subdirectory and correspondig tar file
+	   if [[ -e "${input}.tar" ]]; then
+	     tmp_file=($(basename "$input" | tr " " "_" )"_a-put_.tar")
+           fi
        fi
     fi
     tmp_file=$(remove_slash_from_ends $tmp_file)
@@ -1171,20 +1182,20 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #upload with rclone
   if [[ $silent -eq 0 ]] ; then
      if [[ $compression -eq 1 ]] ; then  
-        rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        rclone copy "$rclone_copy_options" --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?     
      else  
-        # echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-        rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        #echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+        rclone copy "$rclone_copy_options" -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
      fi
   else
       if [[ $compression -eq 1 ]] ; then
-         rclone copy  ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+         rclone copy "$rclone_copy_options" ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          exitcode=$?
       else
          #echo "rclone copy -L ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
-         rclone copy -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+         rclone copy "$rclone_copy_options" -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
          exitcode=$?
       fi    
   fi
