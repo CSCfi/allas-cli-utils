@@ -1185,8 +1185,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         rclone copy "$rclone_copy_options" --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?     
      else  
-        #echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-        rclone copy "$rclone_copy_options" -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        echo "rclone copy $rclone_copy_options -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+        rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
      fi
   else
