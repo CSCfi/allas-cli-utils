@@ -25,6 +25,8 @@ bucket_name=""
 user=$(whoami)
 print_help=0
 check_md5=0
+sdc=0
+tmp_root="$(pwd)"
 
 if [[ $# -lt 1 ]]; then
    print_help=1
@@ -67,8 +69,18 @@ do
                    check_md5=1
                   shift
                 ;;
-
-              *)
+                '--sdc' | '-S' )
+                    if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+		                echo ""
+		               echo "sd-lock-util is not available!"
+		               echo "Please install sd-lock-util if you want to use SD Connect based encryption."
+                         echo "    https://github.com/CSCfi/sd-lock-util/"
+		               exit 1
+		               fi
+                     sdc=1
+                     shift
+                ;;
+               *)
                    if [[ $input == "" ]]; then
                       input="$1"
                       if [[ ! -e $input ]] ; then
@@ -109,6 +121,10 @@ In Allas, files larger than 5 GiB will be stored as 5GiB segments.
 This tool utilizes this segmentation to speed up the upload process 
 by uploading several segments of a large file simultaneously.
 Smaller files will be uploaded using normal rclone copy command.
+
+Data can be sorted in SD Connect compatible encrypted format if sd-lock-util command
+is avaialable and the SD Connect compatible Allas connection is provided.
+
 
 USAGE
 
@@ -152,6 +168,8 @@ allas-dir-to-bucket command line options:
 -u, --user <csc-user-name>  Define username liked to the data to be uploaded
                             (default: current username).
 
+-S, --sdc                   Use SD Connect based encryption in upload.                            
+
 -h, --help                  Print this help.
  
 EOF
@@ -173,10 +191,37 @@ if [[ -z "$OS_PASSWORD" ]]; then
 fi
 
 
+#check SD Connect settings if that is used
+if [[ $sdc -eq 1 ]]; then
+    sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+    if [[ $sdc_check -ne 1 ]]; then
+	echo "Connection to SD Connect service is not working."
+	echo "Please open or refresh the connection"
+	echo "by running command:"
+        echo ""
+        echo "   source $allas_conf_path -k --sdc"
+        exit 1	
+    fi
+fi
+
+
+
 if [[ $input == "" ]]; then
   echo "Input directory not defined."
   exit 1
 fi
+
+# In case if SD Connect encryption, check that there is enough space for temporary files
+if [[ sdc -eq 1 ]]; then
+  input_size=$(du -s "$input" | awk '{print $1}')
+  space_avail=$(df --output=size "$input" | tail -1)
+  if [[ $input_size -gt $space_avail ]]
+     echo "Not enough space for temporary files!"
+     echo "$input_size needed."
+     echo "$space_avail available."
+     exit 1
+  fi
+fi  
 
 if [[ $bucket_name == "" ]];	then
   echo "Target bucket not defined."
@@ -251,13 +296,33 @@ else
    fi
 fi
 
-
-
+if [[ $sdc -eq 1 ]]; then
+   ## Make encrypted copy of the data
+   original_location=$(pwd)
+   tmpdir="$tmp_root/adtb_$$/"
+   echo "Encrypting the temporary copy."
+   sd-lock-util lock --container ${bucket_name} --no-content-upload --progress $input
+   echo ""
+   echo "Encryption ready."
+   mkdir -p $tmpdir
+   echo "Creating directory strecture inside $tmpdir"
+   IFS=$(echo -en "\t\n\b")
+   for ndir in $(find "$input" -type d ) 
+   do 
+       mkdir -p "${tmpdir}/${ndir}"
+   done
+   echo "Copyind encrypted files to $tmpdir"
+   for ndfile in $(find "$input" -name "*.c4gh" )
+   do
+       mv "$ndfile" "${tmpdir}/${ndfile}" 
+   done
+   cd "$tmpdir"
+fi
 
 echo "Uploading data from directory: $input to bucket: $bucket_name"
 
 # Get files that are larger than 5GiB
-FILES_LARGE=$(find $input -type f -size +5368709120c)
+FILES_LARGE=$(find "$input" -type f -size +5368709120c)
 num_large_files=$(echo $FILES_LARGE | wc -w )
 echo "Directory $input contains $num_large_files files that are larger than 5 GiB"
 
@@ -344,4 +409,11 @@ if [[ ${#failed_uploads[@]} -gt 0 ]]; then
        echo $value
   done 
 
+fi
+
+exit
+#Clean in case of SD Connect uplaod
+if [[ $sdc --eq 1 ]]; then
+   cd "$original_location"
+   rm -rf "$tmp_root/adtb_$$/"
 fi
