@@ -220,7 +220,7 @@ fi
 if [[ sdc -eq 1 ]]; then
   input_size=$(du -s "$input" | awk '{print $1}')
   space_avail=$(df --output=size "$input" | tail -1)
-  if [[ $input_size -gt $space_avail ]]
+  if [[ $input_size -gt $space_avail ]]; then
      echo "Not enough space for temporary files!"
      echo "$input_size needed."
      echo "$space_avail available."
