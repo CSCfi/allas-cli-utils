@@ -25,6 +25,7 @@ bucket_name=""
 user=$(whoami)
 print_help=0
 check_md5=0
+force=0
 sdc=0
 tmp_root="$(pwd)"
 
@@ -67,6 +68,10 @@ do
                 ;;
                 '--md5' | '-m' )
                    check_md5=1
+                  shift
+                ;;
+                '--force' | '-f' )
+                   force=1
                   shift
                 ;;
                 '--sdc' | '-S' )
@@ -264,10 +269,15 @@ if [[ $bucket_check -lt 2 ]]; then
       fi
       rclone mkdir ${storage_server}:$bucket_name
 else
-   echo ""
-   echo "Bucket $bucket_name already exists!"
-   echo "Do you want to use this bucket [yes/no]"
-   read ans
+   if [[ $force -eq 0 ]]; then
+         echo ""
+         echo "Bucket $bucket_name already exists!"
+         echo "Do you want to use this bucket [yes/no]"
+         read ans
+   else
+         ans="y"
+   fi
+
    if [[ $ans == "y" || $ans == "yes" ]]; then
      old_objects=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "objects:" | awk '{print $NF}')
      old_size=$(rclone size ${storage_server}:${bucket_name}/${input} | grep "size:" | awk '{print $3" "$4}')
