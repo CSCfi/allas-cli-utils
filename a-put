@@ -46,7 +46,6 @@ sdx=0
 sdc=0
 meta_message=""
 check_mode=0
-rclone_copy_options=""
 max_files=1000000
 
 # read customer defaults
@@ -473,7 +472,7 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
 fi
 
 
-#chek SD Connect settings if that is used
+#check SD Connect settings if that is used
 if [[ $sdc -eq 1 ]]; then
     sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
     if [[ $sdc_check -ne 1 ]]; then
@@ -481,7 +480,7 @@ if [[ $sdc -eq 1 ]]; then
 	echo "Please open or refresh the connection"
 	echo "by running command:"
         echo ""
-        echo "   source $allas_conf_path -sdc"
+        echo "   source $allas_conf_path --sdc"
         exit 1	
     fi
 fi
@@ -491,7 +490,7 @@ fi
 if [[ $mode == "s3cmd" ]]; then 
    storage_server="s3allas"
    storage_name="Allas"
-   rclone_copy_options="--s3-chunk-size 10000"
+   #rclone_copy_options="--s3-chunk-size 10000"
 fi
 if [[ $mode == "lumi" ]]; then 
    storage_server="lumi-o"
@@ -1182,20 +1181,20 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #upload with rclone
   if [[ $silent -eq 0 ]] ; then
      if [[ $compression -eq 1 ]] ; then  
-        rclone copy "$rclone_copy_options" --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?     
      else  
-        echo "rclone copy $rclone_copy_options -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+        echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
         rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
      fi
   else
       if [[ $compression -eq 1 ]] ; then
-         rclone copy "$rclone_copy_options" ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+         rclone copy ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          exitcode=$?
       else
          #echo "rclone copy -L ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
-         rclone copy "$rclone_copy_options" -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+         rclone copy -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
          exitcode=$?
       fi    
   fi
