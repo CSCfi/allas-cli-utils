@@ -103,8 +103,11 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
      --swift-auth             Use OpenStack swift based authentication process instead of default curl-based
                               process.  
-   
-     --sd, --sdc              Enable SD Connect compatible Allas connection.      
+
+     --sd, --sdc              Enable SD Connect compatible Allas connection. Using this option keeps OS_PASSWORD 
+                              environment variable once the configuration is done. In addition the configuration
+                              process asks for  SD_CONNECT_API_TOKEN value that can be obtained from
+                              https://sd-connect.csc.fi.  
                               
 
     DEPENDENCIES
