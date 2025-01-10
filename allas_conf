@@ -102,7 +102,9 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
                               connection to Allas in Windows PowerShell.
 
      --swift-auth             Use OpenStack swift based authentication process instead of default curl-based
-                              process.     
+                              process.  
+   
+     --sd, --sdc              Enable SD Connect compatible Allas connection.      
                               
 
     DEPENDENCIES
