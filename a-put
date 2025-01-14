@@ -1238,6 +1238,8 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      if [[ "$sum1" != "$sum2" ]]
      then 
          echo "Upload of $input was not successful!"
+         echo "Checksum for local file ${tmp_dir}/$tmp_file is $sum1" 
+         echo "Checksum for Allas object: $allas_path is $sum2"  
          echo "Cleaning the failed upload"
          echo "Upload summary:"
          cat ${tmp_dir}/upload.log
