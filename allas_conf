@@ -1,5 +1,5 @@
 
-# this script sould be sourced in bash (or zsh)
+# this script should be sourced in bash (or zsh)
 
 PS_ARG_NUM=5
 if [[ $(uname -s) == 'Darwin' ]]; then PS_ARG_NUM=4; fi
