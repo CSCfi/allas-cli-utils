@@ -1,15 +1,14 @@
-#!/bin/bash
 
+# this script sould be sourced in bash (or zsh)
 
-# check if this is executed as sourced command
 PS_ARG_NUM=5
-if [ $(uname -s) == 'Darwin' ]; then PS_ARG_NUM=4; fi
-shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| grep -c bash)
+if [[ $(uname -s) == 'Darwin' ]]; then PS_ARG_NUM=4; fi
+shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| grep -cE 'bash|zsh')
 
 
 if [[ $shell_check -ne 1 ]]; then
-   echo " allas_conf is written for bash shell."
-   my_shell=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}')
+   echo " allas_conf is written for bash (and zsh) shell."
+   my_shell=$(ps -hp $$|sed '1d'|awk '{print $'$PS_ARG_NUM'}')
    echo " You are using $my_shell shell."
    echo " This may cause this command to fail."
    sleep 3
@@ -187,10 +186,18 @@ while [[ $# -ge 1 ]]; do
     esac
 done
 
-
-if [ ${0:(-4):4} != "bash" -a "$force" == "false" ]; then
-    echo "Error: allas_conf should not be executed directly. $usage" >&2
-    exit 1
+if [[ "$force" != "true" ]]; then
+    if [[ "$ZSH_VERSION" == "" ]]; then
+        if [[ ${0:(-4):4} != "bash" ]]; then
+            echo "Error: allas_conf should not be executed directly. $usage" >&2
+            exit 1
+        fi
+    else
+        if [[ ! "$ZSH_EVAL_CONTEXT" =~ :file: ]]; then
+            echo "Error: allas_conf should not be executed directly. $usage" >&2
+            exit 1
+        fi
+    fi
 fi
 
 case "$mode" in
@@ -661,7 +668,7 @@ if $use_s3cmd; then
    chmod go-rwx $HOME/.aws/credentials
    echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
    echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
-   echo AWS_DEFAULT_REGION =" regionOne " >> $HOME/.aws/credentials
+   echo AWS_DEFAULT_REGION=" regionOne " >> $HOME/.aws/credentials
 
    export PYTHONPATH=$activePythonPath
 
