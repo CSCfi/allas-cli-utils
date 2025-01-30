@@ -349,7 +349,11 @@ if [[ "$chunk_size" -lt 5 || "$chunk_size" -gt 5000 || \
 fi
 
 if ! $keep_password; then
-    trap 'unset OS_PASSWORD; trap - RETURN EXIT SIGINT' RETURN EXIT SIGINT
+    if [[ "$ZSH_VERSION" == "" ]]; then
+        trap 'unset OS_PASSWORD; trap - RETURN EXIT SIGINT' RETURN EXIT SIGINT
+    else
+        trap 'unset OS_PASSWORD; trap - EXIT SIGINT' EXIT SIGINT
+    fi
 fi
 
 
