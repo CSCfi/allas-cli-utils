@@ -129,14 +129,15 @@ fi
 
 
 if [[ $object_name == "" ]] ; then 
-  for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
+  rclone lsd "${storage_server}:" | awk '{$1=$2=$3=$4=""; print $0}'|sed 's/^ *//' | while read buc
   do
     echo "-------------------------------"
     echo "Bucket: $buc"
-    rclone size ${storage_server}:$buc
-    if [[ $(curl https://a3s.fi/${buc}/ 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+    rclone size "${storage_server}:$buc"
+    buc_encoded=$(python3 -c "import urllib.parse; print (urllib.parse.quote('''$buc'''))")
+    if [[ $(curl "https://a3s.fi/${buc_encoded}/" 2>/dev/null | grep -c '</Name>') -gt 0 ]]
     then
-        echo "Public URL: https://a3s.fi/$buc"
+        echo "Public URL: https://a3s.fi/$buc_encoded"
     fi
     echo ""
   done
