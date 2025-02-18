@@ -129,23 +129,36 @@ fi
 
 
 if [[ $object_name == "" ]] ; then 
-  rclone lsd "${storage_server}:" | awk '{$1=$2=$3=$4=""; print $0}'|sed 's/^ *//' | while read buc
-  do
-    echo "-------------------------------"
-    echo "Bucket: $buc"
-    rclone size "${storage_server}:$buc"
-    buc_encoded=$(python3 -c "import urllib.parse; print (urllib.parse.quote('''$buc'''))")
-    if [[ $(curl "https://a3s.fi/${buc_encoded}/" 2>/dev/null | grep -c '</Name>') -gt 0 ]]
-    then
-        echo "Public URL: https://a3s.fi/$buc_encoded"
-    fi
-    echo ""
-  done
-  echo "-------------------------------" 
-  echo ""
-  echo "Total summary of data in ${storage_server}"
-  rclone about ${storage_server}:
-  exit
+   if [[ $bucket != "" ]]; then
+      echo "-------------------------------"
+      echo "Bucket: $bucket"
+      rclone size "${storage_server}:$bucket"
+      buc_encoded=$(python3 -c "import urllib.parse; print (urllib.parse.quote('''$bucket'''))")
+      if [[ $(curl "https://a3s.fi/${buc_encoded}/" 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+      then
+          echo "Public URL: https://a3s.fi/$buc_encoded"
+      fi
+      echo ""
+      exit
+   else	
+     rclone lsd "${storage_server}:" | awk '{$1=$2=$3=$4=""; print $0}'|sed 's/^ *//' | while read buc
+     do
+       echo "-------------------------------"
+       echo "Bucket: $buc"
+       rclone size "${storage_server}:$buc"
+       buc_encoded=$(python3 -c "import urllib.parse; print (urllib.parse.quote('''$buc'''))")
+       if [[ $(curl "https://a3s.fi/${buc_encoded}/" 2>/dev/null | grep -c '</Name>') -gt 0 ]]
+       then
+          echo "Public URL: https://a3s.fi/$buc_encoded"
+       fi
+       echo ""
+     done
+     echo "-------------------------------" 
+     echo ""
+     echo "Total summary of data in ${storage_server}"
+       rclone about ${storage_server}:
+     exit
+   fi	 
 fi
 #source /appl/opt/allas_conf
 #input=("$1")
