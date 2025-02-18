@@ -36,24 +36,24 @@ do
   case "$1" in
              '--object' | '-o' )
              # query file
-                  object_name=($2)
+                  object_name="$2"
                   shift
                   shift
                 ;;
              '--project' | '-p' )
-                  os_project_name=($2)
+                  os_project_name="$2"
                   shift
                   shift
                 ;;
 
              '--bucket' | '-b' )
-                  bucket=($2)
-                  object_with_bucket=(2)
+                  bucket="$2"
+                  object_with_bucket="2"
                   shift
                   shift 
                 ;;
              '--help' | '-h' )
-                  print_help=(1)
+                  print_help="1"
                   shift
                  ;;
              '--allas' | '-A' )
