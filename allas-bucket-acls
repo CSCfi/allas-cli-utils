@@ -1,0 +1,110 @@
+#!/bin/bash
+
+USAGE="
+Usage: $0 [-swift|-s3] [-h] [bucket_name]
+       -h     : this help text
+       -swift : swift only
+       -s3    : s3 only
+
+       Script lists bucket ACLs.
+
+       Note that there are also other settings (for instance s3 policies and s3 signed URLs)
+       that can change access to buckets or objects.
+
+       swift requires working 'rclone allas:'
+       s3 requires working 'rclone s3allas:' and aws with default profile
+"
+
+REQUIRED_TOOLS="rclone awk"
+
+SWIFT_ONLY=0
+S3_ONLY=0
+while [[ $# -ge 1 ]]; do
+	case "$1" in
+		'-h') echo "$USAGE" >&2; exit 1;;
+		'-s'|'-swift') SWIFT_ONLY=1; shift;;
+		'-3'|'-s3') S3_ONLY=1; shift;;
+		*) BUCKET="$1"; shift;;
+	esac
+done
+if [ "$SWIFT_ONLY" -eq 1 -a "$S3_ONLY" -eq 1 ]; then
+	echo "$USAGE" >&2
+	exit 1
+fi
+
+if [ ! "$S3_ONLY" -eq 1 ]; then
+	if [ "$OS_AUTH_TOKEN" == "" -o "$OS_STORAGE_URL" == "" ]; then
+		echo "ERROR. swift authentication missing (OS_AUTH_TOKEN and OS_STORAGE_URL)" >&2
+		exit 1
+	fi
+fi
+
+if [ ! "$SWIFT_ONLY" -eq 1 ]; then REQUIRED_TOOLS="$REQUIRED_TOOLS aws"; fi
+if [ ! "$S3_ONLY" -eq 1 ]; then REQUIRED_TOOLS="$REQUIRED_TOOLS curl python3"; fi
+
+for REQUIRED in $REQUIRED_TOOLS
+do
+    PROG_LOCATION=$(/usr/bin/which $REQUIRED 2>/dev/null)
+    if [ ! -e "$PROG_LOCATION" ]; then
+        echo "Error: Can't find $REQUIRED in \$PATH" >&2
+        exit 1
+    fi
+done
+
+get_bucket_acl_swift () {
+	bucket_url=$(python3 -c "import urllib.parse; print (urllib.parse.quote('''$BUCKET'''))")
+
+	OUT=$(curl -sS -I -X HEAD -H "X-Auth-Token: $OS_AUTH_TOKEN" "$OS_STORAGE_URL/$bucket_url" 2>&1)
+	if [ "$?" == "0" ]; then
+		HTTP_CODE=$(echo "$OUT" | head -1 | awk '{print $2}')
+		if [[ "$HTTP_CODE" =~ ^2.* ]]; then
+			echo "$OUT" | grep -iE 'x-container-read:|x-container-write:' | sed 's/^/'$'\t''/'
+		else
+			echo "  ERROR. curl output:" >&2
+			echo "$OUT" | head -1 | sed 's/^/    /' >&2
+		fi
+	else
+		echo "  ERROR. curl output:" >&2
+		echo "$OUT" | sed '/^$/d' | sed 's/^/    /' >&2
+	fi
+	}
+
+get_s3_json_grant () {
+	python3 -c "
+import sys
+import json
+data = json.load(sys.stdin)
+for entry in data['Grants']:
+  if entry['Grantee']['DisplayName'] != data['Owner']['DisplayName']:
+    print(entry)
+"
+	}
+
+get_bucket_acl_s3 () {
+	OUT=$(aws --endpoint=https://a3s.fi s3api get-bucket-acl --bucket "$BUCKET" 2>&1)
+	if [ "$?" == "0" ]; then
+		echo "$OUT" | get_s3_json_grant | sed 's/^/  /'
+	else
+		echo "  ERROR. aws output:"
+		echo "$OUT" | sed '/^$/d' | sed 's/^/    /'
+	fi
+	}
+
+if [ "$BUCKET" != "" ]; then
+	printf "\n$BUCKET\n"
+	if [ ! "$S3_ONLY" -eq 1 ]; then get_bucket_acl_swift; fi
+	if [ ! "$SWIFT_ONLY" -eq 1 ]; then get_bucket_acl_s3; fi
+	exit
+fi
+
+RCLONE_TARGET="s3allas:"
+if [ ! "$S3_ONLY" -eq 1 ]; then RCLONE_TARGET="allas:"; fi
+
+rclone lsd "$RCLONE_TARGET" | awk '{$1=$2=$3=$4=""; print $0}' | sed 's/^ *//' | while read -r BUCKET
+do
+	printf "\n$BUCKET\n"
+	if [ ! "$S3_ONLY" -eq 1 ]; then get_bucket_acl_swift; fi
+	if [ ! "$SWIFT_ONLY" -eq 1 ]; then get_bucket_acl_s3; fi
+done
+
+
