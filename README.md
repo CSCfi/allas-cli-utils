@@ -77,12 +77,16 @@ __allas_conf__ script requires:
 *   [bash shell](https://en.wikipedia.org/wiki/Bash_(Unix_shell))
 *   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer, not mandatory if you use swift and know the project name.)
 *   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
-
-I addition to the above, A_ -tools require:
+, y
+I addition to the above, a-tools require:
 
 *   [rclone](https://rclone.org/) (1.48 or newer)
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
 *   [crypt4gh](https://crypt4gh.readthedocs.io/en/latest/)
+
+If you want to use a-commands to upload or download dara from SD Connect youu need to have *SD lock utils* installed
+
+* [sd-lock-util](https://github.com/CSCfi/sd-lock-util)
 
 
 Example: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
