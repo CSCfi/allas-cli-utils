@@ -84,7 +84,7 @@ I addition to the above, a-tools require:
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
 *   [crypt4gh](https://crypt4gh.readthedocs.io/en/latest/)
 
-If you want to use a-commands to upload or download dara from SD Connect youu need to have *SD lock utils* installed
+If you want to use a-commands to upload or download data from *SD Connect sensitve data storage service* you need to have *SD lock util* installed
 
 * [sd-lock-util](https://github.com/CSCfi/sd-lock-util)
 
