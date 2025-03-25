@@ -65,7 +65,6 @@ allas-dir-to-bucket command line options:
 
 -h, --help                  Print this help.
  
-OS_PASSWORD not defined!
 allas-dir-to-bucket needs to have your Allas password stored in an environment variable.
 Please setup you Allas connection with a command that sets this variable.
 
