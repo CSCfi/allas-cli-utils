@@ -404,9 +404,9 @@ echo "Starting to upload files that are smaller than 5 GB."
 ftype=$(file $input | awk '{print $NF}')
 
 if [[ $ftype == "directory" ]] ; then
-   rclone --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
+   rclone --links --transfers=$MAX_PROCESSES --swift-no-chunk copy --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input
 else
-   rclone copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input 
+   rclone --links copyto --ignore-existing --progress $input $RCLONE_DESTINATION:$bucket_name/$input 
 fi
  
 echo "DONE uploading ${1}"
