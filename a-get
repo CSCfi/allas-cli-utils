@@ -589,7 +589,7 @@ else
            if [[ $encrypt == "gpg" ]]; then
              rclone cat "${storage_server}:$object_name" | gpg -d | zstdmt -d >  $target_name
              exitcode=$?
-           elif [[  $encrypt == "crypt4gh" || $sdc -eq 0  ]]; then
+           elif [[  $encrypt == "crypt4gh" && $sdc -eq 0  ]]; then
              rclone cat "${storage_server}:$object_name" | crypt4gh decrypt --sk "$secret_key" | zstdmt -d >  $target_name
              exitcode=$?
 	   elif [[ $sdc -eq 1 ]]; then
