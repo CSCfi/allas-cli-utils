@@ -672,7 +672,7 @@ if $use_s3cmd; then
    chmod go-rwx $HOME/.aws/credentials
    echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
    echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
-   echo AWS_DEFAULT_REGION=" regionOne " >> $HOME/.aws/credentials
+   #echo AWS_DEFAULT_REGION=" regionOne " >> $HOME/.aws/credentials
    echo '[default]' > $HOME/.aws/config
    chmod go-rwx $HOME/.aws/config
    echo "[default]" > $HOME/.aws/config
