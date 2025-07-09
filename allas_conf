@@ -596,7 +596,7 @@ if $use_swift; then
     fi
     if $sd_connect; then
          sd_server=https://sd-connect.csc.fi 
-         export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
+         export SD_CONNECT_API_ADDRESS="${sd_server}"
          #
          #if [[ $SD_CONNECT_API_TOKEN == "" ]]; then
          #    export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
