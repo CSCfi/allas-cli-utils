@@ -253,6 +253,7 @@ fi
 
 if [[ $sdc -eq 1 ]]; then
   cd $tmp_dir
+  echo "Using tmp_dir: $tmp_dir"
 fi
 
 
