@@ -288,8 +288,8 @@ do
     if [[ sdc -eq 1 ]]; then
        a-get --asis "$object_name"
        fname=$(echo "$object_name" | awk -F "/" '{print $NF}')
-       pseudopath=$(echo "$object_name" |sed -e s/"${fname}$"/""/g)
-       a-put --sdc $fname -b $pseudopath
+       pseudopath=$(echo "$target_object" |sed -e s/"${fname}${suffix}$"/""/g)
+       a-put --sdc $fname -b ${target_bucket}/${pseudopath}
        rm $fname
        check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
     else
