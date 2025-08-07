@@ -252,8 +252,8 @@ if [[ $sdc -eq 0 ]]; then
 fi
 
 if [[ $sdc -eq 1 ]]; then
+  make_temp_dir
   cd $tmp_dir
-  echo "Using tmp_dir: $tmp_dir"
 fi
 
 
