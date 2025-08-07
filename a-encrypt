@@ -29,7 +29,7 @@ secret_key=""
 all_keys=""
 suffix=".c4gh"
 replace=0
-
+sdc=1
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -75,10 +75,14 @@ do
                   all=1
                   shift
              ;;
-
+              '--sdx' )
+                  sdc=0
+                  shift
+             ;;
               '-p' | '--pk' | '--public-key' )
                  # query file
                  public_key=$(abspath "$2")
+                 sdc=0
                  if [[ -e $public_key ]];then
                     echo Public key: "$public_key"
                     all_keys=$(echo -en "$all_keys --recipient_pk $public_key ")
@@ -110,36 +114,41 @@ done
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
-This tool is used to encrypt objects, that have already been uploaded to Allas.
+This tool is used to apply SD Connect encryption to objects, that have already been uploaded to Allas.
 The basic syntax of the command is:
 
    a-encrypt object_name
 
-a-encrypt command streams the object to the local computer where crypt4gh encryption is applied
-to the data stream. The encrypted data is then streamed back to Allas into a new object.
-By default the object is encrypted with CSC public key only. The encrypted object is located to the
-same bucket as the original object. Suffix: .c4gh is added to the object name.
+a-encrypt command copies the object to the local computer where SD Connect encryption is applied
+to the data. The encrypted data is then copied back to Allas into a new object.
+By default the object is encrypted with SD Connect compatible encryption. 
+The encrypted object is located to the same bucket as the original object. Suffix: .c4gh is added to the object name.
 
 The main purpose of this tool is to make a file, uploaded to the Allas service, compatible with the
 Sensitive data services of CSC.
 
+
+
 Options:
+
+-a, --all                        Process all the objects that include the given name (e.g. bucket name) in the beginning of
+                                 object name. 
 
 -r, --replace                    Remove the original un-encrypted object after encryption.
 
 -b, --bucket <bucket_name>       Save the encrypted object to the given bucket instead of the original bucket.
 
--p, --public_key <public key>    Additional Public key for crypt4gh encryption. By default only CSC public key is used.
-                                 This option allows you to include additional public keys so that data can be used
-                                 outside CSC sensitive data computing environment too.
+--sdx                            Use old SD Connect encryption
+
+-p, --public_key <public key>    Use users own Public key for crypt4gh encryption. In this case data is not 
+                                 compatible with SD Connect.
 
 --s3cmd                          Use S3 protocol and s3cmd command for data retrieval instead of
                                  Swift protocol and rclone.
 
 -s, --suffix <suffix>            Define your own suffix instead of the default suffix (.c4gh)
 
--a, --all                        Process all the objects that include the given name in the beginning of
-                                 object name.
+
 
 Related commands: a-put, a-find, a-info, a-delete
 
@@ -233,12 +242,14 @@ if [[ $check_os -lt 2 ]]; then
      exit 1
 fi
 
-## Write CSC public key to a temporary file
-echo "Starting to process ${#object_list[@]} objects"
-echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
-dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
------END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
 
+if [[ $sdc -eq 0 ]]; then
+  ## Write CSC public key to a temporary file
+  echo "Starting to process ${#object_list[@]} objects"
+  echo "-----BEGIN CRYPT4GH PUBLIC KEY-----
+  dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
+  -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
+fi
 
 for i in ${!object_list[@]}
 do
@@ -268,8 +279,17 @@ do
        check_os=$(rclone ls ${storage_server}:${target_bucket}/${object} 2> /dev/null | wc -l)
     fi
   else
-    rclone cat -P "${storage_server}:$object_name" | crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys | rclone rcat ${storage_server}:${target_bucket}/${target_object}
-    check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+    if [[ sdc -eq 1 ]]; then
+       a-get --asis "$object_name"
+       fname=$(echo "$object_name" | awk -F "/" '{print $NF}')
+       pseudopath=$(echo "$object_name" |sed -e s/"${fname}$"/""/g)
+       a-put --sdc $fname -b $pseudopath
+       rm $fname
+       check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+    else
+       rclone cat -P "${storage_server}:$object_name" | crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys | rclone rcat ${storage_server}:${target_bucket}/${target_object}
+      check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+    fi
   fi
 
   if [[ $check_os -ne 1 ]]; then
