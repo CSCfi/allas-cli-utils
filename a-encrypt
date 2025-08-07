@@ -14,7 +14,7 @@ object_name=""              #object to retrieve
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 mode="swift"
-tmp_dir="${tmp_root}/a_get_$$_tmp"
+#tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
 show_filelist=0
 query=""
 object_with_bucket=0
@@ -251,6 +251,11 @@ if [[ $sdc -eq 0 ]]; then
   -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
 fi
 
+if [[ $sdc -eq 1 ]]; then
+  cd $tmp_dir
+fi
+
+
 for i in ${!object_list[@]}
 do
   object_name="${object_list[$i]}"
@@ -312,6 +317,11 @@ do
   fi
 done
 
-rm -f .sdx_key_tmp_$$
+
+if [[ $sdc -eq 1 ]]; then
+  rm -rf $tmp_dir
+else
+  rm -f .sdx_key_tmp_$$
+fi
 
 exit 0
