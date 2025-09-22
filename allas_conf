@@ -602,7 +602,7 @@ if $use_swift; then
          #    export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
          echo "Please give your SD Connect API token"
          echo "If you don't have a valid API token, login to $sd_server"
-         echo "In the web interface, make sure that the active projest is: $OS_PROJECT_NAME"
+         echo "In the web interface, make sure that the active project is: $OS_PROJECT_NAME"
 	 echo
          echo "Then select: Support -> Create API tokens."
          echo " "
