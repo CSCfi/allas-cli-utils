@@ -14,7 +14,7 @@ object_name=""              #object to retrieve
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 mode="swift"
-#tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
+tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
 show_filelist=0
 query=""
 object_with_bucket=0
@@ -30,6 +30,7 @@ all_keys=""
 suffix=".c4gh"
 replace=0
 sdc=1
+previous_bucket="x"
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -78,7 +79,25 @@ do
               '--sdx' )
                   sdc=0
                   shift
+	     ;;
+	     '--sdx-to-sdc' )
+                  sdc=2
+                  shift
+        	  ;;
+             '--sk' )
+                 secret_key=$(abspath "$2")
+                 sdc=2
+                 if [[ ! -e $secret_key ]];then
+                    echo "Secret key $secret_key not found"
+                    exit 1
+                 fi
+		 echo "Give password for $2 :"
+                 read -s C4GH_PASSPHRASE
+                 export C4GH_PASSPHRASE		 
+		 shift
+		 shift
              ;;
+	      
               '-p' | '--pk' | '--public-key' )
                  # query file
                  public_key=$(abspath "$2")
@@ -140,6 +159,13 @@ Options:
 
 --sdx                            Use old SD Connect encryption
 
+--sdx-to-sdc                     Convert data that has veen encrypted with SD Connect v1. to SD Connect v2 format
+                                 To do this you must define the secret key that will be used to decrypt the for conversion 
+                                 with option --sk
+
+--sk <secret-key>                Define the seccret key that will be used to decrypt SD Connect v1 data in sdx-to-sdc conversion
+
+
 -p, --public_key <public key>    Use users own Public key for crypt4gh encryption. In this case data is not 
                                  compatible with SD Connect.
 
@@ -147,6 +173,8 @@ Options:
                                  Swift protocol and rclone.
 
 -s, --suffix <suffix>            Define your own suffix instead of the default suffix (.c4gh)
+
+
 
 
 
@@ -243,6 +271,8 @@ if [[ $check_os -lt 2 ]]; then
 fi
 
 
+
+
 if [[ $sdc -eq 0 ]]; then
   ## Write CSC public key to a temporary file
   echo "Starting to process ${#object_list[@]} objects"
@@ -251,7 +281,8 @@ if [[ $sdc -eq 0 ]]; then
   -----END CRYPT4GH PUBLIC KEY-----" > .sdx_key_tmp_$$
 fi
 
-if [[ $sdc -eq 1 ]]; then
+
+if [[ $sdc -gt 0 ]]; then
   make_temp_dir
   cd $tmp_dir
 fi
@@ -270,13 +301,53 @@ do
   else
     target_bucket="$source_bucket"
   fi
-  target_object="${object}${suffix}"
+
+
+  if [[ $previous_bucket != $target_bucket ]]; then 
+    #check of the bucket name is OK
+    echo ""
+    echo "Checking S3 validity of bucket $target_bucket"
+  
+    bucket_check=$(s3_name_check $target_bucket)
+    while [[ $bucket_check != "OK" ]]
+    do
+        echo "Bucket name:  $target_bucket"
+        echo "Is not compatibe with S3 bucket name rules"
+        echo
+	s3_name_check $target_bucket    
+        echo ""
+        echo "Do you want to change the target bucket name (y/n):"
+        read ans
+        if [[ $ans == "n" ]]; then
+            bucket_check="OK"
+        else
+	    echo ""
+	    echo "Give new bucket name:"
+            read new_bname
+            echo ""
+	    echo "Do you want use bucket $new_bname for storing the encrypted data(y/n)?"
+	    read ans
+	    if [[ $ans == "y" || $ans == "yes" ]]; then
+		target_bucket="$new_bname"
+	    fi
+	    bucket_check=$(s3_name_check $target_bucket)   
+  	fi
+    done	
+  fi
+  previous_bucket="$target_bucket"
+  
+  if [[ ${object_name:(-5):5} == "${suffix}" ]]; then
+      target_object="${object}" 
+  else      
+      target_object="${object}${suffix}"
+  fi
+      
   echo ""
   echo "Making encrypted copy of ${source_bucket}/${object}"
   echo "to ${target_bucket}/$target_object"
 
-  # no re-encryption
-  if [[ ${object_name:(-5):5} == "${suffix}" ]]; then
+  # no re-encryption for encrypted files excep in the conversion cases
+  if [[ ${object_name:(-5):5} == "${suffix}" && $sdc -ne 2 ]]; then
     echo "$object_name is already encrypted."
     if [[ "${bucket}" != "" ]]; then
        rclone cat "${storage_server}:$object_name" | rclone rcat ${storage_server}:${target_bucket}/${object}
@@ -285,17 +356,66 @@ do
        check_os=$(rclone ls ${storage_server}:${target_bucket}/${object} 2> /dev/null | wc -l)
     fi
   else
-    if [[ sdc -eq 1 ]]; then
-       a-get --asis "$object_name"
-       fname=$(echo "$object_name" | awk -F "/" '{print $NF}')
-       pseudopath=$(echo "$target_object" |sed -e s/"${fname}${suffix}$"/""/g)
-       a-put --sdc $fname -b ${target_bucket}/${pseudopath}
-       rm $fname
-       check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
-    else
+    
+    #Case 0 ecryption using old SD Conenct format   
+    if [[ $sdc -eq 0 ]]; then
        rclone cat -P "${storage_server}:$object_name" | crypt4gh encrypt --recipient_pk .sdx_key_tmp_$$ $all_keys | rclone rcat ${storage_server}:${target_bucket}/${target_object}
       check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
     fi
+
+    # Default case. Data is coverted to SD Connect v2 format
+    if [[ $sdc -gt 0 ]]; then
+       echo " a-get --asis $object_name"
+       a-get --asis "$object_name"
+       exitcode=$?
+       if [[ $exitcode -ne 0 ]]; then
+          echo "Downloading $object_name Failed. Exiting"
+          exit 1
+       fi
+       fname=$(echo "$object_name" | awk -F "/" '{print $NF}')
+       echo "fname: $fname"
+
+       #collcect pseudopath
+       if [[ $sdc -eq 1 ]]; then
+	   pseudopath=$(echo "$target_object" |sed -e s/"${fname}.c4gh$"/""/g )
+       else
+           pseudopath=$(echo "$target_object" |sed -e s/"${fname}$"/""/g )
+       fi
+	   
+       echo "pseudopath: $pseudopath"
+
+       
+       #Decryption for SD Connecet V1 data
+       if [[ $sdc -eq 2 ]]; then
+	  f_decrypted=$(echo "$fname" |sed -e s/".c4gh$"/""/g)
+	  crypt4gh decrypt --sk $secret_key < "$fname" > "$f_decrypted"
+	  exitcode=$?
+	  rm $fname
+          if [[ $exitcode -ne 0 ]]; then
+              echo "Decrypting $object_name Failed. Exiting"
+              exit 1
+          fi
+	  fname="$f_decrypted"
+          test_ob_exists=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l )
+	  if [[ $test_ob_exists -gt 0 ]]; then
+	      if [[ $replace -eq 1 ]]; then
+                rclone deletefile ${storage_server}:${target_bucket}/${target_object}
+              else		  
+	        mv $fname sdc_v2_$fname
+                fname="sdc_v2_${fname}"
+	        target_object="${pseudopath}${fname}.c4gh"
+	      fi 
+	  fi    
+       fi
+       echo "a-put --sdc $fname -b ${target_bucket}/${pseudopath}"
+       a-put --sdc $fname -b ${target_bucket}/${pseudopath}
+       rm $fname
+       #echo "Debug: rclone:"
+       #echo "rclone ls ${storage_server}:${target_bucket}/${target_object}"
+       rclone ls ${storage_server}:${target_bucket}/${target_object}
+       check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+    fi
+    
   fi
 
   if [[ $check_os -ne 1 ]]; then
@@ -308,7 +428,7 @@ do
      # Do not remove already encrypted objects
      if [[ ${object_name:(-5):5} == "${suffix}" ]]; then
         if [[ "${bucket}" != "" ]]; then
-             echo "Removing un-encrypted version of $object_name"
+             echo "Removing original $object_name"
              rclone deletefile "${storage_server}:$object_name"
         fi
      else
@@ -319,7 +439,7 @@ do
 done
 
 
-if [[ $sdc -eq 1 ]]; then
+if [[ $sdc -gt 0 ]]; then
   rm -rf $tmp_dir
 else
   rm -f .sdx_key_tmp_$$

@@ -129,3 +129,48 @@ Check the segments bucket ${segments_bucket} for object ${check_object}."
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
 
+#check if bucket name follows S3 rules
+s3_name_check(){
+    b="$1"
+    problem=0
+    if [[ ${#b} -lt 3 ]] ; then
+       #echo ""
+       #echo "Bucket name $b is not valid"
+       echo "Bucket name must be at least 3 characters long"
+       problem=1
+    fi
+    if [[ ${#b} -gt 63 ]] ; then
+       #echo ""
+       #echo "Bucket name $b is not valid:"
+       echo "Bucket name must be shorter that 64 characters long"
+       problem=1
+    fi
+    
+    charcheck=$(echo $b | tr -d [a-z] | tr -d [0-9] | tr -d . | tr -d \-)
+    
+    if [[ ${#charcheck} -gt 0 ]] ; then
+     #  if [[ $problem -eq 0 ]]; then
+     #      echo ""
+	   #echo "Bucket name $b is not valid:"
+	  problem=1
+     #  fi	  
+     echo "Only lower case non-scandinavic lertters, numbers, . and - are accepted in bucket names."
+ 
+    fi
+    if [[ $(echo $b | cut -c1 ) == "." ]] || [[ $(echo $b | cut -c1 ) == "-" ]]
+       then
+      # if [[ $problem -eq 0 ]]; then
+	    #echo ""    
+	    #echo "Bucket name $b is not valid:"
+	    problem=1
+      #fi
+      echo "Bucket name must start with a letter or nubmer." 
+    fi
+    if [[ $problem -eq 0 ]]; then
+	   echo   "OK"
+    fi
+
+
+
+
+}
