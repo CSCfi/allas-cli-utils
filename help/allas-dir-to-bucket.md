@@ -21,6 +21,10 @@ This tool utilizes this segmentation to speed up the upload process
 by uploading several segments of a large file simultaneously.
 Smaller files will be uploaded using normal rclone copy command.
 
+Data can be sorted in SD Connect compatible encrypted format if sd-lock-util command
+is avaialable and the SD Connect compatible Allas connection is provided.
+
+
 USAGE
 
 The basic syntax of the command is:
@@ -63,8 +67,11 @@ allas-dir-to-bucket command line options:
 -u, --user <csc-user-name>  Define username liked to the data to be uploaded
                             (default: current username).
 
+-S, --sdc                   Use SD Connect based encryption in upload.                            
+
 -h, --help                  Print this help.
  
+OS_PASSWORD not defined!
 allas-dir-to-bucket needs to have your Allas password stored in an environment variable.
 Please setup you Allas connection with a command that sets this variable.
 

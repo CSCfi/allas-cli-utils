@@ -131,7 +131,7 @@ a-put command line options:
 --pk, --public-key          Public key used for crypt4gh encryption.
 
 --sdx                       Upload data to Allas in format format that is compatible with
-                            the CSC Sensitive data services: The files are encrypted with 
+                            the old verision of CSC Sensitive data services: The files are encrypted with 
                             crypt4gh using CSC public key after which the files are imported 
                             to Allas. 
                             With --public-key you can do the encryption with both
@@ -139,6 +139,11 @@ a-put command line options:
                             your-project-number_SD-CONNECT.
 
 
+--sdc                       Upload data to Allas in format format that is compatible with
+                            the SD Connect and SD Desktop services. Note that to use this feature
+                            you must set up the allas connection with option --sdc that will guide you 
+                            to import project specific SD Connect token that this process needs.               
+ 
 -A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
                             Normally this (Allas with swift) is the default and this option is not needed,
                             but if you have set e.g. Lumi-O as the default storage server, this option can be

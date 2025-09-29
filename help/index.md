@@ -22,11 +22,15 @@
  
 [a-put](./a-put.md)
  
+[a-settings](./a-settings.md)
+ 
 [a-stream](./a-stream.md)
  
 [allas-add-S3-permissions](./allas-add-S3-permissions.md)
  
 [allas-backup](./allas-backup.md)
+ 
+[allas-bucket-acls](./allas-bucket-acls.md)
  
 [allas-dir-to-bucket](./allas-dir-to-bucket.md)
  

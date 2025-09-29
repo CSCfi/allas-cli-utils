@@ -17,6 +17,13 @@ Options:
 
 -p, --prefix            List only objects starting with the given prefix.
 
+-S, --s3                Use Allas with S3 protocol
+
+-L --lumi               Use Lumi-O storage server
+
+
+
+
 
 Working with shared buckets:
 
@@ -27,8 +34,6 @@ Working with shared buckets:
                         the shared buckets stored to Allas or Lumi-o. NOTE that this option shows information about only about 
                         shared buckets that have previously been used by a-list. Thus you can't use a-list check if some
                         new buckets has been shared to you.
-
-
                     
 
 Related commands: a-put, a-get, a-delete, a-find
