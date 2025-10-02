@@ -5,6 +5,7 @@ inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 
 
+
 #allas_conf_path=("/home/kkmattil/allas-cli-utils/allas_conf")
 os_project_name=$OS_PROJECT_NAME
 project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
@@ -16,6 +17,7 @@ options=""
 target="./"
 help=0
 mode="swift"
+packsize=64
 
 if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "delete" || $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ]]
 then
@@ -239,7 +241,7 @@ fi
 
 if [[ $task == "add" ]]
 then
-  restic backup  --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER  $input
+  restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $pacsize $input
 fi
 
 if [[ $task == "list" ]]
