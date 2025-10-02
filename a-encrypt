@@ -228,7 +228,7 @@ fi
 
 if [[ $object_def == "" ]]
 then
-  echo "Please give the object to retrieve:"  >&2
+  echo "Please give the object to encrypt:"  >&2
   read object_def
 fi
 
@@ -266,6 +266,28 @@ fi
 #Rclone through s3
 if [[ $mode == "lumi" ]];then
    storage_server="lumi-o"
+fi
+
+
+if [[ $sdc -gt 0 ]];  then
+ #check sd-locku-util is istalled
+  if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+	    echo ""
+	    echo "sd-lock-util is not available!"
+	    echo "pleas install sd-lock-util if you are using SD Connect based encryption."
+	    echo "   https://github.com/CSCfi/sd-lock-util "
+	    exit 1
+	fi
+	# check that sd-lock connecton is wroking
+  sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+  if [[ $sdc_check -ne 1 ]]; then
+	       echo "Decryption is not possible."
+	          echo "Refresh the sd-lock-util connection by running command:"
+            echo ""
+            echo "   source $allas_conf_path --sdc"
+            exit 1	
+  fi		 
+  
 fi
 
 

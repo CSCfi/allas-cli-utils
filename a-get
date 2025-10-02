@@ -321,13 +321,9 @@ else
   #check if object exists
   bucket_found=$(rclone ls ${storage_server}:/$object_name 2> /dev/null | wc -l)
   if [ $bucket_found -ne 1 ]; then
-     a-find 
-
      echo ""
      echo "Object $object_name was not found"
      echo ""
-     echo "You can list all the available objects with command:"
-     echo "   a-find"
   fi
 fi 
    
@@ -369,7 +365,7 @@ if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
 	    echo ""
 	    echo "If you are using SD Connect based encryption, refresh the sd-lock-util connection by running command:"
             echo ""
-            echo "   source $allas_conf_path -sdc"
+            echo "   source $allas_conf_path --sdc"
             exit 1	
          fi		 
      fi

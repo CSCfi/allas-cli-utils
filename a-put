@@ -474,8 +474,15 @@ fi
 
 #check SD Connect settings if that is used
 if [[ $sdc -eq 1 ]]; then
-    sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
-    if [[ $sdc_check -ne 1 ]]; then
+   if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+	    echo ""
+	    echo "sd-lock-util is not available!"
+	    echo "Please install sd-lock-util if you are using SD Connect based encryption."
+	    echo "   https://github.com/CSCfi/sd-lock-util "
+	    exit 1
+	fi
+   sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+   if [[ $sdc_check -ne 1 ]]; then
 	echo "Connection to SD Connect service is not working."
 	echo "Please open or refresh the connection"
 	echo "by running command:"
