@@ -241,7 +241,9 @@ fi
 
 if [[ $task == "add" ]]
 then
-  restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $pacsize $input
+    restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $packsize $input
+    
+    #restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER $input
 fi
 
 if [[ $task == "list" ]]
