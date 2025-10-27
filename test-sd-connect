@@ -1,0 +1,37 @@
+#!/bin/bash
+# test sd-connect ports, 20251027
+
+# default is to use dns names
+# -n option to use ip addresses instead of names
+# note that a3s.fi has now 2 addresses
+
+NAMES=( pouta.csc.fi pouta.csc.fi a3s.fi sd-connect.csc.fi )
+PORTS=( 5001 443 443 443 )
+OPTS=''
+
+if [ "$1" = "-n" ]; then
+  NAMES=( 86.50.166.15 86.50.166.15 86.50.254.18 86.50.254.19 193.167.203.228 )
+  PORTS=( 5001 443 443 443 443 )
+  OPTS='-k'
+fi
+
+LENGTH=${#NAMES[@]}
+
+i=0
+while [ $i -lt $LENGTH ]
+do
+  ADDRESS="${NAMES[${i}]}"
+  PORT="${PORTS[${i}]}"
+
+  echo "---------------"
+  echo "https://$ADDRESS:$PORT"
+  OUT=$(curl -Ss --max-time 5 $OPTS https://"$ADDRESS:$PORT" 2>&1)
+  RETURN="$?"
+
+  if [ "$RETURN" = "0" ]; then
+    echo "OK"
+  else
+    echo "${OUT}"; echo ""
+  fi
+  ((i++))
+done
