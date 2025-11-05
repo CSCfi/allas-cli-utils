@@ -21,7 +21,9 @@ packsize=64
 
 
 
-if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "restore-overwrite" || $1 == "restore-newer" || $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ]]
+
+if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "restore-overwrite" || $1 == "restore-newer" ||\
+ $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ||  $1 == "delete" ]]
 then
    task="$1"
    shift
