@@ -18,22 +18,14 @@ target="./"
 help=0
 mode="swift"
 packsize=64
-
-
-
+check_permissions=0
+task="add"
 
 if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "restore-overwrite" || $1 == "restore-newer" ||\
  $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ||  $1 == "delete" ]]
 then
    task="$1"
    shift
-else
-   if [[ -e $1 ]] ;then
-     task="add"
-     input=$1
-   else
-      help=(1)
-   fi
 fi
 
 
@@ -83,13 +75,17 @@ do
               '-mode' )
                   if [[ $2 == "s3cmd" || $2 == "S3" || $2 == "s3" ]]; then
                       mode="s3cmd"
-		  fi
-		  if [[ $2 == "swift" ]]; then
-		      mode="swift"
-		  fi
+		            fi
+		            if [[ $2 == "swift" ]]; then
+		                mode="swift"
+		            fi
 		  shift
 		  shift
 		  ;;
+              '-pre-check' )
+                check_permissions=1
+                shift
+                ;;
 	      
               '--s3cmd' | '-s3' | '-S3' )
                   mode="s3cmd"
@@ -115,6 +111,7 @@ if [[ $task == "add" ]]; then
      echo "File or directory $input does not exist!"
      exit 1
   fi
+
 fi
 
 
@@ -193,6 +190,9 @@ allas-backup can be used for following five operations:
 
   -mode swift/S3                     Define if S3 or swift based repository is in use.
 
+  -pre-check                         Check that you have access permissions to all the data in the
+                                     directory to be backuped
+
 EOF
 exit 0
 fi
@@ -262,6 +262,35 @@ echo ""
 
 if [[ $task == "add" ]]
 then
+   if [[ $check_permissions -eq 1 ]];then
+     echo "Checking the access premissions of $input"
+     echo "In the case of large directories this can take some time"
+     echo ""
+     for f in $(find $input ! -readable 2> /dev/null)
+     do 
+         ls -ld "$f" | awk '{print $3}' >> note_users_$$
+     done
+
+     if [[ -e note_users_$$ ]]; then
+      echo "" 
+      echo "Following users have files with restricted access permissions in $input: "
+      cat note_users_$$ | sort | uniq -c
+      echo ""
+      echo "These users should provide read permissions for you for their files in $input"
+      echo "data accessibility later on"
+      rm note_users_$$
+      echo ""
+      echo "Do you want to continue backup process for the files that are accessible for you? [y/n]:"
+      read ans
+        if [[ $ans == "y" || $ans == "yes" ]]; then
+           echo "Starting backup process"
+        else 
+           echo "Exiting"
+           exit
+         fi
+      fi
+   fi
+
     restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $packsize $input
     
     #restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER $input
