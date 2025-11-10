@@ -30,7 +30,7 @@ start_time=$(date +%s)
 encrypt=""
 secret_key=""
 sdc=0
-rclone_copy_options=""
+rclone_copy_options="-P"
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -112,7 +112,7 @@ do
                   shift
                   ;;
              '--ignore-checksum' )
-                  rclone_copy_options=" --ignore-checksum "
+                  rclone_copy_options="-P --ignore-checksum"
                   shift
                    ;;  
 
@@ -499,8 +499,8 @@ if [[ $is_tar_file -eq 1 ]]; then
      echo "Downloading compressed object from $storage_name"
      
      #if [[ $mode == "swift" ]]; 
-        #echo "clone -P "DEBUG 0 $rclone_copy_options" copyto  "${storage_server}:$object_name" a-get_download_$$_tmp.zst"
-        rclone -P copyto  "${storage_server}:$object_name" a-get_download_$$_tmp.zst
+        #echo "DEBUG 0 $rclone_copy_options copyto  ${storage_server}:$object_name a-get_download_$$_tmp.zst"
+        rclone $rclone_copy_options copyto "${storage_server}:$object_name" a-get_download_$$_tmp.zst
         exitcode=$?
      #else
      #  s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
@@ -511,6 +511,7 @@ if [[ $is_tar_file -eq 1 ]]; then
         rm -f  a-get_download_$$_tmp.zst
         exit 1
      fi
+
      if [[ $encrypt == "gpg" ]]; then
         echo "Based on the object name, the object has been encrypted with gpg."
         gpg -d a-get_download_$$_tmp.zst > a-get_download_$$_tmp.zst.tmp
@@ -602,8 +603,8 @@ else
                locked_file=$(basename "$object_name")
 	       locked_path=$(dirname "$object_name")
 	       echo "Copying encrypted data"
-          #echo "DEBUG 1: rclone -P "$rclone_copy_options" copyto "${storage_server}:$object_name" "./${locked_file}""
-	       rclone -P copyto "${storage_server}:$object_name" "./${locked_file}"
+               #echo "DEBUG 1: rclone -P "$rclone_copy_options" copyto "${storage_server}:$object_name" "./${locked_file}""
+	       rclone $rclone_copy_options copyto "${storage_server}:$object_name" "./${locked_file}"
 	       echo "Decrypting $locked-file"
 	       #echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
@@ -620,6 +621,7 @@ else
 	       fi	 
 	       rm -f "$locked_file"	       
 	   else
+         
              rclone cat "${storage_server}:$object_name" | zstdmt -d >  $target_name
              exitcode=$?
            fi
@@ -639,8 +641,8 @@ else
 	       locked_file=$(basename "$object_name")
 	       locked_path=$(dirname "$object_name")
 	       echo "Copying encrypted data"
-          #echo "DEBUG 2: rclone copyto -P $rclone_copy_options ${storage_server}:$object_name ./${locked_file}"
-	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
+               #echo "DEBUG 2: rclone copyto -P $rclone_copy_options ${storage_server}:$object_name ./${locked_file}"
+	       rcloner $clone_copy_options copyto "${storage_server}:$object_name" "./${locked_file}"
 	       echo "Decrypting $locked-file"
 	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
@@ -658,13 +660,12 @@ else
            else
              if [[ ${target_name:0:1} != "/" ]]; then
                 #this is needed to cope with file names containing :"
-                #echo "DEBUG 3"
-                rclone -P  copyto "${storage_server}:$object_name"  "./$target_name"
+                #echo "rclone "$rclone_copy_options" copyto "${storage_server}:$object_name"  "./$target_name""
+		rclone $rclone_copy_options copyto "${storage_server}:$object_name"  "./$target_name"
                 exitcode=$?
                 fix_target_name=1
              else
-                #echo "Debug 4"
-                rclone -P  copyto "${storage_server}:$object_name"  "$target_name"
+                rclone $rclone_copy_options copyto "${storage_server}:$object_name"  "$target_name"
                 exitcode=$?
              fi
            fi
