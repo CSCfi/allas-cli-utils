@@ -348,7 +348,6 @@ then
       cat note_users_$$ | sort | uniq -c
       echo ""
       echo "These users should provide read permissions for you for their files in $input"
-      echo "data accessibility later on"
       rm note_users_$$
       echo ""
       echo "Do you want to continue backup process for the files"
