@@ -30,6 +30,7 @@ start_time=$(date +%s)
 encrypt=""
 secret_key=""
 sdc=0
+rclone_copy_options=""
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -82,7 +83,7 @@ do
                 asis_mode=1
                   shift
                 ;; 
-              '--s3cmd' )
+              '--s3cmd'  | '--s3' | '-S' )
                   mode="s3cmd"
                   shift
                 ;;
@@ -110,6 +111,11 @@ do
                   shift
                   shift
                   ;;
+             '--ignore-checksum' )
+                  rclone_copy_options="--ignore-checksum"
+                  shift
+                   ;;  
+
 	     '--sdc' )
 		 sdc=1
                  if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -175,7 +181,7 @@ Options:
                               but if you have set e.g. Lumi-O as the default storage server, this option can be
                               used to get data from Allas without changing the default storage server.
                               
---s3cmd                       Use Allas with S3 protocol.
+--s3cmd, --s3, -S             Use Allas with S3 protocol.
 
 --lumi                        Get data from Lumi-O with S3 protocol in stead of the default storage server. 
                               If Lumi-O is defined to be the default storage server and this option is not needed.
@@ -490,7 +496,7 @@ if [[ $is_tar_file -eq 1 ]]; then
      echo "Downloading compressed object from $storage_name"
      
      #if [[ $mode == "swift" ]]; then
-        rclone copyto -P "${storage_server}:$object_name" a-get_download_$$_tmp.zst
+        rclone copyto -P "$rclone_copy_options" "${storage_server}:$object_name" a-get_download_$$_tmp.zst
         exitcode=$?
      #else
      #  s3cmd get "s3://${object_name}" a-get_download_$$_tmp.zst 
@@ -592,7 +598,7 @@ else
                locked_file=$(basename "$object_name")
 	       locked_path=$(dirname "$object_name")
 	       echo "Copying encrypted data"
-	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
+	       rclone copyto -P "$rclone_copy_options" "${storage_server}:$object_name" "./${locked_file}"
 	       echo "Decrypting $locked-file"
 	       #echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
@@ -628,7 +634,7 @@ else
 	       locked_file=$(basename "$object_name")
 	       locked_path=$(dirname "$object_name")
 	       echo "Copying encrypted data"
-	       rclone copyto -P "${storage_server}:$object_name" "./${locked_file}"
+	       rclone copyto -P "$rclone_copy_options" "${storage_server}:$object_name" "./${locked_file}"
 	       echo "Decrypting $locked-file"
 	       echo " sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}" "
 	       sd-lock-util unlock --container "${locked_path}" --no-content-download --no-preserve-original --path "${locked_file}"
@@ -645,12 +651,12 @@ else
 	       rm -f "$locked_file"
            else
              if [[ ${target_name:0:1} != "/" ]]; then
-                #this is needed to cope with file names containing :
-                rclone -P copyto "${storage_server}:$object_name"  "./$target_name"
+                #this is needed to cope with file names containing :"
+                rclone -P copyto "$rclone_copy_options" "${storage_server}:$object_name"  "./$target_name"
                 exitcode=$?
                 fix_target_name=1
              else
-                rclone -P copyto "${storage_server}:$object_name"  $target_name
+                rclone -P copyto "$rclone_copy_options" "${storage_server}:$object_name"  "$target_name"
                 exitcode=$?
              fi
            fi

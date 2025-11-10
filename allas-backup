@@ -20,6 +20,8 @@ mode="swift"
 packsize=64
 check_permissions=0
 task="add"
+def_bucket=1
+create_new=0
 
 if [[ $1 == "add" || $1 == "list" ||  $1 == "restore" || $1 == "restore-overwrite" || $1 == "restore-newer" ||\
  $1 == "find" || $1 == "files" || $1 == "dump" || $1 == "unlock" ||  $1 == "delete" ]]
@@ -35,11 +37,14 @@ do
   case "$1" in
               '-b' | '-bucket')
                 bucket_name="$2"
+                def_bucket=0
                 shift
                 shift
                 ;;
-              '-repo')
-                repository=$2
+              '-r' | '-repo')
+                project_label=$2
+                bucket_name="${project_label}-BACKUP"
+                def_bucket=0
                 shift
                 shift
               ;;
@@ -70,8 +75,13 @@ do
               '-h' | '--help' | '-help')
                 help=("1")
                 shift
-		;;
-
+		        ;;
+              '-password')
+                echo "Please enter password for the repository:"
+                read -s RESTIC_PASSWORD
+                export RESTIC_PASSWORD
+                shift
+               ;;
               '-mode' )
                   if [[ $2 == "s3cmd" || $2 == "S3" || $2 == "s3" ]]; then
                       mode="s3cmd"
@@ -182,9 +192,11 @@ allas-backup can be used for following five operations:
 
   Extra options:
  
-  -b, -bucket                        Use specific bucket for your repository. Note that this makes
-                                     Allas-backup to use different separate repository instead of
-                                     the default one.
+  -r, -repo                          Use non-default repository. This make 
+                                     Allas-backup to use different repository instead of
+                                     the default one. If you use this option together with
+                                     -password option. You can define and use a non-default
+                                     password for your repository.
 
   -S3, -s3                           Use S3 based backup repository
 
@@ -192,6 +204,10 @@ allas-backup can be used for following five operations:
 
   -pre-check                         Check that you have access permissions to all the data in the
                                      directory to be backuped
+
+  -password                          Ask for password. Use this in case of repositories for which
+                                     you don't want to store the password to your home directory. 
+
 
 EOF
 exit 0
@@ -217,6 +233,22 @@ if [[ $mode == "swift" ]]; then
      exit 1
    fi
    repository="swift:${bucket_name}:/backup"
+   check_repo=$(rclone ls allas:${bucket_name}/backup/config | wc -l)
+   if [[ $check_repo -eq 0 ]]; then
+      if [[ $def_bucket -eq 0 ]]; then
+         echo "Backup repository $repository does not exist."
+         if [[ $task != "add" ]]; then
+            exit 1
+         fi
+         echo "Do you want to create it[y/n]?"
+         read ans
+         if [[ $ans != "y" ]]; then
+             echo "exiting."
+             exit 0
+         fi 
+      fi   
+      create_new=1
+   fi
 fi
 
 ### Settings in case of S3
@@ -237,27 +269,65 @@ if [[ $mode == "s3cmd" ]]; then
   fi    
   bucket_name="${project_label}-s3backup"
   repository="s3:a3s.fi/${bucket_name}"  
+  check_repo=$(rclone ls s3allas:${bucket_name}/backup/config | wc -l)
+   if [[ $check_repo -eq 0 ]]; then
+      if [[ $def_bucket -eq 0 ]]; then
+         echo "Backup repository $repository does not exist."
+         if [[ $task != "add" ]]; then
+            exit 1
+         fi
+         echo "Do you want to create it[y/n]?"
+         read ans
+         if [[ $ans != "y" ]]; then
+             echo "exiting."
+             exit 0
+         fi 
+      fi   
+      create_new=1
+   fi
 fi    
-
-
-if [[ ! -e $HOME/.backup_passwd_${project_label} ]]
-then
-  echo restic_$project_label >  $HOME/.backup_passwd_${project_label}
-fi 
 
 
 
 #check if restic repository already exists
 #snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} snapshots 2> /dev/null | wc -l)
-snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} check 2> /dev/null | grep -c "no errors were found")
-if [[ $snum -lt 1 ]]
+#snum=$(restic -r $repository -p $HOME/.backup_passwd_${project_label} check 2> /dev/null | grep -c "no errors were found")
+#restic -r $repository -p $HOME/.backup_passwd_${project_label} check 1> /dev/null
+if [[ $create_new -eq 1 ]]
 then
-   restic init --repo $repository -p $HOME/.backup_passwd_${project_label} 
+   echo "Initialiazing new restic repository: $repository"
+   if [[ $RESTIC_PASSWORD == "" ]]; then
+       restic init --repo $repository -p $HOME/.backup_passwd_${project_label} 
+   else
+      echo "Password will be set for the repository."
+      echo "Please re-enter the password:"
+      read -s "pass_check"
+      if [[ "$RESTIC_PASSWORD" != "$pass_check" ]]; then
+         echo "Passwords don't match! Exiting."
+         exit 1
+      fi
+      echo "Do you want to save the password to your home directory"
+      echo "This enables passwordless access to a private backup repository [y/n]?"
+      read ans
+      if [[ $ans == y || $ans == yes ]]; then
+         echo "Writing password to $HOME/.backup_passwd_${project_label}"
+         echo "$RESTIC_PASSWORD" >  $HOME/.backup_passwd_${project_label}
+         restic init --repo $repository
+      else
+         restic init --repo $repository
+      fi
+   fi
 fi 
 
 echo ""
 echo "Using backup repository: $repository"
 echo "" 
+
+
+if [[ ! -e $HOME/.backup_passwd_${project_label} && $RESTIC_PASSWORD == "" ]]
+then
+  echo restic_$project_label >  $HOME/.backup_passwd_${project_label}
+fi 
 
 
 if [[ $task == "add" ]]
@@ -273,14 +343,16 @@ then
 
      if [[ -e note_users_$$ ]]; then
       echo "" 
-      echo "Following users have files with restricted access permissions in $input: "
+      echo "Following users have files with restricted access permissions in"
+      echo "$input: "
       cat note_users_$$ | sort | uniq -c
       echo ""
       echo "These users should provide read permissions for you for their files in $input"
       echo "data accessibility later on"
       rm note_users_$$
       echo ""
-      echo "Do you want to continue backup process for the files that are accessible for you? [y/n]:"
+      echo "Do you want to continue backup process for the files"
+      echp "that are accessible for you? [y/n]:"
       read ans
         if [[ $ans == "y" || $ans == "yes" ]]; then
            echo "Starting backup process"
@@ -290,16 +362,23 @@ then
          fi
       fi
    fi
-
-    restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $packsize $input
+   if [[ $RESTIC_PASSWORD != "" ]]; then
+       restic backup --repo $repository --tag $USER --pack-size $packsize $input
+   else
+       restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER --pack-size $packsize $input
+   fi
     
     #restic backup --repo $repository -p $HOME/.backup_passwd_${project_label} --tag $USER $input
 fi
 
 if [[ $task == "list" ]]
 then
+   if [[ $RESTIC_PASSWORD != "" ]]; then
+      restic snapshots --repo $repository $input $options
+   else
   #echo "restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options"
-  restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
+      restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
+   fi
 fi
 
 if [[ $task == "files" ]]
@@ -312,7 +391,11 @@ then
      exit 1
   fi
   #echo "restic snapshots --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options"
-  restic ls --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
+   if [[ $RESTIC_PASSWORD != "" ]]; then   
+      restic ls --repo $repository $input $options
+   else
+      restic ls --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options
+   fi
 fi
 
 if [[ $task == "find" ]]
@@ -325,7 +408,11 @@ then
      exit 1
   fi
   #echo "restic find --repo $repository -p $HOME/.backup_passwd_${project_label} $options"
-  restic find --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options > .find_list_$$
+  if [[ $RESTIC_PASSWORD != "" ]]; then   
+     restic find --repo $repository $input $options > .find_list_$$
+  else
+     restic find --repo $repository -p $HOME/.backup_passwd_${project_label} $input $options > .find_list_$$
+  fi
   numhits=$(grep -v "Found matching entries" .find_list_$$ | grep . | wc -l)
   numsn=$(grep "Found matching entries" .find_list_$$ | grep . | wc -l)
   cat  .find_list_$$
@@ -348,8 +435,11 @@ then
   fi
   echo "Only missing files will be downloaded. Existing local files will not be overwritten."
   echo ""
-   
-  restic restore --repo $repository --overwrite never -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  if [[ $RESTIC_PASSWORD != "" ]]; then   
+     restic restore --repo $repository --overwrite never $input --target $target $options
+  else
+     restic restore --repo $repository --overwrite never -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi
 fi
 
 if [[ $task == "restore-overwrite" ]]
@@ -366,7 +456,11 @@ then
   fi
   echo "All files from the snapshot will be downloaded. Existing local files will be overwritten."
   echo ""
-  restic restore --repo $repository --overwrite always -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  if [[ $RESTIC_PASSWORD != "" ]]; then  
+    restic restore --repo $repository --overwrite always $input --target $target $options
+  else 
+    restic restore --repo $repository --overwrite always -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi
 fi
  
 if [[ $task == "restore-newer" ]]
@@ -383,8 +477,11 @@ then
   fi
   echo "Existing local files will be overwritten only if the time stamp in the snapshot is newer than in the local file."
   echo ""
-
-  restic restore --repo $repository --overwrite if-newer -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  if [[ $RESTIC_PASSWORD != "" ]]; then 
+     restic restore --repo $repository --overwrite if-newer $input --target $target $options
+  else
+     restic restore --repo $repository --overwrite if-newer -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi   
 fi
 
 
@@ -395,12 +492,20 @@ then
      echo ""
      exit 1
   fi
-  restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input 
+  if [[ $RESTIC_PASSWORD != "" ]]; then 
+     restic forget --prune --repo $repository -p $input
+  else
+     restic forget --prune --repo $repository -p $HOME/.backup_passwd_${project_label} $input
+  fi 
 fi 
  
 if [[ $task == "unlock" ]]
 then
-  restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
+  if [[ $RESTIC_PASSWORD != "" ]]; then 
+    restic unlock --repo $repository 
+  else
+    restic unlock --repo $repository -p $HOME/.backup_passwd_${project_label} 
+  fi
 fi 
 
 
@@ -418,7 +523,11 @@ then
      echo ""
      exit 1
   fi
-  restic dump --repo $repository -p $HOME/.backup_passwd_${project_label} $input $get_file
+  if [[ $RESTIC_PASSWORD != "" ]]; then 
+    restic dump --repo $repository $input $get_file
+  else
+    restic dump --repo $repository -p $HOME/.backup_passwd_${project_label} $input $get_file
+  fi 
 fi 
 
 

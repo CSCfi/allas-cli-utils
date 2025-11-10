@@ -68,8 +68,8 @@ do
              '--rmb')
                   remove_bucket=1
                   shift
-                ;;
-             '--s3cmd' )
+                ;; 
+             '--s3cmd' | '--s3' | '-S' )
                   mode="s3cmd"
                   shift
                 ;;
@@ -126,6 +126,8 @@ Options:
 --rmb                        Remove empty bucket.
 
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
+
+-S, --s3, --s3cmd            Use S3 protocol.
 
 
 Related commands: a-put, a-get, a-find, a-info

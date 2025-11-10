@@ -216,31 +216,30 @@ do
                  ;;
                  '--sdx' )
                     if [[ $(which crypt4gh 2> /dev/null | wc -l ) -ne 1 ]];then
-		         echo ""
-		         echo "crypt4gh is not available!"
-		         echo "Please install crypt4gh if you want to use encryption."
-		         exit 1
-		    fi
+		                 echo ""
+		                 echo "crypt4gh is not available!"
+		                 echo "Please install crypt4gh if you want to use encryption."
+		                 exit 1
+		              fi
                     include_ameta=0
                     encrypt="crypt4gh"
                     compression=0
                     sdx=1
-
                     fnum=0                  
                  shift
                  ;;
 
         	 '--sdc' )
                     if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
-		         echo ""
-		         echo "sd-lock-util is not available!"
-		         echo "Please install sd-lock-util if you want to use SD Connect based encryption."
-                         echo "    https://github.com/CSCfi/sd-lock-util/"
-		         exit 1
-		    fi
+		                  echo ""
+		                  echo "sd-lock-util is not available!"
+		                  echo "Please install sd-lock-util if you want to use SD Connect based encryption."
+                        echo "    https://github.com/CSCfi/sd-lock-util/"
+		                  exit 1
+		              fi
                     sdc=1
-		    include_ameta=0
-		    compression=0
+		              include_ameta=0
+		              compression=0
                     fnum=0
                  shift
                  ;;
@@ -471,7 +470,6 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
       exit 1
 fi
 
-
 #check SD Connect settings if that is used
 if [[ $sdc -eq 1 ]]; then
    if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -491,7 +489,6 @@ if [[ $sdc -eq 1 ]]; then
         exit 1	
     fi
 fi
-
 
 # s3cmd mode
 if [[ $mode == "s3cmd" ]]; then 
@@ -1135,18 +1132,18 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      sd_lock_partial_path=$(remove_slash_from_ends $sd_lock_partial_path)
      if [[ ${partial_path} != "" ]]; then
          partial_path=$(remove_slash_from_ends $partial_path)
-	 sd_lock_partial_path="${sd_lock_partial_path}/${partial_path}"
+	      sd_lock_partial_path="${sd_lock_partial_path}/${partial_path}"
      fi
      sd_lock_partial_path=$(remove_slash_from_ends $sd_lock_partial_path)
      currdir=$(pwd)
      # move to the directory where the file is and encrypt it, then return.
      cd $(dirname ${tmp_dir}/$tmp_file)
      if [[ $sd_lock_partial_path == "" ]]; then
-	 echo " sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"" >> $ameta_file
-	 sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"
+	    echo " sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"" >> $ameta_file
+	    sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"
      else
-	 echo "sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload $tmp_file" >> $ameta_file
-         sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload "$tmp_file"
+	     echo "sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload $tmp_file" >> $ameta_file
+        sd-lock-util lock --container ${sd_lock_bucket} --prefix "${sd_lock_partial_path}/" --no-content-upload "$tmp_file"
      fi 
      cd $currdir
      
