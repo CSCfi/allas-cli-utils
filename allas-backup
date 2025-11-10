@@ -352,7 +352,7 @@ then
       rm note_users_$$
       echo ""
       echo "Do you want to continue backup process for the files"
-      echp "that are accessible for you? [y/n]:"
+      echo "that are accessible for you? [y/n]:"
       read ans
         if [[ $ans == "y" || $ans == "yes" ]]; then
            echo "Starting backup process"
