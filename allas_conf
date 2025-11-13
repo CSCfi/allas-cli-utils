@@ -34,33 +34,47 @@ local usage="
 
 Usage: source allas_conf [OPTIONS] [PROJECT]
 
-    This bash script sets up the environment variables and the configuration
-    files for accessing Allas or Lumi-O storage service.
+    This bash script sets up the environment variables and 
+    the configuration files for accessing Allas or Lumi-O 
+    storage services.
 
     Allas
 
-    By default this script confgure swift based connection to Allas (https://a3s.fi).
+    By default this script configures swift based connection 
+    to Allas (https://a3s.fi).
 
-    The program asks your CSC password before starting the configuration
-    process.
+    The program asks your CSC password before starting the 
+    configuration process.
 
-    If the project name is not given as PROJECT argument, the available
-    project names are listed and you are asked to choose one.
+    If the project name is not given as PROJECT argument, the 
+    available project names are listed and you are asked to 
+    choose one.
 
-    By default, this tool sets up access tokens that are used by swift and
-    rclone connections.
+    By default, this tool sets up access tokens that are used 
+    by swift and rclone connections.
+
+
+    SD Connect
+
+    With option --sdc, the Swift based Allas connection is extended
+    to cover also the parameters that are needed by the SD Connect
+    sensitive data storage service. In that case you need to feed in
+    to the process a project specific application token that can be 
+    obtained from SD Connect web interface (https://sd-connect.csc.fi).
 
 
     Lumi-O
 
-    With option --lumi, this script can be used to configure S3 based connection to
-    Lumi-O. In that case you need to use seprate web server (https://auth.lumidata.eu/)
-    to create authentication keys for Lumi-O. Authentication server provides key strings
-    based of which this script creates configuration files for rclone, S3 and S3cmd.
+    With option --lumi, this script can be used to configure S3 
+    connection to Lumi-O. In that case you need to use separate 
+    web server (https://auth.lumidata.eu/) to create authentication 
+    keys for Lumi-O. Authentication server provides key strings
+    based of which this script creates configuration files for 
+    rclone, S3 and S3cmd.
 
-    Note that you can have active connection to both Lumi-O and Allas in the same time
-    but in that case you must indicate the stroage server to be used in the commands
-    you are using.
+    Note that you can have active connection to both Lumi-O and 
+    Allas in the same time but in that case you must indicate the 
+    storage server to be used in the commands you are using.
  
 
     OPTIONS
@@ -72,14 +86,14 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
      --lumi, --mode lumi      Configure Lumi-O connection. 
 
-     -u, --user USER          Storage server username (default: $USER)
+     -u, --user <USER >       Storage server username (default: $USER)
 
      -k, --keeppasswd         Keep OS_PASSWORD environment variable once the
                               configuration is done. This can be useful if you
                               use this tool in scripts that need to switch between 
                               projects or re-open Allas connection
 
-     -c, --chuncksize SIZE    s3cmd chunk size, 5-5000, Files larger than
+     -c, --chuncksize <SIZE>  s3cmd chunk size, 5-5000, Files larger than
                               SIZE, in MB, are automatically uploaded
                               multithread-multipart  (default: 5000)
 
@@ -87,26 +101,39 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
      -s, --silent             Less output
 
-     -f, --force              Skip check that tries to ensure that this command is
-                              sourced correctly. This option needs to be used in batch jobs.
+     -f, --force              Skip check that tries to ensure that this
+                              command is sourced correctly. This option 
+                              needs to be used in batch jobs.
   
      --s3remove               Remove S3 access key for an Allas project.
       
-     --show-shell             After configuration, show bash / zsh commands that set swift authentication 
-                              related environment variables. These commands can be used to enable Rclone
-                              connection to Allas in bash or zsh shell.
+     --show-shell             After configuration, show bash / zsh commands 
+                              that set swift authentication related environment 
+                              variables. These commands can be used to 
+                              enable Rclone connection to Allas in bash or 
+                              zsh shell in servers were you are not able to 
+                              use allas_conf script.
 
-     --show-powershell        After configuration, show PowerShell commands that set swift authentication 
-                              related environment variables. These commnads can be used to enable Rclone
+     --show-powershell        After configuration, show PowerShell commands 
+                              that set swift authentication related environment 
+                              variables. These commands can be used to enable Rclone
                               connection to Allas in Windows PowerShell.
 
-     --swift-auth             Use OpenStack swift based authentication process instead of default curl-based
-                              process.  
+     --swift-auth             Use OpenStack swift based authentication process 
+                              instead of default curl-based process.  
 
-     --sd, --sdc              Enable SD Connect compatible Allas connection. Using this option keeps OS_PASSWORD 
-                              environment variable once the configuration is done. In addition the configuration
-                              process asks for  SD_CONNECT_API_TOKEN value that can be obtained from
-                              https://sd-connect.csc.fi.  
+     --sd, --sdc              Enable SD Connect compatible Allas connection. 
+                              Using this option keeps OS_PASSWORD environment 
+                              variable once the configuration is done. In addition 
+                              the configuration process asks for SD_CONNECT_API_TOKEN 
+                              value that can be obtained from
+                              https://sd-connect.csc.fi.
+                              
+     --sdc-token <tokenfile>  Same as --sd but in this case the SD_CONNECT_API_TOKEN
+                              is red from a file defined by this option. 
+
+     --project-id <id-string> This option can be used in cases where automatic
+                              resolving of the project ID fails.  
                               
 
     DEPENDENCIES
@@ -147,6 +174,7 @@ local project_list_method=curl
 local sd_connect=false
 local show_powershell=false
 local show_shell=false
+local fixed_project_id=false
 
 # Process command line arguments
 
@@ -167,8 +195,9 @@ while [[ $# -ge 1 ]]; do
         '--store-token' )       ood=true;                shift;;
         '--lumi')               mode="lumi";             shift;;
         '--sd' | '--sdc' )      sd_connect=true; keep_password=true;      shift;;
+        '--sdc-token' )         sd_connect=true; keep_password=true; sd_token_file="$2";     shift 2;;
         '--show-powershell' )   show_powershell=true;    shift;;
-	'--show-shell' )        show_shell=true;         shift;;
+	    '--show-shell' )        show_shell=true;         shift;;
         '-p'|'--project' )
           if [[ -z $2 ]]; then
               if [[ ${2::1} != "-" ]];then
@@ -182,6 +211,12 @@ while [[ $# -ge 1 ]]; do
           fi    
           shift
           ;; 
+        '--project-id' )
+           export OS_PROJECT_ID="$2"
+           fixed_project_id=true
+           shift
+           shift
+           ;;
         *) export OS_PROJECT_NAME="$1";                  shift;;
     esac
 done
@@ -597,22 +632,46 @@ if $use_swift; then
     if $sd_connect; then
          sd_server=https://sd-connect.csc.fi 
          export SD_CONNECT_API_ADDRESS="${sd_server}"
-         #
-         #if [[ $SD_CONNECT_API_TOKEN == "" ]]; then
-         #    export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
-         echo "Please give your SD Connect API token"
-         echo "If you don't have a valid API token, login to $sd_server"
-         echo "In the web interface, make sure that the active project is: $OS_PROJECT_NAME"
-	 echo
-         echo "Then select: Support -> Create API tokens."
-         echo " "
-         echo "SD Connect API token:"
-         read SD_CONNECT_API_TOKEN   
-         export SD_CONNECT_API_TOKEN
+         echo "sd_token_file: $sd_token_file"
+         if [[ $sd_token_file == "" ]]; then
+           #
+           #if [[ $SD_CONNECT_API_TOKEN == "" ]]; then
+           #    export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
+           echo "Please give your SD Connect API token"
+           echo "If you don't have a valid API token, login to $sd_server"
+           echo "In the web interface, make sure that the active projest is: $OS_PROJECT_NAME"
+	       echo
+           echo "Then select: Support -> Create API tokens."
+           echo " "
+           echo "SD Connect API token:"
+           read SD_CONNECT_API_TOKEN   
+           export SD_CONNECT_API_TOKEN
+         else
+           if [[ -e $sd_token_file ]]; then
+              SD_CONNECT_API_TOKEN=$(cat $sd_token_file)
+              export SD_CONNECT_API_TOKEN
+           else
+              echo "Token file $sd_token_file not found"
+           fi
+         fi
+
          #fi 
-         export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+        
+         if [[ ! $fixed_project_id ]] ; then       
+            export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+         fi
+
+         if [[ $OS_PROJECT_ID == "" ]]; then
+            echo ""
+            echo "Defining OS_PROJECT_ID for project $OS_PROJECT_NAME failed." 
+            echo "Please copy the Copy Share ID of the project from SD Connect"
+            echo "to the line below:"
+            read OS_PROJECT_ID
+            export OS_PROJECT_ID
+         fi
+         echo ""
          echo "Using $sd_server"
-         echo "With project $OS_PROJECT_NAME"
+         echo "With project $OS_PROJECT_NAME / $OS_PROJECT_ID"
          echo "And token: $SD_CONNECT_API_TOKEN"
     fi  
 fi
@@ -784,9 +843,6 @@ if $show_shell; then
    echo "--------------------------------------------------------------"
    env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
 fi  
-
-
-
 
 
 }
