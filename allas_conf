@@ -530,6 +530,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 	       return 1
 	   fi
            export OS_PROJECT_NAME=$project
+	   export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
            ;;
    esac
    export PYTHONPATH=$activePythonPath
