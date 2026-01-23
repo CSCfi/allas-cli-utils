@@ -237,7 +237,7 @@ fi
 
 #chek SD Connect settings if that is used
 if [[ $sdc -eq 1 ]]; then
-    sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+    sdc_check=$(sd-lock-util pubkey | grep -c "END CRYPT4GH PUBLIC KEY")
     if [[ $sdc_check -ne 1 ]]; then
 	echo "Connection to SD Connect service is not working"
 	echo "Please open or refresh the connection"

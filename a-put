@@ -479,7 +479,7 @@ if [[ $sdc -eq 1 ]]; then
 	    echo "   https://github.com/CSCfi/sd-lock-util "
 	    exit 1
 	fi
-   sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+   sdc_check=$(sd-lock-util pubkey | grep -c "END CRYPT4GH PUBLIC KEY")
    if [[ $sdc_check -ne 1 ]]; then
 	echo "Connection to SD Connect service is not working."
 	echo "Please open or refresh the connection"
@@ -487,7 +487,7 @@ if [[ $sdc -eq 1 ]]; then
         echo ""
         echo "   source $allas_conf_path --sdc"
         exit 1	
-    fi
+   fi
 fi
 
 # s3cmd mode
