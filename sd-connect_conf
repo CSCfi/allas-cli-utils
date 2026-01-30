@@ -402,7 +402,13 @@ if $use_s3cmd; then
    echo 'acl = private' >>  "$rconf"
 
    echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
+   echo " "
+   echo "The S3 compatible version of sd-lock-util can be used with commands:"
+   echo "  Upload:"
+   echo "  sd-lock-util lock --s3 local-file-or-directory --container bucket-in-sd-connect"
    echo ""
+   echo "  Download:"
+   echo "   sd-lock-util unlock --s3 --container bucket-in-sd-connect" 
 
 
  #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
