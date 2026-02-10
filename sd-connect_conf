@@ -401,6 +401,32 @@ if $use_s3cmd; then
    echo 'endpoint = a3s.fi' >>  "$rconf"
    echo 'acl = private' >>  "$rconf"
 
+    if [[ ${#OS_PASSWORD} -lt 2 ]]; then
+      pwdcheck="Password not set?"
+    else
+      pwdcheck="Password has been defined"
+    fi
+    cat <<EOF
+Environment variables assigned:" 
+-----------------------------------------------------------------------
+OS_REGION_NAME=$OS_REGION_NAME
+OS_INTERFACE=$OS_INTERFACE
+OS_AUTH_URL=$OS_AUTH_URL
+OS_USERNAME=$OS_USERNAME
+OS_PROJECT_ID=$OS_PROJECT_ID
+OS_USER_DOMAIN_NAME=$OS_USER_DOMAIN_NAME
+OS_PROJECT_NAME=$OS_PROJECT_NAME
+OS_PASSWORD=$pwdcheck
+OS_IDENTITY_API_VERSION=$OS_IDENTITY_API_VERSION
+SD_CONNECT_API_TOKEN=$SD_CONNECT_API_TOKEN
+SD_CONNECT_API_ADDRESS=$SD_CONNECT_API_ADDRESS
+EC2_ACCESS_KEY=$EC2_ACCESS_KEY
+EC2_SECRET_KEY=$EC2_SECRET_KEY
+------------------------------------------------------------------------
+
+EOF
+
+
    echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
    echo " "
    echo "The S3 compatible version of sd-lock-util can be used with commands:"
