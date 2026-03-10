@@ -3,10 +3,6 @@
 #default user
 user=($USER)
 
-#read static variables
-inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
 
 # local variable
 object_name=""              #object to retrieve
@@ -31,6 +27,12 @@ encrypt=""
 secret_key=""
 sdc=0
 rclone_copy_options="-P"
+
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -341,15 +343,19 @@ fi
 #assign name for output file if not defined 
 
 #if encrypted, remove .gpg temporarily from the object name to make zst and tar detection work
-if [[ ${object_name:(-4):4} == ".gpg" ]]; then
+if [[ ${object_name} =~ \.gpg$ ]]; then
+#if [[ ${object_name:(-4):4} == ".gpg" ]]; then
   encrypt="gpg"
-  object_name=${object_name:0:-4}
+  #object_name=${object_name:0:-4}
+  object_name=${object_name:0:$((${#object_name} - 4))}
   echo "GPG encrypted object"
 fi
 
-if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
+if [[ ${object_name} =~ \.c4gh$ ]]; then
+#if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
   encrypt="crypt4gh"
-  object_name=${object_name:0:-5}
+  object_name=${object_name:0:$((${#object_name} - 5))}
+  #object_name=${object_name:0:-5}
   echo "Crypt4gh encrypted object"
   if [[ $sdc -eq 0 && $asis_mode -eq 0 ]]; then
      if [[ $secret_key == "" ]]; then
@@ -383,7 +389,8 @@ fi
 
 is_compressed=0
 
-if [[ ${object_name:(-4):4} == ".zst" ]]; then
+if [[ ${object_name} =~ \.zst$ ]]; then
+#if [[ ${object_name:(-4):4} == ".zst" ]]; then
   is_compressed=1
   #check if zstdmt is available
    if [[ $(which zstdmt 2> /dev/null | wc -l ) -ne 1 ]];then
@@ -400,12 +407,14 @@ fi
 
 is_tar_file=(0)
 
-if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
+if [[ ${object_name} =~ \.tar\.zst$ ]]; then
+#if [[ ${object_name:(-8):8} == ".tar.zst" ]]; then
   is_tar_file=(1)
   is_compressed=(1)
 fi 
 
-if [[ ${object_name:(-4):4} == ".tar" ]]; then
+if [[ ${object_name} =~ \.tar$ ]]; then
+#if [[ ${object_name:(-4):4} == ".tar" ]]; then
   is_tar_file=(1)
   is_compressed=(0)
 fi 
