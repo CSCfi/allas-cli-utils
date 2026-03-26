@@ -456,7 +456,6 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    if [[ $OS_PASSWORD =~ '$' || $OS_PASSWORD =~ '!' || $OS_PASSWORD =~ '&' ||  $OS_PASSWORD =~ '*' ]]; then
        project_list_method="openstack"
    fi
-       
    
    if [[ $project_list_method == "curl" ]];  then
       ## This section replaces openstack based project listing
@@ -490,9 +489,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
          local all_projects=($(echo "$curl_out"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
       fi
    else
-      local all_projects=(
-          $(openstack project list \
-                      --my-projects -c Name -f value --os-username $OS_USERNAME))
+      local all_projects=($(openstack project list --my-projects -c Name -f value --os-username $OS_USERNAME))
    fi
 
    case ${#all_projects[@]} in
@@ -593,7 +590,7 @@ if $use_swift; then
       fi
     else
        if command -v openstack >/dev/null 2>&1; then
-         activePythonPath=$PYTHONPATH
+         =$PYTHONPATH
          unset PYTHONPATH
          export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
          export PYTHONPATH=$activePythonPath     
@@ -699,31 +696,26 @@ if $use_s3cmd; then
 
    local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
    
-   if [[ $debug == "true" ]];then
-      echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
-       s3cmd --configure \
-             --access_key=$ACCESS_KEY \
-             --secret_key=$SECRET_KEY \
-             --host=a3s.fi \
-             --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 
-   #replace default signurl_use_https
-   else 
-       echo -e "\n\n\n\n\n\n\n\n\n\ny\n" | \
-       s3cmd --configure \
-             --access_key=$ACCESS_KEY \
-             --secret_key=$SECRET_KEY \
-             --host=a3s.fi \
-             --multipart-chunk-size-mb=$chunk_size \
-             --host-bucket='%(bucket)s.a3s.fi' -c $HOME/.s3cfg_$$ 2>$devnull >$devnull
+   #S3cmd parameters
+   echo '[allas-'${OS_PROJECT_NAME}']' > $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "access_key   = $ACCESS_KEY" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "secret_key   = $SECRET_KEY"  >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "host_base    = a3s.fi" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "host_bucket  = %(bucket)s.a3s.fi" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "human_readable_sizes = True" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "enable_multipart = True" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "signature_v2 = True" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+   echo "use_https = True" >> $HOME/.s3cfg_${OS_PROJECT_NAME}
+
+   if [[ -e $HOME/.s3cfg ]]; then
+      rm -f $HOME/.s3cfg
    fi
-   grep -v signurl_use_https $HOME/.s3cfg_$$ | grep -v public_url_use_https > $HOME/.s3cfg
-   rm -f  $HOME/.s3cfg_$$
-   echo "signurl_use_https = True" >> $HOME/.s3cfg
-   echo "public_url_use_https = True" >> $HOME/.s3cfg
-   
+
+   #S3cmd parameters
+   ln -s $HOME/.s3cfg_${OS_PROJECT_NAME} $HOME/.s3cfg 
+
    echo ""
-   echo "s3cmd configuration ready."
+   echo "s3cmd configuration updated"
    echo ""
 
    #aws.s3 conf   
@@ -743,6 +735,9 @@ if $use_s3cmd; then
 
    #s3allas for rclone
    rclone config delete s3allas
+   rclone config delete s3allas-${OS_PROJECT_NAME}
+
+   #default
    mkdir -p  "${rconf%/*}"
    echo "" >> "$rconf"
    chmod go-rwx "$rconf"
@@ -754,15 +749,37 @@ if $use_s3cmd; then
    echo "secret_access_key = $SECRET_KEY" >> "$rconf"
    echo 'endpoint = a3s.fi' >>  "$rconf"
    echo 'acl = private' >>  "$rconf"
+   echo "" >>  "$rconf"
+
+   #static
+   mkdir -p  "${rconf%/*}"
+   echo "" >> "$rconf"
+   chmod go-rwx "$rconf"
+   echo '[s3allas'-${OS_PROJECT_NAME}']' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Other' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $ACCESS_KEY" >> "$rconf"
+   echo "secret_access_key = $SECRET_KEY" >> "$rconf"
+   echo 'endpoint = a3s.fi' >>  "$rconf"
+   echo 'acl = private' >>  "$rconf"
+   echo "" >>  "$rconf"
+
 
    echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
    echo ""
-
-
- #  s3cmd --configure --access_key=$ACCESS_KEY --secret_key=$SECRET_KEY \
- #  --host=object.pouta.csc.fi --signature-v2 --multipart-chunk-size-mb=$chunk_size \
- #  --host-bucket='%(bucket)s.object.pouta.csc.fi' -c $HOME/.s3cfg 
+   echo "Remote endpoints configured for rclone"
+   echo ""
+   printf "%-24s %s\n"  "Rclone remote name"   Protocol
+   echo "--------------------------------------------------------"
+   rclone listremotes --long
+   echo "--------------------------------------------------------"
+   echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in Allas"
+   echo "aws licent and s3cmd use now $OS_PROJECT_NAME"
+   echo "a-commands use now $OS_PROJECT_NAME when used in S3 mode"
+   
 fi
+
 
 
 # Option to remove s3cmd key

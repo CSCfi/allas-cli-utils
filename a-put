@@ -14,12 +14,6 @@ start_time=$(date +%s)
 #default user
 user="$USER"
 
-
-#read static variables
-inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
-
 #local variables
 bucket_name="not_defined"
 fixed_bucket=0
@@ -47,6 +41,11 @@ sdc=0
 meta_message=""
 check_mode=0
 max_files=1000000
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
