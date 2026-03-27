@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+ 
+# Usage: source this_script projectname [username]
+ 
+# Script to get S3 credentials for Allas project.
+# This script likely won't work if user has multiple s3 keys for a project
+# Credentials are saved in to environment variables AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID
+# These environment variables are compatible with aws python client and rclone
+
+# constants
+OS_AUTH_URL='https://pouta.csc.fi:5001/v3/auth'
+TOKEN_HEADER_RE='^[0-9:]*X-Subject-Token: '
+
+if [ "$0" != "bash" -a "$0" != "-bash" ]; then
+    echo "In order to be useful this script needs to be sourced instead of running it" >&2
+    exit 1
+fi
+ 
+PROJECT_ID=""
+
+if [ ! -e "`/usr/bin/which curl 2>/dev/null`" ]; then
+    echo "error: curl command is missing" >&2
+else
+    if [ -z "$1" ]; then
+        echo "Usage: source $BASH_SOURCE projectname [username]"
+    else
+
+        export OS_PROJECT_NAME="$1"
+        export OS_USERNAME="$USER"
+        if [ -n "$2" ]; then
+            export OS_USERNAME="$2"
+        fi
+ 
+        # get password
+        echo "Please enter your CSC password to authenticate to Allas for project $OS_PROJECT_NAME as user $OS_USERNAME: "
+        read -sr OS_PASSWORD_INPUT
+        OS_PASSWORD="$OS_PASSWORD_INPUT"
+ 
+        OS_AUTH_DATA_UNSCOPED='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'", "password": "'$OS_PASSWORD'" } } } } }'
+ 
+        echo "autehticating..."
+        OUT=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL/tokens" 2>&1 <<< "$OS_AUTH_DATA_UNSCOPED")
+        CURL_EXIT="$?"
+        STATUS=`echo "$OUT" | grep '^HTTP/1.1 201 ' | wc -l | tr -d ' '`
+        if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+            echo "FAILED" >&2
+            echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+        else
+            OS_AUTH_TOKEN=$(echo "$OUT"|tr -d '\r'|grep "$TOKEN_HEADER_RE"|sed "s/$TOKEN_HEADER_RE//")
+
+            echo "getting projects..."
+            OUT=$(curl -s -S -X GET -D - -H "X-Auth-Token: $OS_AUTH_TOKEN" "$OS_AUTH_URL/projects" 2>&1)
+            CURL_EXIT="$?"
+            STATUS=`echo "$OUT" | grep '^HTTP/1.1 200 ' | wc -l | tr -d ' '`
+            if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+                echo "FAILED" >&2
+                echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+            else
+                PROJ_NAMES=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'| grep '"name"'| sed 's/^.*name": "\(.*\)"/\1/')
+                PROJ_IDS=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'| grep '"id"'| sed 's/^.*id": "\(.*\)"/\1/')
+                PROJ_ENABLED=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'| grep '"enabled"'| sed 's/^.*enabled": \(.*\)/\1/')
+
+                index=-1
+                hit=0
+                for i in $PROJ_NAMES
+                do
+                    if [ "$OS_PROJECT_NAME" = "$i" ]; then
+                        index=$hit
+                    fi
+                    hit=$((hit + 1))
+                done
+                if [ $index -lt 0 ]; then
+                    echo "FAILED to find project: $OS_PROJECT_NAME" >&2
+                else
+                    arr=($PROJ_IDS)
+                    PROJECT_ID=${arr[$index]}
+                fi
+            fi
+        fi
+    fi
+fi
+
+if [ "$PROJECT_ID" = "" ]; then
+    echo "FAILED to find project: $OS_PROJECT_NAME" >&2
+else
+    echo "getting credentials..."
+    OUT=$(curl -Ss -D - -X GET https://pouta.csc.fi:5001/v3/credentials?type=ec2 -H "X-Auth-Token: $OS_AUTH_TOKEN" 2>&1)
+    CURL_EXIT="$?"
+    STATUS=$(echo "$OUT" | grep '^HTTP/1.1 200 ' | wc -l | tr -d ' ')
+    if [ "$CURL_EXIT" != "0" -o "$STATUS" != "1" ]; then
+        echo "FAILED" >&2
+        echo "$OUT" | grep -E '^HTTP|{|}|^curl:' >&2
+    else
+        CRED_PROJECTS=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'| grep '"project_id"' | sed 's/^ "project_id": "\(.*\)"/\1/')
+        CRED_SECRETS=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'|tr -d '\'| grep '"secret"' | sed 's/^ "secret": "\(.*\)"/\1/')
+        CRED_ACCESS=$(echo "$OUT"|grep -E '{|}'|tr '[},]' '\n'|tr -d '\'| grep '"access"' | sed 's/^.*access": "\(.*\)"/\1/')
+
+        index=-1
+        hit=0
+        for i in $CRED_PROJECTS
+        do
+            if [ "$PROJECT_ID" = "$i" ]; then
+                index=$hit
+            fi
+	hit=$((hit + 1))
+        done
+
+        if [ $index -lt 0 ]; then
+            echo "FAILED to find credentials for project: $OS_PROJECT_NAME" >&2
+        fi
+
+        # save credentials to environment variables
+        arr=($CRED_SECRETS)
+        export AWS_SECRET_ACCESS_KEY=$(echo ${arr[$index]})
+        arr=($CRED_ACCESS)
+        export AWS_ACCESS_KEY_ID=$(echo ${arr[$index]})
+        echo "done"
+    fi
+fi
+
