@@ -42,6 +42,7 @@ else
   echo "You can add a new rclone connection with command  "
   echo "    allas-conf    "
 
+fi 
 echo "---------------------------------------------------"
 
 
