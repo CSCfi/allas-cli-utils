@@ -3,41 +3,45 @@
 #rlone connections 
 echo "---------------------------------------------------"
 echo "RCLONE"
-echo "Currently defined rclone remotes:"
-for re in $(rclone listremotes)
-do  
-  rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2>/dev/null > /dev/null
-  check=$?
-  #check=$(rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2> >( wc -l) | tail -1)
-  reinfo=$(rclone listremotes --long | grep -w $re)
-  if [[ $check -eq 0 ]]; 
-  then  
-      echo "$reinfo   active"
-  else 
-      echo "$reinfo   not active" 
-  fi 
-done
+if [[ -e $HOME/.config/rclone/rclone.conf]]; then
+  echo "Currently defined rclone remotes:"
+  for re in $(rclone listremotes)
+  do  
+    rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2>/dev/null > /dev/null
+    check=$?
+    #check=$(rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2> >( wc -l) | tail -1)
+    reinfo=$(rclone listremotes --long | grep -w $re)
+    if [[ $check -eq 0 ]]; 
+    then  
+        echo "$reinfo   active"
+    else 
+        echo "$reinfo   not active" 
+    fi 
+  done  
+  echo ""
 
-echo ""
+  #check what project s3allas uses
+  accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+  #echo accesskey: $accesskey
+  aproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+  #echo aprojecy $aproject
 
-#check what project s3allas uses
-accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
-#echo accesskey: $accesskey
-aproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
-#echo aprojecy $aproject
+  accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "lumi-o" ) print $2 }')
+  lproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "lumi-" | grep "private" | awk -F "-" '{print $2}')
 
+  if [[ $aproject != "" ]]; then  
+     echo "s3allas: uses Allas project $aproject."
+  fi
 
-accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "lumi-o" ) print $2 }')
-lproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "lumi-" | grep "private" | awk -F "-" '{print $2}')
+  if [[ $lproject != "" ]]; then
+     echo "lumi-o: uses Lumi project $lproject."
+  fi
 
+else 
+  echo "Rclone endpoints have not yet been defined."
+  echo "You can add a new rclone connection with command  "
+  echo "    allas-conf    "
 
-if [[ $aproject != "" ]]; then
-   echo "s3allas: uses Allas project $aproject."
-fi
-
-if [[ $lproject != "" ]]; then
-   echo "lumi-o: uses Lumi project $lproject."
-fi
 echo "---------------------------------------------------"
 
 
