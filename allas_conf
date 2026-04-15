@@ -194,6 +194,8 @@ while [[ $# -ge 1 ]]; do
         '--debug' )             debug=true;              shift;;
         '--store-token' )       ood=true;                shift;;
         '--lumi')               mode="lumi";             shift;;
+        '--swift')              mode="swift";            shift;;
+        '--S3')                 mode="S3";               shift;;
         '--sd' | '--sdc' )      sd_connect=true; keep_password=true;      shift;;
         '--sdc-token' )         sd_connect=true; keep_password=true; sd_token_file="$2";     shift 2;;
         '--show-powershell' )   show_powershell=true;    shift;;
@@ -303,13 +305,13 @@ if [[ $mode == "lumi" ]]; then
    lumi_secret_key=$(echo $lumi_secret_key | tr -d " ")
 
    #S3 parameters
-   export AWS_ACCESS_KEY_ID="$lumi_access_key"
-   export AWS_SECRET_ACCESS_KEY="$lumi_secret_key"
-   export S3_ACCESS_KEY_ID="$lumi_access_key";
-   export S3_SECRET_ACCESS_KEY="$lumi_secret_key";
-   export S3_HOSTNAME=lumidata.eu;
+   AWS_ACCESS_KEY_ID="$lumi_access_key"
+   AWS_SECRET_ACCESS_KEY="$lumi_secret_key"
+   S3_ACCESS_KEY_ID="$lumi_access_key";
+   S3_SECRET_ACCESS_KEY="$lumi_secret_key";
+   S3_HOSTNAME=lumidata.eu;
    storage_service="lumi" 
-   export OS_PROJECT_NAME=$lumi_project_number
+   OS_PROJECT_NAME=$lumi_project_number
    
    #rclone parameters
    rclone config delete lumi-o
@@ -681,6 +683,12 @@ if $use_s3cmd; then
     if $debug ; then
        devnull='&1'
     fi
+
+        
+    
+
+
+
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
 

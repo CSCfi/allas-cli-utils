@@ -1,0 +1,120 @@
+#!/usr/bin/bash
+
+#rlone connections 
+echo "---------------------------------------------------"
+echo "RCLONE"
+echo "Currently defined rclone remotes:"
+for re in $(rclone listremotes)
+do  
+  rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2>/dev/null > /dev/null
+  check=$?
+  #check=$(rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2> >( wc -l) | tail -1)
+  reinfo=$(rclone listremotes --long | grep -w $re)
+  if [[ $check -eq 0 ]]; 
+  then  
+      echo "$reinfo   active"
+  else 
+      echo "$reinfo   not active" 
+  fi 
+done
+
+echo ""
+
+#check what project s3allas uses
+accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+#echo accesskey: $accesskey
+aproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+#echo aprojecy $aproject
+
+
+accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "lumi-o" ) print $2 }')
+lproject=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "lumi-" | grep "private" | awk -F "-" '{print $2}')
+
+
+if [[ $aproject != "" ]]; then
+   echo "s3allas: uses Allas project $aproject."
+fi
+
+if [[ $lproject != "" ]]; then
+   echo "lumi-o: uses Lumi project $lproject."
+fi
+echo "---------------------------------------------------"
+
+
+#s3 cmd 
+echo " "
+echo "S3CMD"
+if [[ -e "$HOME/.s3cfg"	]]; then   
+   check=$(s3cmd ls  2> >( wc -l) | tail -1)
+   if [[ $check -eq 0 ]]; then
+      status="active"
+    else
+      status="not active"
+   fi
+   echo "   Default project for s3cmd:" $(head -1 $HOME/.s3cfg | tr -d "[" | tr -d "]" ) " $status" 
+
+else
+   echo "   Default project for s3cmd is not defied."
+fi
+echo "---------------------------------------------------"
+
+
+#aws
+echo ""
+echo "AWS S3"
+if [[ -e "$HOME/.aws/credentials" ]]; then
+   key=$(grep -A 1 default "$HOME/.aws/credentials" | awk -F "=" '{ print $2}' | tail -1 )
+   aws_project=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $3 == "'$key'" ) print ep }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | grep allas | sort | tail -1  | awk -F "-" '{print $2}')
+   if [[ $aws_project == "" ]]; then
+     aws_project=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $3 == "'$key'" ) print ep }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | grep private | sort | tail -1  | awk -F "-" '{print "lumi-"$2}')
+   fi 
+   check=$(aws s3 ls  2> >( wc -l) | tail -1)
+   if [[ $check -eq 0 ]]; then  
+      status="active"
+    else
+      status="not active"
+   fi
+
+   echo "   Default project for aws s3: $aws_project  $status"
+else
+   echo "   Default project for aws s3 is not defined"
+fi
+
+echo "---------------------------------------------------"
+echo ""
+
+
+
+# a-commands
+echo A-COMMANDS
+
+mode="swift"
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   #echo "Reading customer settings"
+   source $HOME/.a_tools_conf
+fi
+
+
+if [[ $mode  == "swift" ]]; then
+   echo "   a-commands use by default Allas with swift protocol"
+fi
+
+if [[ $mode == "s3cmd" ]]; then
+   if [[ $aproject == "" ]]; then
+     echo "   a-commands use by default Allas with S3 protocol."
+   else
+     echo "   a-commands use by default Allas project $aproject with S3 protocol."
+   fi
+fi
+
+if [[ $mode == "lumi" ]]; then
+   echo "   a-commands use by default Lumi-O"
+fi
+echo "---------------------------------------------------"
