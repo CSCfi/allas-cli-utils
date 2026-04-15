@@ -3,7 +3,7 @@
 #rlone connections 
 echo "---------------------------------------------------"
 echo "RCLONE"
-if [[ -e $HOME/.config/rclone/rclone.conf]]; then
+if [[ -e "$HOME/.config/rclone/rclone.conf" ]]; then
   echo "Currently defined rclone remotes:"
   for re in $(rclone listremotes)
   do  
