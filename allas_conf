@@ -312,6 +312,17 @@ if [[ $mode == "lumi" ]]; then
    S3_HOSTNAME=lumidata.eu;
    storage_service="lumi" 
    OS_PROJECT_NAME=$lumi_project_number
+   mkdir -m 0700 -p $HOME/.aws
+   echo '[default]' > $HOME/.aws/credentials
+   chmod go-rwx $HOME/.aws/credentials
+   echo AWS_ACCESS_KEY_ID="$ACCESS_KEY" >> $HOME/.aws/credentials 
+   echo	AWS_SECRET_ACCESS_KEY="$SECRET_KEY" >> $HOME/.aws/credentials
+   #echo AWS_DEFAULT_REGION=" regionOne " >> $HOME/.aws/credentials
+   echo '[default]' > $HOME/.aws/config
+   chmod go-rwx $HOME/.aws/config
+   echo "[default]" > $HOME/.aws/config
+   echo "endpoint_url = https://lumidata.eu" >> $HOME/.aws/config 
+
    
    #rclone parameters
    rclone config delete lumi-o
@@ -704,11 +715,6 @@ if $use_s3cmd; then
     if $debug ; then
        devnull='&1'
     fi
-
-        
-    
-
-
 
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
