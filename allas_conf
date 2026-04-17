@@ -272,7 +272,7 @@ if [[ mode != "lumi" ]]; then
         lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
-           echo "Do you want to remiove this setting and use Allas a the defaut object storage server (y/n)?"
+           echo "Do you want to remove this setting and use Allas as the default object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
                 grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
@@ -315,12 +315,14 @@ if [[ $mode == "lumi" ]]; then
    
    #rclone parameters
    rclone config delete lumi-o
+   rclone config delete lumi-${OS_PROJECT_NAME}-private
    rclone config delete lumi-pub
+   rclone config delete lumi-${OS_PROJECT_NAME}-public
+
    mkdir -p  "${rconf%/*}"
    echo "" >> "$rconf"
    chmod go-rwx "$rconf"
    echo '[lumi-o]' >>  "$rconf"
-   #echo '['$storage_service']' >>  "$rconf"
    echo 'type = s3' >>  "$rconf"
    echo 'provider = Ceph' >>  "$rconf"
    echo 'env_auth = false' >>  "$rconf"
@@ -329,11 +331,20 @@ if [[ $mode == "lumi" ]]; then
    echo 'endpoint = https://lumidata.eu' >>  "$rconf"
    echo 'acl = private' >>  "$rconf"
 
+   echo '[lumi-'${OS_PROJECT_NAME}'-private]' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Ceph' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> "$rconf"
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> "$rconf"
+   echo 'endpoint = https://lumidata.eu' >>  "$rconf"
+   echo 'acl = private' >>  "$rconf"
+
+
    echo "rclone remote lumi-o: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
    echo ""  
    echo ""  >>  "$rconf"
    echo '[lumi-pub]' >>  "$rconf"
-   #echo '['$storage_service']' >>  "$rconf"
    echo 'type = s3' >>  "$rconf"
    echo 'provider = Ceph' >>  "$rconf"
    echo 'env_auth = false' >>  "$rconf"
@@ -343,6 +354,16 @@ if [[ $mode == "lumi" ]]; then
    echo 'acl = public-read' >>  "$rconf"
    echo "rclone remote lumi-pub: now provides an S3 based connection to Lumi-O storage area of project $lumi_project_number."
    echo ""  
+
+   echo '[lumi-'${OS_PROJECT_NAME}'-public]' >>  "$rconf"
+   echo 'type = s3' >>  "$rconf"
+   echo 'provider = Ceph' >>  "$rconf"
+   echo 'env_auth = false' >>  "$rconf"
+   echo "access_key_id = $S3_ACCESS_KEY_ID" >> "$rconf"
+   echo "secret_access_key = $S3_SECRET_ACCESS_KEY" >> "$rconf"
+   echo 'endpoint = https://lumidata.eu' >>  "$rconf"
+   echo 'acl = public-read' >>  "$rconf"
+
 
    #S3cmd parameters
    rm $HOME/.s3cfg
