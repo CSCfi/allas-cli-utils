@@ -51,7 +51,7 @@ do
                   mode="lumi"
                 shift
                 ;; 
-              '--allas' | '-A' )
+              '--swift' )
                   mode="swift"
                 shift
                 ;; 

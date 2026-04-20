@@ -196,7 +196,7 @@ while [[ $# -ge 1 ]]; do
         '--lumi')               mode="lumi";             shift;;
         '--swift')              mode="swift";            shift;;
         '--S3')                 mode="S3";               shift;;
-        '--sd' | '--sdc' )      sd_connect=true; keep_password=true;      shift;;
+        '--sd' | '--sdc' )      sd_connect=true; keep_password=true; mode="swift";     shift;;
         '--sdc-token' )         sd_connect=true; keep_password=true; sd_token_file="$2";     shift 2;;
         '--show-powershell' )   show_powershell=true;    shift;;
 	    '--show-shell' )        show_shell=true;         shift;;
@@ -315,8 +315,8 @@ if [[ $mode == "lumi" ]]; then
    mkdir -m 0700 -p $HOME/.aws
    echo '[default]' > $HOME/.aws/credentials
    chmod go-rwx $HOME/.aws/credentials
-   echo AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY" >> $HOME/.aws/credentials 
-   echo	AWS_SECRET_ACCESS_KEY="$AWS_SECRET_KEY" >> $HOME/.aws/credentials
+   echo AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" >> $HOME/.aws/credentials 
+   echo	AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" >> $HOME/.aws/credentials
    #echo AWS_DEFAULT_REGION=" regionOne " >> $HOME/.aws/credentials
    echo '[default]' > $HOME/.aws/config
    chmod go-rwx $HOME/.aws/config
