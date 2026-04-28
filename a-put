@@ -431,10 +431,8 @@ if [[ $silent -eq 0 ]]; then
 fi 
 
 ##Assign project to be used if not defined 
-if [[ $os_project_name == "" ]]
-then
-  if [ -e $HOME/.allas_default ]
-  then
+if [[ $os_project_name == "" ]]; then
+  if [[ -e $HOME/.allas_default ]];then
      source $HOME/.allas_default
   else
    #check what project s3allas uses
@@ -449,6 +447,7 @@ then
 #     echo ""
 #  fi
 #  source $HOME/.allas_default
+  fi
 fi
 
 # Check for object name - asis conflict
