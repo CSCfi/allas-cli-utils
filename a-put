@@ -431,12 +431,17 @@ if [[ $silent -eq 0 ]]; then
 fi 
 
 ##Assign project to be used if not defined 
-#if [[ $os_project_name == "" ]]
-#then
-#  if [ -e $HOME/.allas_default ]
-#  then
-#     source $HOME/.allas_default
-#  else
+if [[ $os_project_name == "" ]]
+then
+  if [ -e $HOME/.allas_default ]
+  then
+     source $HOME/.allas_default
+  else
+   #check what project s3allas uses
+   accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+   #echo accesskey: $accesskey
+   os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+   #echo aprojecy $aproject
 #     echo "Default project is not defined"
 #     source $allas_conf_path -user $user
 #     echo "os_project_name=$OS_PROJECT_NAME" > $HOME/.allas_default
@@ -444,7 +449,7 @@ fi
 #     echo ""
 #  fi
 #  source $HOME/.allas_default
-#fi
+fi
 
 # Check for object name - asis conflict
 if [[ $asis_mode -eq 1 ]] && [[ $fixed_object -eq 1 ]]; then
