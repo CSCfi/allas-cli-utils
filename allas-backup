@@ -274,10 +274,10 @@ if [[ $mode == "s3cmd" ]]; then
       if [[ "$project_label" == "" ]]; then
           project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
       fi
-      echo "Allas project not defined!"
-      echo "Please set environment variable: OS_PROJECT_NAME"
-      echo "to define the Allas project"
-      exit 1
+      if [[ "$project_label" == "" ]]; then  
+         echo "Unable to define default project name."
+         exit 1
+      fi
   fi    
   bucket_name="${project_label}-s3backup"
   repository="s3:a3s.fi/${bucket_name}"  
