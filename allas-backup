@@ -262,6 +262,18 @@ if [[ $mode == "s3cmd" ]]; then
      exit 1
   fi
   if [[ -z "${OS_PROJECT_NAME}" ]]; then
+     
+      #check what project s3allas uses
+      accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+      if [[ "$accesskey" != "$AWS_ACCESS_KEY_ID" ]]; then
+         echo "aws and rclone s3allas: end point do not refer to same project. Exiting."
+         exit 1
+      fi
+      #echo accesskey: $accesskey
+      os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+      if [[ "$project_label" == "" ]]; then
+          project_label=$(echo ${os_project_name} | sed -e s/"project_"/""/g)
+      fi
       echo "Allas project not defined!"
       echo "Please set environment variable: OS_PROJECT_NAME"
       echo "to define the Allas project"
