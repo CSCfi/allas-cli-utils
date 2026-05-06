@@ -93,8 +93,8 @@ do
                   mode="lumi"
                   shift
                 ;; 
-            '--allas' | '-A' )
-                  mode="lumi"
+            '--swift' | '--sw' | '-A' )
+                  mode="swift"
                   shift
                 ;;
 
@@ -509,7 +509,7 @@ fi
 
 #check free space in tmpdir
 if [[ $free_space_check -eq 1 ]]; then
-  if [[ $local_host == "puhti" || $local_host == "mahti" || $local_host == "roihu" ]];then
+  if [[ $local_host == "puhti" || $local_host == "mahti" ]];then
       free_space=$(list-dir-quota $tmp_root | tail -1 | tr "/" " " | awk '{ a=$3-$2}{print a}')
   else
       free_space=$(df $tmp_root | tail -1 | awk '{print $4}')
@@ -1183,7 +1183,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
   #S3 protocol requires that directory exist before copying
   if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]  ; then
-     echo "rclone mkdir  ${storage_server}:${bucket_name}"
+     #echo "rclone mkdir  ${storage_server}:${bucket_name}"
      rclone mkdir  ${storage_server}:${bucket_name}
   fi
     
@@ -1193,7 +1193,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
         rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?     
      else  
-        echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
+        #echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
         rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
      fi
