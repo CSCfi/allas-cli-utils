@@ -93,7 +93,7 @@ do
                   mode="lumi"
                   shift
                 ;;
-              '--allas' | '-A' )
+              '--allas' | '-A'| '--swift' )
                   mode="swift"
                   shift
                 ;;
@@ -181,7 +181,7 @@ Options:
                               used to circumvent the problems that originate from the different
                               checksum protocols used by S3 and Swift protocols
                                               
---allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
+--swift                       Get data from Allas with swift protocol in stead of currently set storage server. 
                               Normally this (Allas with swft) is the default and this option is not needed,
                               but if you have set e.g. Lumi-O as the default storage server, this option can be
                               used to get data from Allas without changing the default storage server.
