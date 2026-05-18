@@ -488,17 +488,14 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
 
-   # Curl method for getting project list has difficulties in case passwors has some pecial characters
-   if [[ $OS_PASSWORD =~ '$' || $OS_PASSWORD =~ '!' || $OS_PASSWORD =~ '&' ||  $OS_PASSWORD =~ '*' ]]; then
-       project_list_method="openstack"
-   fi
-   
    if [[ $project_list_method == "curl" ]];  then
       ## This section replaces openstack based project listing
       ##
 
-      local os_auth_data_unscoped='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
-         "password": "'$OS_PASSWORD'" } } } } }'
+      # Build the JSON via python's json module so that special characters
+      # (spaces, quotes, backslashes, ...) in OS_PASSWORD are properly escaped.
+      local os_auth_data_unscoped=$(python3 -c 'import json, os
+print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"user": {"id": os.environ["OS_USERNAME"], "password": os.environ["OS_PASSWORD"]}}}}}))')
 
       # get an unscoped token
       local curl_out=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL/auth/tokens" 2>&1 <<< "$os_auth_data_unscoped"`
@@ -521,8 +518,14 @@ if [ -z "$OS_PROJECT_NAME" ]; then
             unset OS_PASSWORD
          fi
 
-         # figure the project list out with just basic tools without dependency to any json tool
-         local all_projects=($(echo "$curl_out"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
+         # Extract the project names from the JSON response body
+         local all_projects=($(echo "$curl_out" | python3 -c 'import json, sys
+data = sys.stdin.read()
+_, _, body = data.partition("\r\n\r\n")
+if not body:
+    _, _, body = data.partition("\n\n")
+for p in json.loads(body).get("projects", []):
+    print(p["name"])'))
       fi
    else
       local all_projects=($(openstack project list --my-projects -c Name -f value --os-username $OS_USERNAME))
@@ -606,8 +609,8 @@ if $use_swift; then
       # authenticates and save token to environment variable
       
  
-      os_auth_data='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
-                     "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
+      os_auth_data=$(python3 -c 'import json, os
+print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"user": {"id": os.environ["OS_USERNAME"], "password": os.environ["OS_PASSWORD"]}}}, "scope": {"project": {"domain": {"id": "default"}, "name": os.environ["OS_PROJECT_NAME"]}}}}))')
 
       # authenticate and get return values
       #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
