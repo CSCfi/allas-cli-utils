@@ -844,7 +844,7 @@ if $s3remove; then
        PS3="Please choose an access key to be deleted by giving an item number form the list above: "
        local accesskey
        select accesskey in "${accesskeys[@]}" "abort allas_conf"; do
-              [[ -n "accesskey" ]] && break
+              [[ -n "$accesskey" ]] && break
        done
        if [[ "$accesskey" == "abort allas_conf" ]]; then
           return 1
