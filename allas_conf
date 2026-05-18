@@ -3,7 +3,7 @@
 
 PS_ARG_NUM=5
 if [[ $(uname -s) == 'Darwin' ]]; then PS_ARG_NUM=4; fi
-shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| grep -cE 'bash|zsh')
+shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| \grep -cE 'bash|zsh')
 
 
 if [[ $shell_check -ne 1 ]]; then
@@ -272,13 +272,13 @@ esac
 # Turn off lumi off default if configuration is not done for lumi
 if [[ mode != "lumi" ]]; then
      if [[ -e $HOME/.a_tools_conf ]]; then
-        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
+        lumi_mode_check=$(\grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
            echo "Do you want to remove this setting and use Allas as the default object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
-                grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+                \grep -v "storage_service=" $HOME/.a_tools_conf | \grep -v "mode=" | \grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
                 rm -f $HOME/.a_tools_conf
                 mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
            fi
@@ -395,7 +395,7 @@ if [[ $mode == "lumi" ]]; then
    if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
     # define Lumi-o in customer defaults
      if [[ -e $HOME/.a_tools_conf ]]; then
-        grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+        \grep -v "storage_service=" $HOME/.a_tools_conf | \grep -v "mode=" | \grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
         rm -f $HOME/.a_tools_conf
         mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
      fi
@@ -503,21 +503,21 @@ if [ -z "$OS_PROJECT_NAME" ]; then
       # get an unscoped token
       local curl_out=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL/auth/tokens" 2>&1 <<< "$os_auth_data_unscoped"`
       local curl_exit="$?"
-      local curl_status=`echo "$curl_out" | grep -i '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
+      local curl_status=`echo "$curl_out" | \grep -i '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
          echo "FAILED" >&2
-         echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+         echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
          unset OS_PASSWORD
       else
-         local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+         local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|\grep "$token_header_re"|sed "s/$token_header_re//"`
 
          # get the project list authenticating with the unscoped token
          local curl_out=`curl -s -S -X GET -D - -H "X-Auth-Token: $os_auth_token_unscoped" "$OS_AUTH_URL/auth/projects" 2>&1`
          local curl_exit="$?"
-         local curl_status=`echo "$curl_out" | grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
+         local curl_status=`echo "$curl_out" | \grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
          if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
-            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+            echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
             unset OS_PASSWORD
          fi
 
@@ -551,7 +551,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
              # if csc-projects is available, show the project names
              for g in ${all_projects[@]}
              do
-                title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
+                title=$(csc-projects -p ${g} -o T | \grep -v "no such file or directory" | \grep -v "Failed to generate project")
                 allas_projects+=("${g}  ${title}")
              done
              select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
@@ -570,7 +570,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 fi
 
 #rclone configuration file check
-if [[ $(grep -c "\[$storage_service\]"  "$rconf" 2> /dev/null ) -lt 1 ]]; then
+if [[ $(\grep -c "\[$storage_service\]"  "$rconf" 2> /dev/null ) -lt 1 ]]; then
        mkdir -p  "${rconf%/*}"
        echo '['"$storage_service"']' >> "$rconf"
        echo 'type = swift' >>  "$rconf"
@@ -613,16 +613,16 @@ if $use_swift; then
       #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
       curl_out=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "${OS_AUTH_URL}/auth/tokens" 2>&1 <<< "$os_auth_data")
       curl_exit="$?"
-      curl_status=`echo "$curl_out" | grep -i '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+      curl_status=`echo "$curl_out" | \grep -i '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
-            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+            echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
       else
            # save token to environment variable
-           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|\grep "$token_header_re"|sed "s/$token_header_re//"`
 
            # save also the storage url, figure it out with just basic tools without dependency to any json tool
-           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|grep "$storage_url_re"|grep "$storage_url_interface_re"|sed "$storage_url_sed"`
+           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|\grep "$storage_url_re"|\grep "$storage_url_interface_re"|sed "$storage_url_sed"`
       fi
     else
        if command -v openstack >/dev/null 2>&1; then
@@ -634,7 +634,7 @@ if $use_swift; then
        eval "$(swift auth)"
     fi
 
-    if [[ $(grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
+    if [[ $(\grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
         mkdir -p  ${rconf%/*}
         printf "%s\n" >> $rconf \
             "[${storage_service}]" \
@@ -656,7 +656,7 @@ if $use_swift; then
         else   
             echo "Connection stays active for eight hours."
             #echo "Connection stays active until:"
-            #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
+            #allas-token-lifetime | \grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
         fi
     fi
     if $ood; then
@@ -725,13 +725,13 @@ if $use_s3cmd; then
     openstack project show $OS_PROJECT_NAME
 
     local ACCESS_KEY=$(
-       openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+       openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
     if [ -z "$ACCESS_KEY" ]; then
        openstack ec2 credentials create
-       local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+       local ACCESS_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
     fi
 
-   local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
+   local SECRET_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
    
    #S3cmd parameters
    echo '[allas-'${OS_PROJECT_NAME}']' > $HOME/.s3cfg_${OS_PROJECT_NAME}
@@ -827,7 +827,7 @@ if $s3remove; then
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
     export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-    local accesskeys=($(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | awk '{print $1}'))
+    local accesskeys=($(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | awk '{print $1}'))
     if [[ ${#accesskeys[*]} -eq 0 ]]; then
        echo "No access keys found for project $OS_PROJECT_NAME"
        return 1
@@ -882,7 +882,7 @@ if $show_powershell; then
    echo "Allas connection in your Windows machine."
    echo ""
    echo "--------------------------------------------------------------"
-   env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
+   env | \grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
 fi  
 
 
@@ -896,7 +896,7 @@ if $show_shell; then
    echo "Allas connection in your machine."
    echo ""
    echo "--------------------------------------------------------------"
-   env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
+   env | \grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
 fi  
 
 
