@@ -270,7 +270,7 @@ esac
 
 
 # Turn off lumi off default if configuration is not done for lumi
-if [[ mode != "lumi" ]]; then
+if [[ $mode != "lumi" ]]; then
      if [[ -e $HOME/.a_tools_conf ]]; then
         lumi_mode_check=$(\grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
