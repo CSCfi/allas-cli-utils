@@ -3,7 +3,7 @@
 
 PS_ARG_NUM=5
 if [[ $(uname -s) == 'Darwin' ]]; then PS_ARG_NUM=4; fi
-shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| grep -cE 'bash|zsh')
+shell_check=$(ps -hp $$|awk '{print $'$PS_ARG_NUM'}'| \grep -cE 'bash|zsh')
 
 
 if [[ $shell_check -ne 1 ]]; then
@@ -201,17 +201,13 @@ while [[ $# -ge 1 ]]; do
         '--show-powershell' )   show_powershell=true;    shift;;
 	    '--show-shell' )        show_shell=true;         shift;;
         '-p'|'--project' )
-          if [[ -z $2 ]]; then
-              if [[ ${2::1} != "-" ]];then
-                export OS_PROJECT_NAME="$2"
-                shift 
-              else
-                export OS_PROJECT_NAME="" 
-              fi
-          else 
+          if [[ -n $2 && ${2::1} != "-" ]]; then
+              export OS_PROJECT_NAME="$2"
+              shift 2
+          else
               export OS_PROJECT_NAME=""
+              shift
           fi    
-          shift
           ;; 
         '--project-id' )
            export OS_PROJECT_ID="$2"
@@ -267,15 +263,15 @@ esac
 
 
 # Turn off lumi off default if configuration is not done for lumi
-if [[ mode != "lumi" ]]; then
+if [[ $mode != "lumi" ]]; then
      if [[ -e $HOME/.a_tools_conf ]]; then
-        lumi_mode_check=$(grep -c "mode=lumi"  $HOME/.a_tools_conf)
+        lumi_mode_check=$(\grep -c "mode=lumi"  $HOME/.a_tools_conf)
         if [[ $lumi_mode_check  -ne 0 ]]; then
            echo "Lumi-o is set as the default object storage server in your local configuration file"
            echo "Do you want to remove this setting and use Allas as the default object storage server (y/n)?"
            read ansver
            if [[ $ansver == "y" ]] || [[ $ansver == "yes" ]]; then
-                grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+                \grep -v "storage_service=" $HOME/.a_tools_conf | \grep -v "mode=" | \grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
                 rm -f $HOME/.a_tools_conf
                 mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
            fi
@@ -392,7 +388,7 @@ if [[ $mode == "lumi" ]]; then
    if [[ $lumi_as_default == "y" ]] || [[ $lumi_as_default == "Y" ]];then
     # define Lumi-o in customer defaults
      if [[ -e $HOME/.a_tools_conf ]]; then
-        grep -v "storage_service=" $HOME/.a_tools_conf | grep -v "mode=" | grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
+        \grep -v "storage_service=" $HOME/.a_tools_conf | \grep -v "mode=" | \grep -v "os_project_name=" > $HOME/.a_tools_conf_$$
         rm -f $HOME/.a_tools_conf
         mv  $HOME/.a_tools_conf_$$ $HOME/.a_tools_conf
      fi
@@ -485,41 +481,52 @@ if [ -z "$OS_PROJECT_NAME" ]; then
    activePythonPath=$PYTHONPATH
    unset PYTHONPATH
 
-   # Curl method for getting project list has difficulties in case passwors has some pecial characters
-   if [[ $OS_PASSWORD =~ '$' || $OS_PASSWORD =~ '!' || $OS_PASSWORD =~ '&' ||  $OS_PASSWORD =~ '*' ]]; then
-       project_list_method="openstack"
-   fi
    
    if [[ $project_list_method == "curl" ]];  then
-      ## This section replaces openstack based project listing
+      ## This section replaces openstack based project listing"
       ##
 
-      local os_auth_data_unscoped='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
-         "password": "'$OS_PASSWORD'" } } } } }'
-
+      #local os_auth_data_unscoped='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+      #  "password": "'$OS_PASSWORD'" } } } } }'
+      # Build the JSON via python's json module so that special characters
+      # (spaces, quotes, backslashes, ...) in OS_PASSWORD are properly escaped.
+           # Build the JSON via python's json module so that special characters
+      # (spaces, quotes, backslashes, ...) in OS_PASSWORD are properly escaped.
+      local os_auth_data_unscoped=$(python3 -c 'import json, os
+print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"user": {"id": os.environ["OS_USERNAME"], "password": os.environ["OS_PASSWORD"]}}}}}))')
       # get an unscoped token
+
       local curl_out=`curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL/auth/tokens" 2>&1 <<< "$os_auth_data_unscoped"`
       local curl_exit="$?"
-      local curl_status=`echo "$curl_out" | grep -i '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
+      local curl_status=`echo "$curl_out" | \grep -i '^HTTP/[0-9\.]* 201 Created' | wc -l | tr -d ' '`
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
          echo "FAILED" >&2
-         echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+         echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
          unset OS_PASSWORD
       else
-         local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+         local os_auth_token_unscoped=`echo "$curl_out"|tr -d '\r'|\grep "$token_header_re"|sed "s/$token_header_re//"`
 
          # get the project list authenticating with the unscoped token
          local curl_out=`curl -s -S -X GET -D - -H "X-Auth-Token: $os_auth_token_unscoped" "$OS_AUTH_URL/auth/projects" 2>&1`
          local curl_exit="$?"
-         local curl_status=`echo "$curl_out" | grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
+         local curl_status=`echo "$curl_out" | \grep '^HTTP/[0-9\.]* 200 OK' | wc -l | tr -d ' '`
          if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
-            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+            echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
             unset OS_PASSWORD
          fi
 
-         # figure the project list out with just basic tools without dependency to any json tool
-         local all_projects=($(echo "$curl_out"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
+         ## figure the project list out with just basic tools without dependency to any json tool
+         #local all_projects=($(echo "$curl_out"|grep -E '{|}'|tr '[},]' '\n'|grep '"name"' | sed 's/^ "name": "\(.*\)"/\1/'))
+
+         # Extract the project names from the JSON response body
+         local all_projects=($(echo "$curl_out" | python3 -c 'import json, sys
+data = sys.stdin.read()
+_, _, body = data.partition("\r\n\r\n")
+if not body:
+    _, _, body = data.partition("\n\n")
+for p in json.loads(body).get("projects", []):
+    print(p["name"])'))
       fi
    else
       local all_projects=($(openstack project list --my-projects -c Name -f value --os-username $OS_USERNAME))
@@ -548,7 +555,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
              # if csc-projects is available, show the project names
              for g in ${all_projects[@]}
              do
-                title=$(csc-projects -p ${g} -o T | grep -v "no such file or directory" | grep -v "Failed to generate project")
+                title=$(csc-projects -p ${g} -o T | \grep -v "no such file or directory" | \grep -v "Failed to generate project")
                 allas_projects+=("${g}  ${title}")
              done
              select allas_project in "${allas_projects[@]}" "abort allas_conf"; do
@@ -567,7 +574,7 @@ if [ -z "$OS_PROJECT_NAME" ]; then
 fi
 
 #rclone configuration file check
-if [[ $(grep -c "\[$storage_service\]"  "$rconf" 2> /dev/null ) -lt 1 ]]; then
+if [[ $(\grep -c "\[$storage_service\]"  "$rconf" 2> /dev/null ) -lt 1 ]]; then
        mkdir -p  "${rconf%/*}"
        echo '['"$storage_service"']' >> "$rconf"
        echo 'type = swift' >>  "$rconf"
@@ -601,37 +608,36 @@ if $use_swift; then
       ## This section replaces swift auth based authentication
       ##
       # authenticates and save token to environment variable
-      
- 
-      os_auth_data='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
-                     "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
-
+      #os_auth_data='{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$OS_USERNAME'",
+      #               "password": "'$OS_PASSWORD'" } } }, "scope": { "project": { "domain": { "id": "default" }, "name": "'$OS_PROJECT_NAME'" } } } } '
+      os_auth_data=$(python3 -c 'import json, os
+print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"user": {"id": os.environ["OS_USERNAME"], "password": os.environ["OS_PASSWORD"]}}}, "scope": {"project": {"domain": {"id": "default"}, "name": os.environ["OS_PROJECT_NAME"]}}}}))')
       # authenticate and get return values
       #echo curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "$OS_AUTH_URL" 2>&1 '<<<' "$OS_AUTH_DATA"
       curl_out=$(curl -sS -X POST -D - -d '@-' -H 'Content-Type: application/json' "${OS_AUTH_URL}/auth/tokens" 2>&1 <<< "$os_auth_data")
       curl_exit="$?"
-      curl_status=`echo "$curl_out" | grep -i '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
+      curl_status=`echo "$curl_out" | \grep -i '^HTTP/1.1 201 Created' | wc -l | tr -d ' '`
       if [ "$curl_exit" != "0" -o "$curl_status" != "1" ]; then
             echo "FAILED" >&2
-            echo "$curl_out" | grep -E '^HTTP|{|}|^curl:' >&2
+            echo "$curl_out" | \grep -E '^HTTP|{|}|^curl:' >&2
       else
            # save token to environment variable
-           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|grep "$token_header_re"|sed "s/$token_header_re//"`
+           export OS_AUTH_TOKEN=`echo "$curl_out"|tr -d '\r'|\grep "$token_header_re"|sed "s/$token_header_re//"`
 
            # save also the storage url, figure it out with just basic tools without dependency to any json tool
-           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|grep "$storage_url_re"|grep "$storage_url_interface_re"|sed "$storage_url_sed"`
+           export OS_STORAGE_URL=`echo "$curl_out"|tr '}' '\n'|\grep "$storage_url_re"|\grep "$storage_url_interface_re"|sed "$storage_url_sed"`
       fi
     else
        if command -v openstack >/dev/null 2>&1; then
-         =$PYTHONPATH
+         activePythonPath=$PYTHONPATH
          unset PYTHONPATH
          export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-         export PYTHONPATH=$activePythonPath     
+         export PYTHONPATH=$activePythonPath
        fi
        eval "$(swift auth)"
     fi
 
-    if [[ $(grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
+    if [[ $(\grep -c "\[${storage_service}\]" $rconf 2> /dev/null) -lt 1 ]]; then
         mkdir -p  ${rconf%/*}
         printf "%s\n" >> $rconf \
             "[${storage_service}]" \
@@ -652,8 +658,7 @@ if $use_swift; then
             $echop "ACTIVE_TOKEN launched"
         else   
             echo "Connection stays active for eight hours."
-            #echo "Connection stays active until:"
-            #allas-token-lifetime | grep expires | awk '{print $2}' | cut -c2-20 | tr "T" " "
+
         fi
     fi
     if $ood; then
@@ -688,7 +693,7 @@ if $use_swift; then
 
          #fi 
         
-         if [[ ! $fixed_project_id ]] ; then       
+         if ! $fixed_project_id  ; then       
             export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
          fi
 
@@ -722,13 +727,13 @@ if $use_s3cmd; then
     openstack project show $OS_PROJECT_NAME
 
     local ACCESS_KEY=$(
-       openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+       openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
     if [ -z "$ACCESS_KEY" ]; then
        openstack ec2 credentials create
-       local ACCESS_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+       local ACCESS_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
     fi
 
-   local SECRET_KEY=$(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
+   local SECRET_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $2}')
    
    #S3cmd parameters
    echo '[allas-'${OS_PROJECT_NAME}']' > $HOME/.s3cfg_${OS_PROJECT_NAME}
@@ -824,7 +829,7 @@ if $s3remove; then
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
     export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-    local accesskeys=($(openstack ec2 credentials list -f value | grep $OS_PROJECT_ID | awk '{print $1}'))
+    local accesskeys=($(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | awk '{print $1}'))
     if [[ ${#accesskeys[*]} -eq 0 ]]; then
        echo "No access keys found for project $OS_PROJECT_NAME"
        return 1
@@ -838,7 +843,7 @@ if $s3remove; then
        PS3="Please choose an access key to be deleted by giving an item number form the list above: "
        local accesskey
        select accesskey in "${accesskeys[@]}" "abort allas_conf"; do
-              [[ -n "accesskey" ]] && break
+              [[ -n "$accesskey" ]] && break
        done
        if [[ "$accesskey" == "abort allas_conf" ]]; then
           return 1
@@ -879,7 +884,7 @@ if $show_powershell; then
    echo "Allas connection in your Windows machine."
    echo ""
    echo "--------------------------------------------------------------"
-   env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
+   env | \grep OS_ | awk -F "=" '{ if  ( $2 != "") print "$Env:"$1" = \""$2 "\""}'
 fi  
 
 
@@ -893,7 +898,7 @@ if $show_shell; then
    echo "Allas connection in your machine."
    echo ""
    echo "--------------------------------------------------------------"
-   env | grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
+   env | \grep OS_ | awk -F "=" '{ if  ( $2 != "") print "export "$1"=\""$2"\""}'
 fi  
 
 
