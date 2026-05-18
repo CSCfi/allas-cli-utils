@@ -40,8 +40,9 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
 
     Allas
 
-    By default this script configures swift based connection 
-    to Allas (https://a3s.fi).
+    By default this script configures S3 based connection
+    to Allas (https://a3s.fi). Use --swift (or -m swift) for
+    a swift based connection.
 
     The program asks your CSC password before starting the 
     configuration process.
@@ -80,7 +81,9 @@ Usage: source allas_conf [OPTIONS] [PROJECT]
     OPTIONS
     -------
 
-     -m, --mode S3            Configure S3 API (default: swift)
+     -m, --mode S3            Configure S3 API (default)
+
+     -m, --mode swift         Configure swift API
 
      -m, --mode both          Configure both swift and S3 APIs
 
@@ -156,7 +159,7 @@ local active_mode=false
 local echop=echo
 local chunk_size=5000
 local rconf=${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}
-local mode=swift
+local mode=s3
 local force=false
 #auth_method options are curl and swift
 local auth_method=curl
