@@ -204,18 +204,14 @@ while [[ $# -ge 1 ]]; do
         '--show-powershell' )   show_powershell=true;    shift;;
 	    '--show-shell' )        show_shell=true;         shift;;
         '-p'|'--project' )
-          if [[ -z $2 ]]; then
-              if [[ ${2::1} != "-" ]];then
-                export OS_PROJECT_NAME="$2"
-                shift 
-              else
-                export OS_PROJECT_NAME="" 
-              fi
-          else 
+          if [[ -n $2 && ${2::1} != "-" ]]; then
+              export OS_PROJECT_NAME="$2"
+              shift 2
+          else
               export OS_PROJECT_NAME=""
-          fi    
-          shift
-          ;; 
+              shift
+          fi
+          ;;
         '--project-id' )
            export OS_PROJECT_ID="$2"
            fixed_project_id=true
