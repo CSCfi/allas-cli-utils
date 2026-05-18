@@ -625,10 +625,10 @@ print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"u
       fi
     else
        if command -v openstack >/dev/null 2>&1; then
-         =$PYTHONPATH
+         activePythonPath=$PYTHONPATH
          unset PYTHONPATH
          export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-         export PYTHONPATH=$activePythonPath     
+         export PYTHONPATH=$activePythonPath
        fi
        eval "$(swift auth)"
     fi
