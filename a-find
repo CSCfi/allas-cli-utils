@@ -189,7 +189,7 @@ then
 fi
 
 
-if [[ $mode == "s3cmf" ]]
+if [[ $mode == "s3cmd" ]]
 then
   storage_server="s3allas"
 fi
