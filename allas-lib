@@ -146,7 +146,7 @@ s3_name_check(){
        problem=1
     fi
     
-    charcheck=$(echo $b | tr -d [a-z] | tr -d [0-9] | tr -d . | tr -d \-)
+    charcheck=$(echo $b | tr -d [:lower:] | tr -d [0-9] | tr -d . | tr -d \-)
     
     if [[ ${#charcheck} -gt 0 ]] ; then
      #  if [[ $problem -eq 0 ]]; then
