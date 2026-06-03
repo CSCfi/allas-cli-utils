@@ -154,7 +154,8 @@ s3_name_check(){
 	   #echo "Bucket name $b is not valid:"
 	  problem=1
      #  fi	  
-     echo "Only lower case non-scandinavic lertters, numbers, . and - are accepted in bucket names."
+     echo "Only lower case non-scandinavic letters, numbers, . and - are accepted in bucket names."
+     echo "Conflicting characters: $charcheck"
  
     fi
     if [[ $(echo $b | cut -c1 ) == "." ]] || [[ $(echo $b | cut -c1 ) == "-" ]]

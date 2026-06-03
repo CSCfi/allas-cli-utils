@@ -19,6 +19,7 @@ long_listing=0
 silent=1
 all=0
 show_shared=1
+s3_check=0
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -65,6 +66,10 @@ do
              ;;
              '--shared' | '-s')
                 show_shared=1
+                shift     
+             ;;
+             '--s3check')
+                s3_check=1
                 shift     
              ;;
              '--help' | '-h' )
@@ -127,6 +132,9 @@ if [ $(echo $bucket_name | grep -o "/" | wc -l) -gt 0 ]; then
   exit 1
 fi
 
+
+
+
 if [ $print_help -eq 1 ]; then
 cat <<EOF
 This tool is used to list buckets and objects in Allas or Lumi-o. If bucket name is not defined, all buckets are listed. 
@@ -149,6 +157,8 @@ Options:
 
 -L --lumi               Use Lumi-O storage server
 
+--s3check               Check if the bucket name is S3 compatible.
+
 
 
 
@@ -170,13 +180,13 @@ EOF
 exit 0
 fi 
 
-# check is this is a shared  bucket
+# check if this is a shared  bucket
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 a_tools_bucket=${project_label}-a-tools
 shared_list="buckets_shared_to"
 
 
-if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then   
+if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then  
    bucket_readable=$(rclone ls ${storage_server}:$bucket_name 2> /dev/null | wc -l)
    own_bucket=$(rclone lsd allas: | awk '{ print $NF}' | grep -c -w $bucket_name )
    # case: bucket reable but not owned
@@ -218,13 +228,18 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
           fi
        fi
    fi
+
  
 
 fi
+
+#s3_check
+if [[ $s3_check -eq 1 ]] && [[ $bucket_name != "" ]]; then  
+     s3_name_check  $bucket_name
+     exit
+fi 
+
 # run list command
-
-
-
 if [[ $dir_like -eq 1 ]]; then
   rclone lsf ${storage_server}:${full_name} | grep -v "_ameta$"
   exit 0
@@ -232,7 +247,20 @@ fi
 
 if [[ $bucket_name == "" ]]; then
    if [[ $long_listing -eq 0 ]]; then
-      rclone lsd ${storage_server}: | awk '{print $NF}'         
+      if [[ $s3_check -eq 1 ]]; then
+         # S3 name check 
+         for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
+         do
+            bucket_check=$(s3_name_check $buc)
+            if [[ $bucket_check != "OK" ]]; then
+              printf "%-40s %20s\n" "$buc" "Bucket name is not S3 compatible."
+            else
+             echo "$buc"
+            fi
+         done
+      else
+         rclone lsd ${storage_server}: | awk '{print $NF}'
+      fi                
    else
       rclone lsd ${storage_server}:
    fi
@@ -241,7 +269,19 @@ if [[ $bucket_name == "" ]]; then
       echo ""
       echo "Previously used buckets shared from other projects:"
       echo "NOTE: The list below is not necessarily up to date."
+      if [[ $s3_check -eq 1 ]]; then
+         for buc in $(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list)
+         do
+            bucket_check=$(s3_name_check $buc)
+            if [[ $bucket_check != "OK" ]]; then
+              printf "%-40s %20s\n" "$buc" "Bucket name is not S3 compatible."
+            else
+              echo "$buc"
+            fi 
+         done
+      else
       rclone cat ${storage_server}:${a_tools_bucket}/$shared_list
+      fi
    fi
 
    # swift list $options
