@@ -1178,14 +1178,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
 
 
   # Lumi-O dont allow upper case letters in bucket names
-  if [[ $mode == "lumi" ]]; then  
-     bucket_name=$(echo $bucket_name | tr [:upper:]  [:lower:] )
-  fi
+  #if [[ $mode == "lumi" ]]; then  
+  #   bucket_name=$(echo $bucket_name | tr [:upper:]  [:lower:] )
+  #fi
 
   # check bucket name
-  bucket_check=$(s3_name_check $bucket_name)
+  bucket_root=$(awk -F "/" '{print $1}')
+  bucket_check=$(s3_name_check $bucket_root)
   if [[ $bucket_check != "OK" ]]; then
-     old_bucket=$( rclone lsd ${storage_server}: | grep -c -w $bucket_name)
+     old_bucket=$( rclone lsd ${storage_server}: | grep -c -w $bucket_root )
      if [[ $old_bucket -eq 0 ]]; then
         echo ""
         echo "------------------------------------------------"
