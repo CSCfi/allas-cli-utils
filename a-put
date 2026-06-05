@@ -1183,7 +1183,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #fi
 
   # check bucket name
-  bucket_root=$(awk -F "/" '{print $1}')
+  bucket_root=$(echo $bucket_name | awk -F "/" '{print $1}')
   bucket_check=$(s3_name_check $bucket_root)
   if [[ $bucket_check != "OK" ]]; then
      old_bucket=$( rclone lsd ${storage_server}: | grep -c -w $bucket_root )
