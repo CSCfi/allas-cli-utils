@@ -6,7 +6,6 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
 #local variables
@@ -20,7 +19,7 @@ show_filelist=(0)
 query=("")
 object_with_bucket=(0)
 
-
+source $inst_root/a_env_conf
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
    customized=1
@@ -60,7 +59,7 @@ do
                   mode="swfit"
                   shift
                  ;;
-             '--s3allas' )
+             '--s3cmd' | '--s3' | '-S' )
                   mode="s3cmd"
                   shift
                  ;;
@@ -70,7 +69,10 @@ do
                   shift
                  ;;
 
-
+            '--swift' | '--sw' | '-A' )
+                  mode="swift"
+                  shift
+                ;;
 
              *)
                    if [[ $object_name != "" ]]; then
@@ -99,6 +101,10 @@ Options:
 -p, --project <project_ID>   Get information about objects form the buckets of the defined project instead of the currently configured project. 
 
 -b, --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
+
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas woth swift protocol.  
 
 
 Related commands: a-put, a-get, a-delete, a-find

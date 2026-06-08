@@ -77,11 +77,20 @@ do
                  mode="lumi"
                  shift
               ;;
+             '--s3cmd' | '--s3' | '-S' )
+                  mode="s3cmd"
+                  shift
+                 ;;
 
-              '--allas' | '-A' )
-                 mode="allas"
-                 shift
-              ;;
+             '--lumi' | '-L' )
+                  mode="lumi"
+                  shift
+                 ;;
+
+              '--swift' | '--sw' | '-A' )
+                  mode="swift"
+                  shift
+                ;;
 
              '-h' | '--help' )
                   print_help=1
@@ -127,7 +136,9 @@ Options:
 
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
--S, --s3, --s3cmd            Use S3 protocol.
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas with swift protocol.
 
 
 Related commands: a-put, a-get, a-find, a-info
@@ -165,7 +176,7 @@ fi
 if [[ $remove_bucket -eq 1 ]]; then
      if [[ $force -eq 2 ]]; then
         if [[ $object_name != "" ]]; then
-            rclone delete ${storage_server}:"$object_name"
+            rclone delete -P ${storage_server}:"$object_name"
             rclone rmdir ${storage_server}:"$object_name"
             echo "$object_name deleted"
         fi

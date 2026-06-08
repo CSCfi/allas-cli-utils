@@ -60,10 +60,21 @@ do
                   silent=1
                   shift
                 ;;
-            '--lumi')
+             '--s3cmd' | '--s3' | '-S' )
+                  mode="s3cmd"
+                  shift
+                 ;;
+
+             '--lumi' | '-L' )
                   mode="lumi"
                   shift
+                 ;;
+
+             '--swift' | '--sw' | '-A' )
+                  mode="swift"
+                  shift
                 ;;
+
             '--files' | '-f' )
                   show_filelist=1
                   shift
@@ -143,6 +154,10 @@ Options:
 
 -s, --silent                 Output just the object names and number of hits. If -file option is included,
                              print object name and matching file name on one row.
+
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas with swift protocol.                            
 
 
 Related commands: a-put, a-get, a-delete, a-info

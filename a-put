@@ -338,8 +338,6 @@ a-put command line options:
 -o, --object <object_name>  Define a name for the new object to be 
                             created.
 
--S, --s3cmd                 Use S3 protocol instead of swift protocol 
-                            for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
                             (This is now the default mode thus this option is 
@@ -402,16 +400,12 @@ a-put command line options:
                             you must set up the allas connection with option --sdc that will guide you 
                             to import project specific SD Connect token that this process needs.               
  
--A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
-                            Normally this (Allas with swift) is the default and this option is not needed,
-                            but if you have set e.g. Lumi-O as the default storage server, this option can be
-                            used to upload data to Allas without changing the default storage server.
 
---swift                     Use Allas with Swift protocol.
+-A, --sw, --swift           Use Allas with swift protocol.
 
---s3cmd                     Use Allas with S3 protocol.
+-S, --s3, --s3cmd           Use Allas with S3 protocol.
 
--L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+-L, --lumi                  Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
                             If Lumi-O is defined to be the default storage server and this option is not needed.
 
 Related commands: a-find, a-get, a-delete, a-info
