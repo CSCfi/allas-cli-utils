@@ -14,3 +14,4 @@ dependencies:
     - python-swiftclient
     - python-rclone
     - crypt4gh
+    - debtcollector<3.1.0
