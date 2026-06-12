@@ -44,7 +44,7 @@ do
                   options=("$options --lh ")
                   shift
                   ;;
-	     '--s3cmd' | '--s3' | '-S' )
+	          '--s3cmd' | '--s3' | '-S' )
                   mode="s3cmd"
                   shift
                 ;;
@@ -52,9 +52,9 @@ do
                   mode="lumi"
                 shift
                 ;; 
-              '--swift' )
+            '--swift' | '--sw' | '-A' )
                   mode="swift"
-                shift
+                  shift
                 ;; 
              '--dir' | '-d' )
                 dir_like=(1)
@@ -68,8 +68,8 @@ do
                 show_shared=1
                 shift     
              ;;
-             '--s3check')
-                s3_check=1
+             '--sdc-check')
+                 sdc_check=1
                 shift     
              ;;
              '--help' | '-h' )
@@ -155,11 +155,11 @@ Options:
 
 -S, --s3                Use Allas with S3 protocol
 
+-A, --swift             Use Allas with swift protocol
+
 -L --lumi               Use Lumi-O storage server
 
---s3check               Check if the bucket name is S3 compatible.
-
-
+--sdc-check             Check if the bucket name is SD Connect compatible.
 
 
 
@@ -233,9 +233,9 @@ if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then
 
 fi
 
-#s3_check
-if [[ $s3_check -eq 1 ]] && [[ $bucket_name != "" ]]; then  
-     s3_name_check  $bucket_name
+#sdc_check
+if [[ $sdc_check -eq 1 ]] && [[ $bucket_name != "" ]]; then  
+     sdc_name_check  $bucket_name
      exit
 fi 
 
@@ -247,13 +247,13 @@ fi
 
 if [[ $bucket_name == "" ]]; then
    if [[ $long_listing -eq 0 ]]; then
-      if [[ $s3_check -eq 1 ]]; then
+      if [[ $sdc_check -eq 1 ]]; then
          # S3 name check 
          for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
          do
-            bucket_check=$(s3_name_check $buc)
+            bucket_check=$(sdc_name_check $buc)
             if [[ $bucket_check != "OK" ]]; then
-              printf "%-40s %20s\n" "$buc" "Bucket name is not S3 compatible."
+              printf "%-40s %20s\n" "$buc" "Bucket name is not SD Connect compatible."
             else
              echo "$buc"
             fi

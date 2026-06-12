@@ -128,6 +128,52 @@ Check the segments bucket ${segments_bucket} for object ${check_object}."
 
 abspath() { old=`pwd`;new=$(dirname "$1");if [ "$new" != "." ]; then cd $new; fi;file=`pwd`/$(basename "$1");cd $old;echo $file; }
 
+#check if bucket name follows SD Connect rules
+sdc_name_check(){
+    b="$1"
+    problem=0
+    if [[ ${#b} -lt 3 ]] ; then
+       #echo ""
+       #echo "Bucket name $b is not valid"
+       echo "Bucket name must be at least 3 characters long."
+       problem=1
+    fi
+    if [[ ${#b} -gt 63 ]] ; then
+       #echo ""
+       echo "Bucket name $b has ${#b} characters."
+       echo "Bucket name must be shorter that 63 characters."
+
+       problem=1
+    fi
+    
+    charcheck=$(echo $b | tr -d [:lower:] | tr -d [:upper:] | tr -d [:digit:] | tr -d . | tr -d \- | tr -d _ )
+    
+    if [[ ${#charcheck} -gt 0 ]] ; then
+     #  if [[ $problem -eq 0 ]]; then
+     #      echo ""
+	   #echo "Bucket name $b is not valid:"
+	  problem=1
+     #  fi	  
+     echo "Only non-scandinavic letters, numbers, . , _ and - are accepted in bucket names."
+     echo "Special characters and spaces are not allowed in bucket names."
+     echo "Conflicting characters: $charcheck"
+
+    fi
+    if [[ $(echo $b | cut -c1 ) == "." ]] || [[ $(echo $b | cut -c1 ) == "-" ]]
+       then
+      # if [[ $problem -eq 0 ]]; then
+	    #echo ""    
+	    #echo "Bucket name $b is not valid:"
+	    problem=1
+      #fi
+      echo "Bucket name must start with a letter or number." 
+    fi
+    if [[ $problem -eq 0 ]]; then
+	   echo   "OK"
+    fi
+}
+
+
 
 #check if bucket name follows S3 rules
 s3_name_check(){
@@ -170,8 +216,4 @@ s3_name_check(){
     if [[ $problem -eq 0 ]]; then
 	   echo   "OK"
     fi
-
-
-
-
 }

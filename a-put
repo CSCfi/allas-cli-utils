@@ -1176,25 +1176,27 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #   bucket_name=$(echo $bucket_name | tr [:upper:]  [:lower:] )
   #fi
 
-  # check bucket name
-  bucket_root=$(echo $bucket_name | awk -F "/" '{print $1}')
-  bucket_check=$(s3_name_check $bucket_root)
-  if [[ $bucket_check != "OK" ]]; then
-     old_bucket=$( rclone lsd ${storage_server}: | grep -c -w $bucket_root )
-     if [[ $old_bucket -eq 0 ]]; then
-        echo ""
-        echo "------------------------------------------------"
-        echo "NOTE: Proposed bucket name is not S3 compatible!"
-        echo ""
+  # check bucket name 
+  if [[ $sdc -eq 1 ]]; then
+    bucket_root=$(echo $bucket_name | awk -F "/" '{print $1}')
+    bucket_check=$(sdc_name_check $bucket_root)
+    if [[ $bucket_check != "OK" ]]; then
+       old_bucket=$( rclone lsd ${storage_server}: | grep -c -w $bucket_root )
+       if [[ $old_bucket -eq 0 ]]; then
+          echo ""
+          echo "------------------------------------------------"
+          echo "NOTE: Proposed bucket name is not SD Connect compatible!"
+          echo ""
 
-        s3_name_check $bucket_name   
-        echo ""
-        echo "Do you want to create new S3 incompatible bucket $bucket_name [y/n] ?"
-        read ans
-        if [[ $ans != "y" ]]; then
-          exit
-        fi  
-     fi
+          s3_name_check $bucket_name   
+          echo ""
+          echo "Do you want to create new S3 incompatible bucket $bucket_name [y/n] ?"
+          read ans
+          if [[ $ans != "y" ]]; then
+            exit
+          fi  
+       fi
+    fi
   fi
   #S3 protocol requires that directory exist before copying
   if [[ $mode == "s3cmd" ]] || [[ $mode == "lumi" ]]  ; then
