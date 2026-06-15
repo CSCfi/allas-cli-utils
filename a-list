@@ -249,17 +249,22 @@ if [[ $bucket_name == "" ]]; then
    if [[ $long_listing -eq 0 ]]; then
       if [[ $sdc_check -eq 1 ]]; then
          # S3 name check 
-         for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
+         #for buc in $(rclone lsd ${storage_server}: | awk '{print $NF}')
+         SAVEIFS="$IFS"
+         IFS=$(echo -en "\t\n\b")
+         for buc in $(rclone lsd ${storage_server}: | cut -c 44- )
          do
             bucket_check=$(sdc_name_check $buc)
             if [[ $bucket_check != "OK" ]]; then
               printf "%-40s %20s\n" "$buc" "Bucket name is not SD Connect compatible."
+              echo "$buc" >> .sdc_check_problems_$$              
             else
              echo "$buc"
             fi
          done
       else
-         rclone lsd ${storage_server}: | awk '{print $NF}'
+         #rclone lsd ${storage_server}: | awk '{print $NF}'
+         rclone lsd ${storage_server}: | cut -c 44- 
       fi                
    else
       rclone lsd ${storage_server}:
@@ -269,12 +274,13 @@ if [[ $bucket_name == "" ]]; then
       echo ""
       echo "Previously used buckets shared from other projects:"
       echo "NOTE: The list below is not necessarily up to date."
-      if [[ $s3_check -eq 1 ]]; then
+      if [[ $sdc_check -eq 1 ]]; then
          for buc in $(rclone cat ${storage_server}:${a_tools_bucket}/$shared_list)
          do
-            bucket_check=$(s3_name_check $buc)
+            bucket_check=$(sdc_name_check $buc)
             if [[ $bucket_check != "OK" ]]; then
               printf "%-40s %20s\n" "$buc" "Bucket name is not S3 compatible."
+              echo "$buc" >> .sdc_check_problems_$$
             else
               echo "$buc"
             fi 
@@ -283,6 +289,17 @@ if [[ $bucket_name == "" ]]; then
       rclone cat ${storage_server}:${a_tools_bucket}/$shared_list
       fi
    fi
+   if [[ $sdc_check -eq 1 ]]; then
+      if [[ -e .sdc_check_problems_$$ ]]; then 
+         echo ""
+         echo "---------------------------------------"
+         echo "Buckets that have problematic names   :"
+         echo "---------------------------------------"
+         cat .sdc_check_problems_$$
+         rm -f .sdc_check_problems_$$
+      fi
+   fi
+
 
    # swift list $options
 else
