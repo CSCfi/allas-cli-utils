@@ -297,6 +297,12 @@ if [[ $bucket_name == "" ]]; then
          echo "---------------------------------------"
          cat .sdc_check_problems_$$
          rm -f .sdc_check_problems_$$
+      else
+         echo ""
+         echo "------------------------------------------------------"
+         echo "Buckets that have problematic names were not found.   "
+         echo "------------------------------------------------------"
+
       fi
    fi
 
