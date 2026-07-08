@@ -24,7 +24,7 @@ bucket_name="not_defined"
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
-mode="swift"
+#mode="swift"
 #tmp_dir="${tmp_root}/a_put_$$_tmp"
 make_temp_dir
 
@@ -44,12 +44,12 @@ do
   case "$1" in
              '--bucket' | '-b' )
              # query file
-                  bucket_name=($2)
+                  bucket_name="$2"
                   shift
                   shift
                 ;;
              '--project' | '-p' )
-                  os_project_name=($2)
+                  os_project_name="$2"
                   shift
                   shift
                 ;;
@@ -59,20 +59,20 @@ do
                   shift
                   shift
                 ;;
-            '--s3cmd' )
-                  mode=("s3cmd")
+             '--lumi' | '-L' )
+                  mode="lumi"
+                  shift
+                ;; 
+             '--swift' | '--sw' | '-A' )
+                  mode="swift"
                   shift
                 ;;
-            '--lumi' )
-                  mode=("lumi")
-                  shift
-                ;;
-            '--allas' )
-                  mode=("swift")
+             '--s3cmd' | '--s3' | '-S' )
+                  mode="s3cmd"
                   shift
                 ;;
              '--index' | '-i' )
-                  index_mode=$2
+                  index_mode="$2"
                   if [[ $index_mode == "static" || $index_mode == "dynamic" ]]; then
                      echo "creating $index_mode index"
                   else
@@ -84,7 +84,7 @@ do
                   shift
                 ;;
               '--input-list')
-                  list_file=$2
+                  list_file="$2"
                   if [[ -e $list_file ]];then
                     input_def=("$(cat $list_file)")                
                   else  
@@ -95,7 +95,7 @@ do
                   shift
                 ;;
              '-h' | '--help' )
-                  print_help=(1)
+                  print_help=1
                   shift
                 ;;
              *)
@@ -142,7 +142,12 @@ a-publish options:
                     lists the objects that are available in the bucket in the time when 
                     this page is accessed. This dynamic indexing tool can list
                     only up to 1000 files.
- --input-list       List of files to be uploaded.    
+ --input-list       List of files to be uploaded. 
+ -A, --sw, --swift  Use Allas with swift protocol.
+
+ -S, --s3, --s3cmd  Use Allas with S3 protocol.
+
+ -L, --lumi         Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
  
 
 EOF
@@ -164,6 +169,24 @@ then
   fi 
 fi
 
+if [[ $mode == "s3cmd" ]]; then
+  storage_server="s3allas"
+  ##Assign project to be used if not defined 
+  if [[ $os_project_name == "" ]]; then
+    if [[ -e $HOME/.allas_default ]];then
+       source $HOME/.allas_default
+    else
+     #check what project s3allas uses
+     accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+     #echo accesskey: $accesskey
+     os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+    fi
+  fi
+  #echo "a-flip is not available s3allas."
+  #exit
+fi
+
+
 
 echo "Files to be uploaded: $input_def"
 
@@ -181,10 +204,7 @@ if [[ $mode == "lumi" ]]; then
    rclone mkdir ${storage_server}:${bucket_name}
 fi
 
-
 echo "Bucket: $bucket_name"
-
-
 
 
 for input in $input_def
@@ -372,6 +392,12 @@ if [[ $mode == "swift" ]]; then
   swift post ${bucket_name} --read-acl ".r:*,.rlistings"
   swift post "${bucket_name}_segments" --read-acl ".r:*,.rlistings"
 fi
+
+#echo "set access control in case of Allas/S3"
+if [[ $mode == "s3cmd" ]]; then
+    s3cmd setacl --recursive --acl-public s3://$bucket_name > /dev/null
+fi
+
 
 clean_temp_dir
 echo ""

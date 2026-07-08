@@ -289,7 +289,7 @@ if [[ $mode == "swift" ]]; then
   echo "Projects that have write access to bucket $bucket:"
   swift stat $bucket | awk '{ if ($1=="Write") if ($2=="ACL:") print $3}' | tr "," "\n" | tr -d ":,*" | awk '{ print "  "$0}'
   echo "----------------------------------------------------------"
-
+ 
 fi
 
 ##
@@ -311,10 +311,10 @@ if [[ $mode == "s3cmd" ]]; then
         s3cmd setacl --acl-revoke=write:$add_read_project s3://$bucket
    fi
    if [[ $public -gt 0 ]];then
-        s3cmd modify --recursive --acl-public s3://$bucket
+        s3cmd setacl --recursive --acl-public s3://$bucket
    fi
    if [[ $public -lt 0 ]];then
-        s3cmd modify --recursive --acl-private s3://$bucket
+        s3cmd setacl --recursive --acl-private s3://$bucket
    fi
 fi 
 exit

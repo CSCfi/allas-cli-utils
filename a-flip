@@ -22,9 +22,8 @@ bucket_name=("not_defined")
 print_help=(0)
 os_project_name=("$OS_PROJECT_NAME")
 input_def=("")
-mode=("swift")
+#mode=("swift")
 #tmp_dir=("${tmp_root}/a_put_$$_tmp")
-
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -34,6 +33,7 @@ else
    customized=0
 fi
 
+
 #Process command line
 while [[ $# -ge 1 ]]
 do
@@ -41,6 +41,18 @@ do
              '--project' | '-p' )
                   os_project_name=($2)
                   shift
+                  shift
+                ;;
+             '--lumi' | '-L' )
+                  mode="lumi"
+                  shift
+                ;; 
+             '--swift' | '--sw' | '-A' )
+                  mode="swift"
+                  shift
+                ;;
+             '--s3cmd' | '--s3' | '-S' )
+                  mode="s3cmd"
                   shift
                 ;;
              '-h' | '--help' )
@@ -76,6 +88,15 @@ https://a3s.fi/username-projectNumber-flip/object_name
 After uploading the file to the public flip bucket, it checks up the content of the bucket and
 removes object that were uploaded more than two days ago.
 
+a-flip command line options
+
+-A, --sw, --swift           Use Allas with swift protocol.
+
+-S, --s3, --s3cmd           Use Allas with S3 protocol.
+
+-L, --lumi                  Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+                            If Lumi-O is defined to be the default storage server and this option is not needed.
+
 EOF
 
 exit
@@ -95,26 +116,29 @@ then
   fi
 fi
 
-if [[ $mode == "s3cmd" ]]
-then
-  echo "a-flip is not available s3allas."
-  exit
+
+
+
+if [[ $mode == "s3cmd" ]]; then
+  storage_server="s3allas"
+  ##Assign project to be used if not defined 
+  if [[ $os_project_name == "" ]]; then
+    if [[ -e $HOME/.allas_default ]];then
+       source $HOME/.allas_default
+    else
+     #check what project s3allas uses
+     accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
+     #echo accesskey: $accesskey
+     os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
+    fi
+  fi
+  #echo "a-flip is not available s3allas."
+  #exit
 fi
 
-if [[ $mode == "lumi" ]]
-then
+if [[ $mode == "lumi" ]]; then
   storage_server="lumi-pub"
 fi
-
-
-
-
-#source /appl/opt/allas_conf
-#input=("$1")
-
-#check free space in $WRKDIR
-#quota_s=($(lfs quota -q -u $USER $WRKDIR))
-#free_space=$(expr ${quota_s[2]} - ${quota_s[1]})
 
 echo "Files to be uploaded: $input_def"
 
@@ -122,7 +146,7 @@ echo "Files to be uploaded: $input_def"
 project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
 bucket_name=("${user}-${project_label}-flip")
 
-if [[ $mode == "lumi" ]]; then
+if [[ $mode == "lumi" || $mode == "s3cmd" ]]; then
    echo "rclone mkdir ${storage_server}:${bucket_name}"
    rclone mkdir ${storage_server}:${bucket_name}
 fi
@@ -273,7 +297,7 @@ do
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
-  if [[ $mode == "swift" ]]; then
+  if [[ $mode == "swift" || $mode == "s3cmd" ]]; then
      echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
   fi
   if [[ $mode == "lumi" ]]; then
@@ -312,6 +336,11 @@ rm -f   ${tmp_dir}/index.html
 if [[ $mode == "swift" ]]; then
   swift post ${bucket_name} --read-acl ".r:*,.rlistings"
   swift post ${bucket_name}_segments --read-acl ".r:*,.rlistings"
+fi
+
+#echo "set access control in case of Allas/S3"
+if [[ $mode == "s3cmd" ]]; then
+    s3cmd setacl --recursive --acl-public s3://$bucket_name > /dev/null
 fi
 
 clean_temp_dir
