@@ -424,7 +424,7 @@ fi
 
 # Check availability of command line tools
 
-if [[ $mode != "lumi" ]]; then
+if [[ $mode != "lumi" && $auth_method != "curl" ]]; then
   if [ -z "$OS_PROJECT_NAME" ] && ! command -v openstack >/dev/null 2>&1; then
       echo -e "\nError: openstack command not found!" >&2
       return 1
