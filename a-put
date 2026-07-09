@@ -426,8 +426,10 @@ fi
 
 ##Assign project to be used if not defined 
 if [[ $os_project_name == "" ]]; then
-  if [[ -e $HOME/.allas_default ]];then
-     source $HOME/.allas_default
+  if [[ mode == "swift" ]]; then
+    if [[ -e $HOME/.allas_default ]];then
+       source $HOME/.allas_default
+    fi
   else
    #check what project s3allas uses
    accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
