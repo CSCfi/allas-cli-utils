@@ -127,7 +127,6 @@ if [[ $mode == "s3cmd" ]]; then
      accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
      #echo accesskey: $accesskey
      os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-"  | awk -F "-" '{print $2}')
-    fi
   fi
   #echo "a-flip is not available s3allas."
   #exit

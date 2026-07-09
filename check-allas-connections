@@ -59,7 +59,7 @@ if [[ -e "$HOME/.s3cfg"	]]; then
    echo "   Default project for s3cmd:" $(head -1 $HOME/.s3cfg | tr -d "[" | tr -d "]" ) " $status" 
 
 else
-   echo "   Default project for s3cmd is not defied."
+   echo "   Default project for s3cmd is not defined."
 fi
 echo "---------------------------------------------------"
 

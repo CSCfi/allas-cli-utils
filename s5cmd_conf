@@ -12,10 +12,15 @@ if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]]; then
       exit 1
 fi
 
+if [[ $1 != "" ]]; then
+   allremotes=($1)
+else
+   allremotes=($(rclone listremotes --type s3))
+fi
 
 #collect list of active s3 connections
 remotes=()
-for re in $(rclone listremotes --type s3)
+for re in ${allremotes[*]}
 do  
     rclone lsd  --max-depth 1 --contimeout 2s --low-level-retries 2 $re 2>/dev/null > /dev/null
     check=$?
@@ -32,6 +37,8 @@ case ${#remotes[@]} in
       echo "No active S3 connections found."
       exit 1
       ;;
+    1)
+      remote=$remotes
     *)
       echo "Please select the number of the S3 connection to be activated for s5cmd."
       select remote in "${remotes[@]}" "Quit"; do
