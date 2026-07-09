@@ -349,7 +349,7 @@ do
 
   echo "$input uploaded to ${bucket_name}"
 
-  if [[ $mode == "swift" ]]; then
+  if [[ $mode == "swift" || $mode == "s3cmd" ]]; then
      https_root="https://a3s.fi"
   fi
   if [[ $mode == "lumi" ]]; then
