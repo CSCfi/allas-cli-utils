@@ -537,7 +537,7 @@ for p in json.loads(body).get("projects", []):
        0)
            echo "Error: No Allas projects found!" >&2
            echo "Please check that you typed your CSC password correctly." >&2
-           echo "Note that you University/Haka or Virtu password can't be used here" >&2
+           echo "Note that your University/Haka or Virtu password can't be used here." >&2
            return 1
            ;;
        1)
