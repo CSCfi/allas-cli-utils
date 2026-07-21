@@ -237,6 +237,7 @@ do
 		                  exit 1
 		              fi
                     sdc=1
+                    mode="swift"
 		              include_ameta=0
 		              compression=0
                     fnum=0
