@@ -337,5 +337,10 @@ if [[ $mode == "s3cmd" ]]; then
    if [[ $public -lt 0 ]];then
         s3cmd setacl --recursive --acl-private s3://$bucket
    fi
+    
+    echo "Access control settings for bucket $buckoet"
+    s3cmd info s3://${bucket} | awk '{ if ( $1 == "ACL:" ) print $0 }'
+        
+
 fi 
 exit
