@@ -76,11 +76,16 @@ do
                   public=-1
                   shift
                 ;;
-               '-S' | '--s3' )
+               '--s3cmd' | '--s3' | '-S' )
                   mode="s3cmd"
                   storage_server="s3allas"
                   shift
                 ;;   
+               '--swift' | '--sw' | '-A' )
+                  mode="swift"
+                  shift
+                ;;
+
                '--help' | '-h' )
                   print_help=(1)
                   shift
@@ -127,6 +132,9 @@ a-access options:
   -rw, -read-write  <project_id>   Remove read and write access from the bucket to the project.
   +p,  +public                     Give public read-only access to the bucket.
   -p,  -public                     Remove public read-only access to the bucket.
+
+  -A, --sw, --swift                Use Allas with swift protocol.
+  -S, --s3, --s3cmd                Use Allas with S3 protocol.
 
 
 For example, to allow members of project: project_2001234 to have read-only access to bucket: my_data_bucket, you
