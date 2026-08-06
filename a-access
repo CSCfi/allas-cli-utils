@@ -102,7 +102,19 @@ do
     esac
 done
 
+# s3cmd mode
+if [[ $mode == "s3cmd" ]]; then 
+   storage_server="s3allas"
+   storage_name="Allas"
+   #rclone_copy_options="--s3-chunk-size 10000"
+fi
 
+# swift mode
+if [[ $mode == "swift" ]]; then 
+   storage_server="allas"
+   storage_name="Allas"
+   #rclone_copy_options="--s3-chunk-size 10000"
+fi
 
 if [ $print_help -eq 1 ]; then
 cat <<EOF
@@ -176,6 +188,7 @@ if [[ $silent -eq 0 ]]; then
      echo "Customer settings read from $HOME/.a_tools_conf"
    fi
 fi 
+
 
 
 #Check that bucket exists
