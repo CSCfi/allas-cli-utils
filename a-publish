@@ -1,17 +1,17 @@
 #!/bin/bash 
 
-
 #default user
 user=($USER)
 
 #read static variables
+mode="swift"
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
 if [[ $# -lt 1 ]]
 then
-  echo "Please give the name of a file to be uploaded to allas as an argument of this command."
+  echo "Please give the name of a file to be uploaded to Allas as an argument of this command."
   echo ""
   exit 1
 fi
@@ -159,6 +159,7 @@ fi
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
+  storage_server="allas"
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]

@@ -6,6 +6,7 @@ user=($USER)
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+mode=("swift")
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
@@ -106,6 +107,7 @@ fi
 #Check if connection works
 if [[ $mode == "swift" ]]
 then
+  storage_server="allas"
   test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
   #test=$(swift stat 2> /dev/null | grep -c "Account:")
   if [[ $test -lt 1 ]]
@@ -293,6 +295,7 @@ do
   rm -f ${tmp_dir}/${tmp_file}_ameta
 
   echo "$input uploaded to ${bucket_name}"
+  echo "mode: $mode"
   if [[ $mode == "swift" || $mode == "s3cmd" ]]; then
      echo "Public link: https://a3s.fi/${bucket_name}/$tmp_file"
   fi
