@@ -7,6 +7,7 @@ user=($USER)
 #inst_root=$(dirname $(readlink -f $0))
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+mode="swift"
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
 
@@ -15,7 +16,6 @@ object_name=""
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
-mode="swift"
 show_filelist=0
 query=""
 object_with_bucket=0
