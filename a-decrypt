@@ -1,0 +1,342 @@
+#!/bin/bash
+
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
+
+# local variable
+object_name=""              #object to retrieve
+print_help=0
+os_project_name="$OS_PROJECT_NAME"
+mode="swift"
+tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
+bucket=""
+all=0
+all_keys=""
+suffix=".c4gh"
+replace=0
+sdc=1
+previous_bucket="x"
+
+# read customer defaults
+if [[ -e $HOME/.a_tools_conf ]]; then
+   echo "Reading customer settings"  >&2
+   source $HOME/.a_tools_conf
+fi
+
+
+#Process command line
+while [[ $# -ge 1 ]]
+do
+  case "$1" in
+             '--object' | '-o')
+             # query file
+                  object_name="$2"
+                  shift
+                  shift
+                ;;
+              '--s3cmd' )
+                  mode=("s3cmd")
+                  shift
+                ;;
+
+              '--lumi' )
+                  mode=("lumi")
+                  shift
+                ;;
+             '-b' | '--bucket' )
+                  bucket="$2"
+                  shift
+                  shift
+             ;;
+             '-r' | '--replace')
+                  replace=1
+                  shift
+             ;;
+              '-a' | '--all')
+                  all=1
+                  shift
+             ;;	      
+             '-h' | '--help' )
+                  print_help=(1)
+                  shift
+              ;;
+             *)
+                   if [[ $object_def != "" ]]; then
+                      echo "unknown option: $1"  >&2
+                      echo "Object name is: $object" >&2
+                      exit 1
+                   fi
+                   object_def="$1"
+                   shift                       # No more switches
+               ;;
+    esac
+done
+
+
+
+if [ $print_help -eq 1 ]; then
+cat <<EOF
+a-decrypt is used to decrypt SD Connect encrypted object that have already been uploaded to Allas.
+The main purpose of this tool is to convert a file, uploaded to SD Connect service, into normal Allas object .
+
+DEFAULT OPERATION: DECRYPT AN OBJECT IN ALLAS
+
+The basic syntax of the command is:
+
+   a-decrypt object_name
+
+The command above copies the object to the local computer where SD Connect decryption is applied
+to the data. The decrypted data is then copied back to Allas into a new object. 
+By default the encrypted object is located to the same bucket as the original object. 
+Suffix: .c4gh is removed from the object name.
+
+You can user option --bucket the define that decrypted files will be stored to different location.
+With option --all you can define that all the objects in a given location will be decrypted. 
+
+Examples:
+
+1. Make an decrypted copy of object my_data.csv.c4gh that locate in bucket project-12345-data
+
+   a-decrypt project-12345-data/my_data.csv.c4gh
+
+2. Make decrypted copies of all objects in bucket project-12345-sd to bucket  project-12345-data
+
+   a-decrypt project-12345-sd --all --bucket project-12345-data
+
+
+Note tha a-decrypt is not able to decrypt files that were encrypted with he old SD Connect method.
+
+
+
+SUMMARY OF A-ENCRYPT OPTIONS
+
+Options:
+
+-a, --all                        Process all the objects that include the given name (e.g. bucket name) in the beginning of
+                                 object name. 
+
+-r, --replace                    Remove the original encrypted object after decryption.
+
+-b, --bucket <bucket_name>       Save the decrypted object to the given bucket instead of the original bucket.
+
+
+--s3cmd                          Use S3 protocol for data retrieval instead of Swift.
+
+
+
+
+Related commands: a-encrypt, a-put, a-find, a-info, a-delete
+
+EOF
+
+exit 0
+
+fi
+
+if [[ $object_def == "" ]]
+then
+  echo "Please give the object to decrypt:"  >&2
+  read object_def
+fi
+
+project_label=$(echo ${os_project_name} |  sed -e s/"project_"/""/g)
+
+#Check if connection works
+if [[ $mode == "swift" ]]
+then
+  #here we check that rclone is available
+  if [[ $(which rclone 2> /dev/null | wc -l ) -ne 1 ]];then
+      echo ""  >&2
+      echo "rclone is not available!" >&2
+      echo "Please install rclone."  >&2
+      exit 1
+  fi
+  #connection test
+  test=$(rclone about ${storage_server}: 2> /dev/null | wc -l)
+  #test=$(swift stat 2> /dev/null | grep -c "Account:")
+  if [[ $test -lt 1 ]]
+  then
+    echo "No connection to Allas!"  >&2
+    echo "Please try setting the connection again."  >&2
+    echo "by running command:" >&2
+    echo "" >&2
+    echo "   source $allas_conf_path" >&2
+    exit 1
+  fi
+fi
+
+#Rclone through s3
+if [[ $mode == "s3cmd" ]];then
+   storage_server="s3allas"
+fi
+
+#Rclone through s3
+if [[ $mode == "lumi" ]];then
+   storage_server="lumi-o"
+fi
+
+
+
+#check sd-locku-util is istalled
+if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+	    echo ""
+	    echo "sd-lock-util is not available!"
+	    echo "pleas install sd-lock-util if you are using SD Connect based encryption."
+	    echo "   https://github.com/CSCfi/sd-lock-util "
+	    exit 1
+fi
+# check that sd-lock connecton is wroking
+sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
+if [[ $sdc_check -ne 1 ]]; then
+	    echo "Decryption is not possible."
+	    echo "Refresh the sd-lock-util connection by running command:"
+      echo ""
+      echo "   source $allas_conf_path --sdc"
+      exit 1	
+fi		 
+  
+
+#source /appl/opt/allas_conf
+#input=("$1")
+
+
+## object list creation depends on if --all
+if [[ $all -eq 1 ]];then
+  object_list=($(a-list $object_def | grep ".c4gh" 2> /dev/null))
+else
+  b_check=$(echo $object_def | grep -c "/")
+  if [[ $b_check -eq 1 ]]; then
+     object_list="$object_def"
+  else
+    echo "Definition $object_def did not define a single object"
+    echo "Please use option --all if you want to decrypt all encrypted objects in a bucket"
+    echo "or several objects, whose name starts with same string"
+    exit 1
+  fi
+fi
+
+#check that object list contains something
+check_os=$(echo  ${object_list[@]} | wc -c)
+echo ${object_list[@]}
+echo check_os: $check_os
+if [[ $check_os -lt 2 ]]; then
+     echo "Object name: $object_name not found in $storage_server." >&2
+     echo "" >&2
+     exit 1
+fi
+
+make_temp_dir
+cd $tmp_dir
+
+
+for i in ${!object_list[@]}
+do
+  object_name="${object_list[$i]}"
+  echo object_name $object_name
+  source_bucket=$(echo $object_name | awk -F "/" '{print $1 }' )
+  #echo "source_bucket $source_bucket"
+  object=$(echo $object_name | sed -e s/"$source_bucket\/"/""/ )
+  #echo "object: $object"
+  if [[ $bucket != "" ]]; then
+    target_bucket=$bucket
+  else
+    target_bucket="$source_bucket"
+  fi
+
+
+  if [[ $previous_bucket != $target_bucket ]]; then 
+    #check of the bucket name is OK
+    echo ""
+    echo "Checking S3 validity of bucket $target_bucket"
+  
+    bucket_check=$(s3_name_check $target_bucket)
+    while [[ $bucket_check != "OK" ]]
+    do
+        echo "Bucket name:  $target_bucket"
+        echo "Is not compatibe with S3 bucket name rules"
+        echo ""
+	s3_name_check $target_bucket    
+        echo ""
+        echo "Do you want to change the target bucket name (y/n):"
+        read ans
+        if [[ $ans == "n" ]]; then
+            bucket_check="OK"
+        else
+	    echo ""
+	    echo "Give new bucket name:"
+            read new_bname
+            echo ""
+	    echo "Do you want use bucket $new_bname for storing the encrypted data(y/n)?"
+	    read ans
+	    if [[ $ans == "y" || $ans == "yes" ]]; then
+		target_bucket="$new_bname"
+	    fi
+	    bucket_check=$(s3_name_check $target_bucket)   
+  	fi
+    done	
+  fi
+  previous_bucket="$target_bucket"
+  
+  if [[ ${object_name:(-5):5} == ".c4gh" ]]; then
+      target_object="${object}" 
+  else      
+      target_object=$( echo "${object}" | sed -e s/".c4gh$"/""/g )
+  fi
+      
+  echo ""
+  echo "Making decrypted copy of ${source_bucket}/${object}"
+  echo "to ${target_bucket}/$target_object"
+
+  a-get "$object_name"
+  exitcode=$?
+  if [[ $exitcode -ne 0 ]]; then
+      echo "Downloading $object_name Failed. Exiting"
+       exit 1
+  fi
+  fname=$(echo "$object_name" | awk -F "/" '{print $NF}' | sed -e s/".c4gh$"/""/g )
+  #echo "fname: $fname"
+  
+  #collcect pseudopath
+	pseudopath=$(echo "$target_object" |sed -e s/"${fname}.c4gh$"/""/g )
+       
+  echo "pseudopath: $pseudopath"
+
+  #test_ob_exists=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l )
+	#if [[ $test_ob_exists -gt 0 ]]; then
+	#  if [[ $replace -eq 1 ]]; then
+  #      echo "RCLONE rclone deletefile ${storage_server}:${target_bucket}/${target_object}"
+  #      rclone deletefile ${storage_server}:${target_bucket}/${target_object}
+  #  fi
+  #fi
+	target_object="${pseudopath}${fname}"
+  #echo "a-put $fname -b ${target_bucket}/${pseudopath}"
+  a-put $fname -b ${target_bucket}/${pseudopath}
+  rm $fname
+       #echo "Debug: rclone:"
+       #echo "rclone ls ${storage_server}:${target_bucket}/${target_object}"
+  rclone ls ${storage_server}:${target_bucket}/${target_object}
+  check_os=$(rclone ls ${storage_server}:${target_bucket}/${target_object} 2> /dev/null | wc -l)
+
+  if [[ $check_os -ne 1 ]]; then
+        echo "Error!"
+        echo "Processing of object: $object_name Failed!"
+        echo
+        exit 1
+  fi
+  if [[ $replace -eq 1 ]]; then
+    echo "Removing encrypted version of $object_name"
+    rclone deletefile "${storage_server}:$object_name"
+  fi
+done
+
+
+if [[ $sdc -gt 0 ]]; then
+  rm -rf $tmp_dir
+else
+  rm -f .sdx_key_tmp_$$
+fi
+
+exit 0
