@@ -14,8 +14,6 @@ mode="swift"
 tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
 bucket=""
 all=0
-all_keys=""
-suffix=".c4gh"
 replace=0
 sdc=1
 previous_bucket="x"
@@ -290,7 +288,7 @@ do
   echo "Making decrypted copy of ${source_bucket}/${object}"
   echo "to ${target_bucket}/$target_object"
 
-  a-get "$object_name"
+  a-get --asis --swift "$object_name"
   exitcode=$?
   if [[ $exitcode -ne 0 ]]; then
       echo "Downloading $object_name Failed. Exiting"

@@ -30,12 +30,8 @@ make_temp_dir
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
-   customized=1
    source $HOME/.a_tools_conf
-else
-   customized=0
 fi
-
 
 
 #Process command line
@@ -259,7 +255,7 @@ do
   fi
 
   #collect and count metadata
-  if [[ include_ameta -eq 1 ]]; then
+  if [[ $include_ameta -eq 1 ]]; then
     echo "user: $user" >> ${tmp_dir}/${tmp_file}_ameta
     echo "host: $(hostname)" >> ${tmp_dir}/${tmp_file}_ameta
     echo "original_location: $file_path" >>  ${tmp_dir}/${tmp_file}_ameta

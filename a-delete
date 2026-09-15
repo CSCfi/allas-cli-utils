@@ -15,9 +15,6 @@ source $inst_root/allas-lib
 object_name=""
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
-input_def=""
-show_filelist=0
-query=""
 object_with_bucket=0
 remove_bucket=0
 force=0

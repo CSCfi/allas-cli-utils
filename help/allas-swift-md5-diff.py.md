@@ -14,6 +14,6 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -v {1,2}, --verbosity {1,2}
+  -v, --verbosity {1,2}
                         increase output verbosity
 ```

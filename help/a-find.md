@@ -42,6 +42,10 @@ Options:
 -s, --silent                 Output just the object names and number of hits. If -file option is included,
                              print object name and matching file name on one row.
 
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas with swift protocol.                            
+
 
 Related commands: a-put, a-get, a-delete, a-info
 ```

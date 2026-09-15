@@ -14,15 +14,9 @@ print_help=0
 os_project_name="$OS_PROJECT_NAME"     
 mode="swift"
 tmp_dir="${tmp_root}/a_get_$$_tmp"
-show_filelist=0
-query=""
 object_with_bucket=0
-to_orig_dir=0
-orig_dir=""
 target_directory="."
 asis_mode=0
-exe_dir=$(pwd)
-start_time=$(date +%s)
 encrypt=""
 secret_key=""
 
@@ -60,7 +54,7 @@ do
                 mode=("lumi")
                 shift
                 ;;
-             '--allas' )
+             '--allas' | '--swift' )
                 mode=("swift")
                 shift
                 ;;

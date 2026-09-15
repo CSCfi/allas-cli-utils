@@ -21,4 +21,13 @@ https://a3s.fi/username-projectNumber-flip/object_name
 After uploading the file to the public flip bucket, it checks up the content of the bucket and
 removes object that were uploaded more than two days ago.
 
+a-flip command line options
+
+-A, --sw, --swift           Use Allas with swift protocol.
+
+-S, --s3, --s3cmd           Use Allas with S3 protocol.
+
+-L, --lumi                  Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+                            If Lumi-O is defined to be the default storage server and this option is not needed.
+
 ```

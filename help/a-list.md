@@ -19,9 +19,11 @@ Options:
 
 -S, --s3                Use Allas with S3 protocol
 
+-A, --swift             Use Allas with swift protocol
+
 -L --lumi               Use Lumi-O storage server
 
-
+--sdc-check             Check if the bucket name is SD Connect compatible.
 
 
 

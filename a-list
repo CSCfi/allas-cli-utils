@@ -9,7 +9,6 @@ source $inst_root/allas-lib
 
 
 #local variables
-user="$USER"
 bucket_name=("")
 print_help=0
 os_project_name=("$OS_PROJECT_NAME")
@@ -19,7 +18,6 @@ long_listing=0
 silent=1
 all=0
 show_shared=1
-s3_check=0
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
@@ -34,11 +32,6 @@ fi
 while [[ $# -ge 1 ]]
 do
   case "$1" in
-             '--user' | '-u' )
-                  user="$2"
-                  shift
-                  shift
-                ;;
              '--lh' | '-l' )
                   long_listing=1
                   options=("$options --lh ")
@@ -107,17 +100,14 @@ fi
  
 if [[ $mode == "swift" ]];then
    storage_server="allas"
-   storage_name="Allas"
 fi
-
 
 if [[ $mode == "s3cmd" ]];then
    storage_server="s3allas"
-   storage_name="Allas"
 fi
+
 if [[ $mode == "lumi" ]];then
    storage_server="lumi-o"
-   storage_name="Lumi-o"
 fi
 
 
@@ -319,7 +309,7 @@ else
      fi
    else
      # listing in swift mode
-     if [[ all -eq 0 ]]; then
+     if [[ $all -eq 0 ]]; then
         swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | grep -v "_ameta$" | awk '{print "'$bucket_name'/" $0}'
      else
         swift list $options $bucket_name | tr -cd '\11\12\15\40-\176' | awk '{print "'$bucket_name'/" $0}'

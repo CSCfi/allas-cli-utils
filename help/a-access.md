@@ -28,6 +28,9 @@ a-access options:
   +p,  +public                     Give public read-only access to the bucket.
   -p,  -public                     Remove public read-only access to the bucket.
 
+  -A, --sw, --swift                Use Allas with swift protocol.
+  -S, --s3, --s3cmd                Use Allas with S3 protocol.
+
 
 For example, to allow members of project: project_2001234 to have read-only access to bucket: my_data_bucket, you
 can use command:

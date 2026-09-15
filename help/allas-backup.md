@@ -30,9 +30,21 @@ allas-backup can be used for following five operations:
 
   allas-backup find <query>          Find snapshots that contain file or directory that match the given query term.
 
-  allas-backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. By default 
-                                 the stored data is restored to the local directory. Other locations can be 
-                                 defined with -target option.
+  allas-backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will not be overwritten. Only missing files will be retrieved.
+
+  allas-backup restore-overwrite <snapshot_id> Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will be overwritten.    
+
+  allas-backup restore-newer <snapshot_id> Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will be overwritten only if the file in the snapshot has a newer modification time.                               
+
 
   allas-backup delete <snapshot_id>  Deletes a snapshot from the backup repository.
 
@@ -42,12 +54,21 @@ allas-backup can be used for following five operations:
 
   Extra options:
  
-  -b, -bucket                        Use specific bucket for your repository. Note that this makes
-                                     Allas-backup to use different separate repository instead of
-                                     the default one.
+  -r, -repo                          Use non-default repository. This make 
+                                     Allas-backup to use different repository instead of
+                                     the default one. If you use this option together with
+                                     -password option. You can define and use a non-default
+                                     password for your repository.
 
   -S3, -s3                           Use S3 based backup repository
 
   -mode swift/S3                     Define if S3 or swift based repository is in use.
+
+  -pre-check                         Check that you have access permissions to all the data in the
+                                     directory to be backuped
+
+  -password                          Ask for password. Use this in case of repositories for which
+                                     you don't want to store the password to your home directory. 
+
 
 ```

@@ -222,6 +222,7 @@ do
 		              fi
                     include_ameta=0
                     encrypt="crypt4gh"
+                    
                     compression=0
                     sdx=1
                     fnum=0                  
@@ -427,7 +428,7 @@ fi
 
 ##Assign project to be used if not defined 
 if [[ $os_project_name == "" ]]; then
-  if [[ mode == "swift" ]]; then
+  if [[ $mode == "swift" ]]; then
     if [[ -e $HOME/.allas_default ]];then
        source $HOME/.allas_default
     fi

@@ -14,12 +14,9 @@ print_help=0
 os_project_name="$OS_PROJECT_NAME"     
 mode="swift"
 #tmp_dir="${tmp_root}/a_get_$$_tmp"
-show_filelist=0
-query=""
 object_with_bucket=0
 to_orig_dir=0
 orig_dir=""
-target_directory="."
 asis_mode=0
 exe_dir=$(pwd)
 start_time=$(date +%s)
@@ -361,16 +358,16 @@ if [[ ${object_name} =~ \.c4gh$ ]]; then
      if [[ $secret_key == "" ]]; then
          #echo "Secret key not defied for Crypt4gh encrypted file."
          #echo "Checking if this is a SD Connect file"
-	 sdc=1
+	     sdc=1
          #check sd-locku-util is istalled
-	 if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
-	    echo ""
-	    echo "sd-lock-util is not available!"
-	    echo "Please define the secretkey with option --sk if you are using normal Crypt4gh encryption ,"
-	    echo "or install sd-lock-util if you are using SD Connect based encryption."
-	    echo "   https://github.com/CSCfi/sd-lock-util "
-	    exit 1
-	 fi
+	     if [[ $(which sd-lock-util 2> /dev/null | wc -l ) -ne 1 ]];then
+	       echo ""
+	        echo "sd-lock-util is not available!"
+	        echo "Please define the secretkey with option --sk if you are using normal Crypt4gh encryption ,"
+	        echo "or install sd-lock-util if you are using SD Connect based encryption."
+	        echo "   https://github.com/CSCfi/sd-lock-util "
+	         exit 1
+	     fi
 	 # check that sd-lock connecton is wroking
              sdc_check=$(sd-lock-util pubkey | grep -c "BEGIN CRYPT4GH PUBLIC KEY")
          if [[ $sdc_check -ne 1 ]]; then
@@ -442,7 +439,7 @@ if  [[ $encrypt == "crypt4gh" || $sdc -eq 1 ]]; then
 fi
 
 #If selected, extract to the same place were data was from.
-if [[ to_orig_dir -eq 1 ]]; then
+if [[ $to_orig_dir -eq 1 ]]; then
    echo "orig dir:"
    rclone cat  ${storage_server}:${object_name}_ameta | awk '{ if ( $1 == "original_location:" ) print $2}'
    orig_dir=$(dirname $(rclone cat  ${storage_server}:${object_name}_ameta | awk '{ if ( $1 == "original_location:" ) print $2}'))

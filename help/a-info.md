@@ -13,6 +13,10 @@ Options:
 
 -b, --bucket                 Object name includes bucket name and the command does not try to use the default bucket names.
 
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas woth swift protocol.  
+
 
 Related commands: a-put, a-get, a-delete, a-find
 

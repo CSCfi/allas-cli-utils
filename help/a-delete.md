@@ -21,6 +21,10 @@ Options:
 
 -F, --FORCE                  In conjunction with --rmb, this option removes a non-empty bucket.
 
+-S, --s3, --s3cmd            Use Allas with S3 protocol.
+
+-A, --sw, --swift            Use Allas with swift protocol.
+
 
 Related commands: a-put, a-get, a-find, a-info
 ```

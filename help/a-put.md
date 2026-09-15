@@ -28,30 +28,30 @@ The location were data is stored in the storage server (Allas or Lumi-o) can be 
 options --bucket (-b) and --object (-o).
 
 The default option is that data that locates in: 
-  - scratch in Puhti is uploaded to bucket:  project_number-puhti-SCRATCH
-  - scratch in Mahti is uploaded to bucket:  project_number-mahti-SCRATCH
-  - projappl in Puhti is uploaded to bucket:  project_number-puhti-PROJAPPL
+  
+  - scratch in Roihu is uploaded to bucket:  project_number-roihu-scratch
+  - scratch in Mahti is uploaded to bucket:  project_number-mahti-scratch
+   - projappl in Mahti is uploaded to bucket:  project_number-roihu-projappl
   - projappl in Mahti is uploaded to bucket:  project_number-mahti-PROJAPPL
-  - LOCAL_SCRATCH in Puhti is uploaded to bucket: project_number-puhti-LOCAL_SCRATCH
   - project in Lumi is uploaded to bucket:  project_number-lumi-o-project
   - flash in Lumi is uploaded to bucket:  project_number-lumi-o-flash
-In other cases the data uploaded to by default : username-project_number-MISC
+In other cases the data uploaded to by default : username-project_number-misc
 
 For example for user kkaytaj belonging in project_201234, data 
-locating in home directory will be uploaded to bucket:  kkayttaj-201234-MISC.
+locating in home directory will be uploaded to bucket:  kkayttaj-201234-misc.
 
 The compressed dataset will be stored as one object. The object 
 name depends on the file name and location. The logic used is that 
-the possible sub-directory path in Mahti or Puhti is included 
+the possible sub-directory path in Roihu and Mahti is included 
 in the object name. 
 
-E.g. a file called test_1.txt in scratch directory of Puhti can be 
+E.g. a file called test_1.txt in scratch directory of Roihu can be 
 stored with commands:
 
    cd /scratch/project_201234
    a-put test_1.txt
 
-In this case the file is stored to bucket: 201234-puhti-SCRATCH
+In this case the file is stored to bucket: 201234-roihu-scratch
 as object: test_1.txt.zst
 
 If you have another file called test_1.txt that locates in directory 
@@ -64,7 +64,7 @@ Or commands
   cd /scratch/project_201234
   a-put project2/sample3/test_1.txt
 
-In these cases the file is stored to bucket: 201234-puhti-SCRATCH
+In these cases the file is stored to bucket: 201234-roihu-scratch
 as object:  project2/sample3/test_1.txt.zst
 
 
@@ -80,8 +80,6 @@ a-put command line options:
 -o, --object <object_name>  Define a name for the new object to be 
                             created.
 
--S, --s3cmd                 Use S3 protocol instead of swift protocol 
-                            for upload.
 
 -n, --nc                    Do not compress the data that will be uploaded.
                             (This is now the default mode thus this option is 
@@ -144,14 +142,12 @@ a-put command line options:
                             you must set up the allas connection with option --sdc that will guide you 
                             to import project specific SD Connect token that this process needs.               
  
--A, --allas                     Upload data to Allas with swift protocol in stead of currently set storage server. 
-                            Normally this (Allas with swift) is the default and this option is not needed,
-                            but if you have set e.g. Lumi-O as the default storage server, this option can be
-                            used to upload data to Allas without changing the default storage server.
-                              
---s3cmd                     Use Allas with S3 protocol.
 
--L, --lumi                      Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
+-A, --sw, --swift           Use Allas with swift protocol.
+
+-S, --s3, --s3cmd           Use Allas with S3 protocol.
+
+-L, --lumi                  Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
                             If Lumi-O is defined to be the default storage server and this option is not needed.
 
 Related commands: a-find, a-get, a-delete, a-info

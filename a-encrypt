@@ -1,9 +1,6 @@
 #!/bin/bash
 
 
-#default user
-user=($USER)
-
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
@@ -15,16 +12,8 @@ print_help=0
 os_project_name="$OS_PROJECT_NAME"
 mode="swift"
 tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
-show_filelist=0
-query=""
-object_with_bucket=0
-to_orig_dir=0
-orig_dir=""
 bucket=""
 all=0
-exe_dir=$(pwd)
-start_time=$(date +%s)
-encrypt=""
 secret_key=""
 all_keys=""
 suffix=".c4gh"

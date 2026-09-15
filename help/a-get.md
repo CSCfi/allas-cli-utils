@@ -29,13 +29,16 @@ Options:
 -T, --tmpdir                  Define a directory that will be used to store 
                               temporary files of the download process.
 
-
---allas                       Get data from Allas with swift protocol in stead of currently set storage server. 
+--ignore-checksum             Ignore the checksum verificaton in downloads. This feature can be
+                              used to circumvent the problems that originate from the different
+                              checksum protocols used by S3 and Swift protocols
+                                              
+--swift                       Get data from Allas with swift protocol in stead of currently set storage server. 
                               Normally this (Allas with swft) is the default and this option is not needed,
                               but if you have set e.g. Lumi-O as the default storage server, this option can be
                               used to get data from Allas without changing the default storage server.
                               
---s3cmd                       Use Allas with S3 protocol.
+--s3cmd, --s3, -S             Use Allas with S3 protocol.
 
 --lumi                        Get data from Lumi-O with S3 protocol in stead of the default storage server. 
                               If Lumi-O is defined to be the default storage server and this option is not needed.

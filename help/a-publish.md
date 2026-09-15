@@ -36,7 +36,12 @@ a-publish options:
                     lists the objects that are available in the bucket in the time when 
                     this page is accessed. This dynamic indexing tool can list
                     only up to 1000 files.
- --input-list       List of files to be uploaded.    
+ --input-list       List of files to be uploaded. 
+ -A, --sw, --swift  Use Allas with swift protocol.
+
+ -S, --s3, --s3cmd  Use Allas with S3 protocol.
+
+ -L, --lumi         Upload data to Lumi-O with S3 protocol in stead of the default storage server. 
  
 
 ```
