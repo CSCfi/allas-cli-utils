@@ -309,7 +309,8 @@ if [[ $create_new -eq 1 ]]
 then
    echo "Initialiazing new restic repository: $repository"
    if [[ $RESTIC_PASSWORD == "" ]]; then
-       restic init --repo $repository -p $HOME/.backup_passwd_${project_label} 
+     echo restic_$project_label >  $HOME/.backup_passwd_${project_label}
+     restic init --repo $repository -p $HOME/.backup_passwd_${project_label}
    else
       echo "Password will be set for the repository."
       echo "Please re-enter the password:"
