@@ -89,9 +89,9 @@ do
 		            if [[ $2 == "swift" ]]; then
 		                mode="swift"
 		            fi
-		  shift
-		  shift
-		  ;;
+		        shift
+		        shift
+		        ;;
               '-pre-check' )
                 check_permissions=1
                 shift
@@ -99,6 +99,11 @@ do
 	      
               '--s3cmd' | '-s3' | '-S3' )
                   mode="s3cmd"
+                  shift
+                ;;
+
+               '--swift' )
+                  mode="swift"
                   shift
                 ;;
 
