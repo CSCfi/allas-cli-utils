@@ -134,6 +134,26 @@ lumi-backup can be used for following five operations:
 
   lumi-backup find <query>          Find snapshots that contain file or directory that match the given query term.
 
+
+  lumi-backup restore <snapshot_id>  Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will not be overwritten. Only missing files will be retrieved.
+
+  lumi-backup restore-overwrite <snapshot_id>    Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will be overwritten.    
+
+  lumi-backup restore-newer <snapshot_id>      Retrieves the data of the given snapshot to the local environment. 
+                                     By default the stored data is restored to the local directory. Other locations can be 
+                                     defined with -target option.
+                                     Existing local files will be overwritten only if the file in the snapshot has a newer modification time.                               
+
+
+
+
+
   lumi-backup restore <snapshot_id> Retrieves the data of the given snapshot to the local environment. By default 
                                     the stored data is restored to the local directory. Other locations can be 
                                      defined with --target option.
@@ -236,7 +256,7 @@ then
   echo "Is the repository using the default password (y/n)?"
   read ans
   if [[ $ans == "y" ]]; then
-     echo restic_$project_label >  $HOME/.backup_passwd_${bucket_name}
+     echo ${project_label} >  $HOME/.backup_passwd_${bucket_name}
   else
     echo "Please give the password for backup repository $repository"
     read passwd
@@ -289,6 +309,7 @@ then
   rm -f  .find_lits_$$
 fi
 
+ 
 if [[ $task == "restore" ]]
 then
   if [[ $input == "" ]] ; then
@@ -296,9 +317,61 @@ then
      echo ""
      exit 1
   fi
-  restic restore --repo $repository -p $HOME/.backup_passwd_${bucket_name} $input --target $target $options
+  if [[ $target == "./" ]]; then
+     echo "Restoring snapshot $input to current directory"
+  else
+     echo "Restoring snapshot $input to directory: $target"
+  fi
+  echo "Only missing files will be downloaded. Existing local files will not be overwritten."
+  echo ""
+  if [[ $RESTIC_PASSWORD != "" ]]; then   
+     restic restore --repo $repository --overwrite never $input --target $target $options
+  else
+     restic restore --repo $repository --overwrite never -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi
+fi
+
+if [[ $task == "restore-overwrite" ]]
+then
+  if [[ $input == "" ]] ; then
+     echo "No snapshot name defined. Please give the snapshot name as a command line argument."
+     echo ""
+     exit 1
+  fi
+  if [[ $target == "./" ]]; then
+     echo "Restoring snapshot $input to current directory."
+  else
+     echo "Restoring snapshot $input to directory: $target"
+  fi
+  echo "All files from the snapshot will be downloaded. Existing local files will be overwritten."
+  echo ""
+  if [[ $RESTIC_PASSWORD != "" ]]; then  
+    restic restore --repo $repository --overwrite always $input --target $target $options
+  else 
+    restic restore --repo $repository --overwrite always -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi
 fi
  
+if [[ $task == "restore-newer" ]]
+then
+  if [[ $input == "" ]] ; then
+     echo "No snapshot name defined. Please give the snapshot name as a command line argument."
+     echo ""
+     exit 1
+  fi
+    if [[ $target == "./" ]]; then
+     echo "Restoring snapshot $input to current directory."
+  else
+     echo "Restoring snapshot $input to directory: $target"
+  fi
+  echo "Existing local files will be overwritten only if the time stamp in the snapshot is newer than in the local file."
+  echo ""
+  if [[ $RESTIC_PASSWORD != "" ]]; then 
+     restic restore --repo $repository --overwrite if-newer $input --target $target $options
+  else
+     restic restore --repo $repository --overwrite if-newer -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+  fi   
+fi
 
 if [[ $task == "delete" ]]
 then
