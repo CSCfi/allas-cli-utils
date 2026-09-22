@@ -257,7 +257,7 @@ if [[ $mode == "s3cmd" ]]; then
   if [[ -e  $HOME/.config/rclone/rclone.conf ]]; then
     accesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
     secretaccesskey=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "secret_access_key" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $1 == "s3allas" ) print $2 }')
-    os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-" | grep "private" | awk -F "-" '{print $2}')
+    os_project_name=$(awk '{ if ( NF == 1 ) ep = $1}{ if ( $1 == "access_key_id" ) print ep" "$3 }' $HOME/.config/rclone/rclone.conf | tr -d "[","]" | awk  '{ if ( $2 == "'$accesskey'" ) print $1 }' | grep "s3allas-" | awk -F "-" '{print $2}')
     export AWS_DEFAULT_REGION=""
     export AWS_ACCESS_KEY_ID="$accesskey"
     export AWS_SECRET_ACCESS_KEY="$secretaccesskey"
