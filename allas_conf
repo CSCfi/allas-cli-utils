@@ -156,7 +156,7 @@ local active_mode=false
 local echop=echo
 local chunk_size=5000
 local rconf=${RCLONE_CONFIG:-$HOME/.config/rclone/rclone.conf}
-local mode=swift
+local mode=s3cmd
 local force=false
 #auth_method options are curl and swift
 local auth_method=curl
@@ -805,6 +805,53 @@ if $use_s3cmd; then
    echo 'endpoint = a3s.fi' >>  "$rconf"
    echo 'acl = private' >>  "$rconf"
    echo "" >>  "$rconf"
+
+   if $sd_connect; then
+         sd_server=https://sd-connect.csc.fi 
+         export SD_CONNECT_API_ADDRESS="${sd_server}"
+         echo "sd_token_file: $sd_token_file"
+         if [[ $sd_token_file == "" ]]; then
+           #
+           #if [[ $SD_CONNECT_API_TOKEN == "" ]]; then
+           #    export SD_CONNECT_API_ADDRESS="${sd_server}/runner"
+           echo "Please give your SD Connect API token"
+           echo "If you don't have a valid API token, login to $sd_server"
+           echo "In the web interface, make sure that the active projest is: $OS_PROJECT_NAME"
+	       echo
+           echo "Then select: Support -> Create API tokens."
+           echo " "
+           echo "SD Connect API token:"
+           read SD_CONNECT_API_TOKEN   
+           export SD_CONNECT_API_TOKEN
+         else
+           if [[ -e $sd_token_file ]]; then
+              SD_CONNECT_API_TOKEN=$(cat $sd_token_file)
+              export SD_CONNECT_API_TOKEN
+           else
+              echo "Token file $sd_token_file not found"
+           fi
+         fi
+
+         #fi 
+        
+         if ! $fixed_project_id  ; then       
+            export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+         fi
+
+         if [[ $OS_PROJECT_ID == "" ]]; then
+            echo ""
+            echo "Defining OS_PROJECT_ID for project $OS_PROJECT_NAME failed." 
+            echo "Please copy the Copy Share ID of the project from SD Connect"
+            echo "to the line below:"
+            read OS_PROJECT_ID
+            export OS_PROJECT_ID
+         fi
+         echo ""
+         echo "Using $sd_server"
+         echo "With project $OS_PROJECT_NAME / $OS_PROJECT_ID"
+         echo "And token: $SD_CONNECT_API_TOKEN"
+    fi  
+
 
 
    echo "rclone remote s3allas: now provides an S3 based connection to project $OS_PROJECT_NAME in $storage_service."
