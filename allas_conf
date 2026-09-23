@@ -196,7 +196,7 @@ while [[ $# -ge 1 ]]; do
         '--lumi')               mode="lumi";             shift;;
         '--swift')              mode="swift";            shift;;
         '--S3')                 mode="S3";               shift;;
-        '--sd' | '--sdc' )      sd_connect=true; keep_password=true; mode="swift";     shift;;
+        '--sd' | '--sdc' )      sd_connect=true; keep_password=true; mode="s3cmd";     shift;;
         '--sdc-token' )         sd_connect=true; keep_password=true; sd_token_file="$2";     shift 2;;
         '--show-powershell' )   show_powershell=true;    shift;;
 	    '--show-shell' )        show_shell=true;         shift;;
