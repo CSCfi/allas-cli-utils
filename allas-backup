@@ -282,7 +282,7 @@ if [[ $mode == "s3cmd" ]]; then
    
   bucket_name="${project_label}-s3backup"
   repository="s3:a3s.fi/${bucket_name}"  
-  check_repo=$(rclone ls s3allas:${bucket_name}/backup/config | wc -l)
+  check_repo=$(rclone ls s3allas:${bucket_name}/config | wc -l)
    if [[ $check_repo -eq 0 ]]; then
       if [[ $def_bucket -eq 0 ]]; then
          echo "Backup repository $repository does not exist."
