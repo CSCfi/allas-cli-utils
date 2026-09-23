@@ -242,7 +242,7 @@ if [[ $sdc -eq 1 ]]; then
 	echo "Please open or refresh the connection"
 	echo "by running command:"
         echo ""
-        echo "   source $allas_conf_path -sdc"
+        echo "   source $allas_conf_path --sdc"
         exit 1	
     fi
 fi
@@ -473,7 +473,7 @@ else
 fi
   
 
-if [[ -n "$OS_PASSWORD" && $sdc -eq 0 ]]; then 
+if [[ -n "$OS_PASSWORD" && $mode == "swift" ]]; then 
    if  [[ $silent -eq 0 ]] ; then     
           echo "Updating token"
    fi
