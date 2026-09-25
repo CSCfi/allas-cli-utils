@@ -22,7 +22,7 @@ tmp_file="not_defined"
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
-mode="swift"
+mode="s3cmd"
 silent=0
 #tmp_dir="${tmp_root}/a_put_$$_tmp"
 user_answer="x"
@@ -238,7 +238,7 @@ do
 		                  exit 1
 		              fi
                     sdc=1
-                    mode="swift"
+                    mode="s3cmd"
 		              include_ameta=0
 		              compression=0
                     fnum=0
@@ -1141,6 +1141,7 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
      currdir=$(pwd)
      # move to the directory where the file is and encrypt it, then return.
      cd $(dirname ${tmp_dir}/$tmp_file)
+     echo "storage_server: $storage_server"
      if [[ $sd_lock_partial_path == "" ]]; then
 	    echo " sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"" >> $ameta_file
 	    sd-lock-util lock --container ${sd_lock_bucket} --no-content-upload "$tmp_file"
@@ -1192,9 +1193,9 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           echo "NOTE: Proposed bucket name is not SD Connect compatible!"
           echo ""
 
-          s3_name_check $bucket_name   
+          s3_name_check $bucket_root   
           echo ""
-          echo "Do you want to create new S3 incompatible bucket $bucket_name [y/n] ?"
+          echo "Do you want to create new S3 incompatible bucket $bucket_root [y/n] ?"
           read ans
           if [[ $ans != "y" ]]; then
             exit
