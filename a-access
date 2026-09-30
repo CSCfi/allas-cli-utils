@@ -12,7 +12,7 @@ add_read_project=""
 add_write_project=""
 remove_read_project=""
 remove_write_project=""
-mode="swift"
+mode="s3cmd"
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"

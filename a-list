@@ -1,23 +1,24 @@
 #!/bin/bash 
 
 
-#read static variables
-inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-mode="swift"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
-
 
 #local variables
 bucket_name=("")
 print_help=0
 os_project_name=("$OS_PROJECT_NAME")
 options=("")
+mode="s3cmd"
 dir_like=0
 long_listing=0
 silent=1
 all=0
 show_shared=1
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+mode="swift"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then

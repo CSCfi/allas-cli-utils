@@ -1,10 +1,10 @@
 #Common settings for a_ -tools
-storage_server="allas"
 local_host="$(hostname)"
 allas_log="/dev/null"
+mode="s3cmd"
 
 #change here your allas_conf location
-allas_conf_path="/some/path/allas-cli-utils/allas_conf"
+allas_conf_path="/home/kkmattil/allas-cli-utils/allas_conf"
 max_size=5000000000
 max_files=100000
 

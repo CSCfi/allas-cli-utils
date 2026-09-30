@@ -16,12 +16,11 @@ silent=0
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
 input_def=""
-mode="swift"
+mode="s3cmd"
 #tmp_dir=("${tmp_root}/a_put_$$_tmp")
 show_filelist=0
 query=""
 all_buckets=0
-
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"

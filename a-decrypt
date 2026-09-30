@@ -1,22 +1,25 @@
 #!/bin/bash
 
 
-#read static variables
-inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $inst_root/a_env_conf
-source $inst_root/allas-lib
-
 # local variable
 object_name=""              #object to retrieve
 print_help=0
 os_project_name="$OS_PROJECT_NAME"
-mode="swift"
+mode="s3cmd"
 tmp_dir="${tmp_root}/a_ecrypt_$$_tmp"
 bucket=""
 all=0
 replace=0
 sdc=1
 previous_bucket="x"
+
+#read static variables
+inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+source $inst_root/a_env_conf
+source $inst_root/allas-lib
+
+
+
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
