@@ -21,14 +21,13 @@ os_project_name="$OS_PROJECT_NAME"
 input_def=""
 mode="s3cmd"
 #tmp_dir="${tmp_root}/a_put_$$_tmp"
-make_temp_dir
 
 #read static variables
 mode="swift"
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source $inst_root/a_env_conf
 source $inst_root/allas-lib
-
+make_temp_dir
 
 # read customer defaults
 if [[ -e $HOME/.a_tools_conf ]]; then
