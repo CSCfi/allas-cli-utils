@@ -320,7 +320,7 @@ if [[ $mode == "s3cmd" ]]; then
         s3cmd setacl --recursive --acl-grant=read:$add_read_project s3://$bucket
    fi
    if [[ $add_write_project != "" ]]; then
-        s3cmd setacl --acl-grant=read:$add_read_project s3://$bucket
+        s3cmd setacl --acl-grant=write:$add_read_project s3://$bucket
         s3cmd setacl --recursive --acl-grant=write:$add_read_project s3://$bucket
    fi
    if [[ $remove_read_project != "" ]] ; then
