@@ -8,7 +8,7 @@ if [[ $bucket == "" ]]; then
   read bucket
 fi
 
-if [[ ${bucket: -9} != "_segments" ]] then
+if [[ ${bucket: -9} != "_segments" ]]; then
   echo "Bucket $bucket is not a segments bucket."
   echo "This tool is used to fix the bucket policies of _segments buckets "
   echo "created with Swift protocol so that they can used with S3 protocol."
@@ -21,13 +21,14 @@ if [[ ${bucket: -9} != "_segments" ]] then
   fi  
 fi
 
-##check if object exists
-#bucket_found=$(rclone ls ${storage_server}:$bucket 2> /dev/null | wc -l)
-#if [ $bucket_found -ne 1 ]; then
-#     echo ""
-#     echo "Bucket $bucket was not found."
-#     echo ""
-#fi
+#check if object exists
+bucket_found=$(rclone lsd ${storage_server}: | grep -c -w "$bucket" )
+if [[ $bucket_found -ne 1 ]]; then
+     echo ""
+     echo "Bucket $bucket was not found."
+     echo ""
+     exit
+fi
 
 
 if [[ $OS_PROJECT_ID == "" ]]; then
@@ -56,6 +57,5 @@ if [[ $sdlu_check -lt 1 ]]; then
   exit 1
 fi
 
-echo "Please run command:"
-echo "sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket"
+sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
 
