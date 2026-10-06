@@ -21,13 +21,13 @@ if [[ ${bucket: -9} != "_segments" ]] then
   fi  
 fi
 
-#check if object exists
-bucket_found=$(rclone ls ${storage_server}:$bucket 2> /dev/null | wc -l)
-if [ $bucket_found -ne 1 ]; then
-     echo ""
-     echo "Bucket $bucket was not found."
-     echo ""
-fi
+##check if object exists
+#bucket_found=$(rclone ls ${storage_server}:$bucket 2> /dev/null | wc -l)
+#if [ $bucket_found -ne 1 ]; then
+#     echo ""
+#     echo "Bucket $bucket was not found."
+#     echo ""
+#fi
 
 
 if [[ $OS_PROJECT_ID == "" ]]; then
