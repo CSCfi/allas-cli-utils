@@ -1,0 +1,60 @@
+#!/bin/bash
+
+storage_server="s3allas"
+bucket=$1
+
+if [[ $bucket == "" ]]; then
+  echo "Give bucket name:"
+  read bucket
+fi
+
+if [[ ${bucket: -9} != "_segments" ]] then
+  echo "Bucket $bucket is not a segments bucket."
+  echo "This tool is used to fix the bucket policies of _segments buckets "
+  echo "created with Swift protocol so that they can used with S3 protocol."
+  echo "Would you like to do the fix for bucket: ${bucket}_segments (y/n)"
+  read ans
+  if [[ $ans == "y"]]; then
+    bucket=${bucket}_segments
+  else  
+    exit 0   
+  fi  
+fi
+
+#check if object exists
+bucket_found=$(rclone ls ${storage_server}:/$bucket 2> /dev/null | wc -l)
+if [ $bucket_found -ne 1 ]; then
+     echo ""
+     echo "Bucket $bucket was not found."
+     echo ""
+fi
+
+
+if [[ $OS_PROJECT_ID == "" ]]; then
+  echo "Give the Share ID of your project"
+  read OS_PROJECT_ID
+fi
+
+EC2_ACCESS_KEY_ID=$(grep AWS_ACCESS_KEY_ID $HOME/.aws/credentials | awk -F "=" '{print $2}')
+EC2_SECRET_ACCESS_KEY=$(grep AWS_SECRET_ACCESS_KEY $HOME/.aws/credentials | awk -F "=" '{print $2}')
+
+if [[   EC2_ACCESS_KEY_ID == "" || EC2_SECRET_ACCESS_KEY == "" ]];  then
+   echo "S3 credentials not found"
+   echo "Have you configure S3 connection with command:"
+   echo "  source allas-cli-utils/allas_conf -u csc-user-name --sdc"
+   exit 1
+fi
+
+#check if sd-lock-util is new enough
+
+sdlu_check=$(sd-lock-util --help | grep -c  fix-shared-bucket-segment-access)
+
+if [[ $sdlu_check -lt 1 ]]; then
+  echo "Your sd-lock-util is not new enough for this tool"
+  echo "Please update your sd_lock_util from:"
+  echo "  https://github.com/CSCfi/sd-lock-util/releases/"
+  exit 1
+fi
+
+
+sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
