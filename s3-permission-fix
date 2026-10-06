@@ -56,5 +56,6 @@ if [[ $sdlu_check -lt 1 ]]; then
   exit 1
 fi
 
+echo "Please run command:"
+echo "sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket"
 
-sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
