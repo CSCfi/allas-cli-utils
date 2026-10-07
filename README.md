@@ -1,6 +1,6 @@
 # allas-cli-utils - Utilities for Allas command line access
 
-**Note: On October 2026 the allas-cli-utils syrted to use S3 as the default access protocol for Allas.**
+**Note: On October 2026 the allas-cli-utils started to use S3 as the default access protocol for Allas.**
 Please add option --swift to the commands if you need to use swift protocol.
 
 The Allas object storage system can be used in multiple ways and for many purposes. 
