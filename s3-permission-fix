@@ -59,5 +59,18 @@ fi
 
 export PROJECT_PUBLIC_KEY=$(sd-lock-util pubkey | grep -v CRYPT4GH)
 
+echo "Setting bucket policy for bucket: $bucket"
+
 sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
+
+#check if object exists
+bucket=${bucket}_segments
+
+bucket_found=$(rclone lsd ${storage_server}: | grep -c -w "$bucket" )
+if [[ $bucket_found -ne 1 ]]; then
+     echo ""
+     echo "Setting bucket policy for bucket: $bucket"
+     sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
+fi
+exit 0
 
