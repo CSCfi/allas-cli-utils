@@ -67,7 +67,7 @@ sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-
 bucket=${bucket}_segments
 
 bucket_found=$(rclone lsd ${storage_server}: | grep -c -w "$bucket" )
-if [[ $bucket_found -ne 1 ]]; then
+if [[ $bucket_found -qe 1 ]]; then
      echo ""
      echo "Setting bucket policy for bucket: $bucket"
      sd-lock-util fix-shared-bucket-segment-access --project-id $OS_PROJECT_ID --ec2-key $EC2_ACCESS_KEY_ID --ec2-secret $EC2_SECRET_ACCESS_KEY --s3-endpoint-url https://a3s.fi $bucket
