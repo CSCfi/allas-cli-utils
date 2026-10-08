@@ -1,5 +1,8 @@
 # allas-cli-utils - Utilities for Allas command line access
 
+**Note: On October 2026 the allas-cli-utils started to use S3 as the default access protocol for Allas.**
+Please add option --swift to the commands if you need to use swift protocol.
+
 The Allas object storage system can be used in multiple ways and for many purposes. 
 In many cases, effective usage of Allas requires that the user knows the features of 
 both Object Storage systems and the software or protocol that is used to manage data in Allas.
@@ -9,26 +12,29 @@ CSC provides a set of commands (a-tools ) for moving data between CSC computing 
 
 ## Opening connection with allas_conf
 
+
+**Note: allas_conf is not compatible with the latest versions of OpenStack python client.**
+Please use OpenStack client version 8 if possible.
+
+
 Connection configuration tool: allas_conf can be used to configure swift or S3 connections to Allas. 
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
-The basic syntax of this tool for swift protocol is:
+The basic syntax of this tool for S3 protocol is:
 
 ```text
    source allas_conf --user your-CSC-user-account
 ```
-and for S3 protocol:
+and for swift protocol:
 ```text
-   source allas_conf --mode s3cmd --user your-CSC-user-account
+   source allas_conf --swift --user your-CSC-user-account
 ```
 
-After successful connection configuration you can start using tools like, _swift_, _rclone_, _restic_, __A_tools__
-or _s3cmd_ to manage data in allas.
+After successful connection configuration you can start using tools like, _s3cmd_, _rclone_, _restic_, __A_tools__
+or _swift_ to manage data in Allas.
 
 ## A_ -tools for easy access to Allas
 
 For those users, that just want to use Allas for storing data that is in CSC computing environment, CSC provides a set of commands for managing and moving data between CSC computing environment and Allas.
-
-**Note! since the update done on 1.3. 2022, a-put no longer compresses the uploaded data as a default preprocessing operation. In the future, use option -c in case you want to compress the data before upload.**
 
 
 ## Four main tools for using Allas
@@ -46,7 +52,6 @@ The available tools are:
 |a-command | Function |
 | :--- | :--- |
 | [a-access](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-access)| Manage access permissions of your buckets in Allas || [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
-| [a-check](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-check) | Command to check if a-put command was successfully executed |
 | [a-encrypt]() | Make an encrypted copy of an object to make it compatible with CSC sensitive data services | 
 | [a-find](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-find)| Search and locate data that has been uploaded with a-put |
 | [a-flip](https://docs.csc.fi/data/Allas/using_allas/a_commands/#a-flip)| Upload a file to Allas into a bucket that will keep the file temporarily available to the internet |
