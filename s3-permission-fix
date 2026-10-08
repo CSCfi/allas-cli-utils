@@ -8,18 +8,18 @@ if [[ $bucket == "" ]]; then
   read bucket
 fi
 
-if [[ ${bucket: -9} != "_segments" ]]; then
-  echo "Bucket $bucket is not a segments bucket."
-  echo "This tool is used to fix the bucket policies of _segments buckets "
-  echo "created with Swift protocol so that they can used with S3 protocol."
-  echo "Would you like to do the fix for bucket: ${bucket}_segments (y/n)"
-  read ans
-  if [[ $ans == "y" ]]; then
-    bucket=${bucket}_segments
-  else  
-    exit 0   
-  fi  
-fi
+#if [[ ${bucket: -9} != "_segments" ]]; then
+#  echo "Bucket $bucket is not a segments bucket."
+#  echo "This tool is used to fix the bucket policies of _segments buckets "
+#  echo "created with Swift protocol so that they can used with S3 protocol."
+#  echo "Would you like to do the fix for bucket: ${bucket}_segments (y/n)"
+#  read ans
+#  if [[ $ans == "y" ]]; then
+#    bucket=${bucket}_segments
+#  else  
+#    exit 0   
+#  fi  
+#fi
 
 #check if object exists
 bucket_found=$(rclone lsd ${storage_server}: | grep -c -w "$bucket" )
