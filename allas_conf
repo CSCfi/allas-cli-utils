@@ -569,7 +569,8 @@ for p in json.loads(body).get("projects", []):
 	       return 1
 	   fi
            export OS_PROJECT_NAME=$project
-	   export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+     	   #export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+           export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
            ;;
    esac
    export PYTHONPATH=$activePythonPath
@@ -633,7 +634,7 @@ print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"u
        if command -v openstack >/dev/null 2>&1; then
          activePythonPath=$PYTHONPATH
          unset PYTHONPATH
-         export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+         export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
          export PYTHONPATH=$activePythonPath
        fi
        eval "$(swift auth)"
@@ -696,7 +697,7 @@ print(json.dumps({"auth": {"identity": {"methods": ["password"], "password": {"u
          #fi 
         
          if ! $fixed_project_id  ; then       
-            export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+            export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
          fi
 
          if [[ $OS_PROJECT_ID == "" ]]; then
@@ -724,12 +725,10 @@ if $use_s3cmd; then
 
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
+    export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
+    #openstack project show $OS_PROJECT_NAME
 
-    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
-    openstack project show $OS_PROJECT_NAME
-
-    local ACCESS_KEY=$(
-       openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
+    local ACCESS_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
     if [ -z "$ACCESS_KEY" ]; then
        openstack ec2 credentials create
        local ACCESS_KEY=$(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | tail -1 | awk '{print $1}')
@@ -835,7 +834,7 @@ if $use_s3cmd; then
          #fi 
         
          if ! $fixed_project_id  ; then       
-            export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+            export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
          fi
 
          if [[ $OS_PROJECT_ID == "" ]]; then
@@ -877,7 +876,7 @@ if $s3remove; then
     echo "s3 access key removal requested for project $OS_PROJECT_NAME"
     activePythonPath=$PYTHONPATH
     unset PYTHONPATH
-    export OS_PROJECT_ID=$(openstack project show -f value -c id $OS_PROJECT_NAME)
+    export OS_PROJECT_ID=$(openstack token issue -f value -c project_id)
     local accesskeys=($(openstack ec2 credentials list -f value | \grep $OS_PROJECT_ID | awk '{print $1}'))
     if [[ ${#accesskeys[*]} -eq 0 ]]; then
        echo "No access keys found for project $OS_PROJECT_NAME"
