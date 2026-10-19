@@ -12,11 +12,6 @@ CSC provides a set of commands (a-tools ) for moving data between CSC computing 
 
 ## Opening connection with allas_conf
 
-
-**Note: allas_conf is not compatible with the latest versions of OpenStack python client.**
-Please use OpenStack client version 8 if possible.
-
-
 Connection configuration tool: allas_conf can be used to configure swift or S3 connections to Allas. 
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
 The basic syntax of this tool for S3 protocol is:
