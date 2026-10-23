@@ -215,7 +215,13 @@ while [[ $# -ge 1 ]]; do
            shift
            shift
            ;;
-        *) export OS_PROJECT_NAME="$1";                  shift;;
+        *) 
+          if [[ ${1::1 } == "-" ]]; then 
+            echo  "Unknown option: $1"
+            return 1
+          fi
+          export OS_PROJECT_NAME="$1"                  
+          shift;;
     esac
 done
 

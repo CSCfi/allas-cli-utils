@@ -177,9 +177,10 @@ a_tools_bucket=${project_label}-a-tools
 shared_list="buckets_shared_to"
 
 
-if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then  
+#if [[ $mode == "swift"  ]] && [[ $bucket_name != "" ]]; then  
+if [[ $bucket_name != "" ]]; then  
    bucket_readable=$(rclone ls ${storage_server}:$bucket_name 2> /dev/null | wc -l)
-   own_bucket=$(rclone lsd allas: | awk '{ print $NF}' | grep -c -w $bucket_name )
+   own_bucket=$(rclone lsd ${storage_server}: | awk '{ print $NF}' | grep -c -w $bucket_name )
    # case: bucket reable but not owned
    if [[ $bucket_readable -gt 0 ]] && [[ $own_bucket -eq 0 ]]; then
        # do we already have a list of shared buckets
