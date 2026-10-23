@@ -12,11 +12,6 @@ CSC provides a set of commands (a-tools ) for moving data between CSC computing 
 
 ## Opening connection with allas_conf
 
-
-**Note: allas_conf is not compatible with the latest versions of OpenStack python client.**
-Please use OpenStack client version 8 if possible.
-
-
 Connection configuration tool: allas_conf can be used to configure swift or S3 connections to Allas. 
 The tool is designed for linux **bash shell**, that is the default command shell in CSC computing environment.
 The basic syntax of this tool for S3 protocol is:
@@ -82,8 +77,7 @@ __allas_conf__ script requires:
 *   [bash shell](https://en.wikipedia.org/wiki/Bash_(Unix_shell))
 *   [OpenStack client](https://github.com/openstack/python-openstackclient)(3.19 or newer, not mandatory if you use swift and know the project name.)
 *   [OpenStack Swift](https://github.com/openstack/swift) and/or [s3cmd](https://s3tools.org/s3cmd) client
-, y
-I addition to the above, a-tools require:
+     addition to the above, a-tools require:
 
 *   [rclone](https://rclone.org/) (1.48 or newer)
 *   [zstdmt](https://github.com/mcmilk/zstdmt)
@@ -94,23 +88,41 @@ If you want to use a-commands to upload or download data from *SD Connect sensit
 * [sd-lock-util](https://github.com/CSCfi/sd-lock-util)
 
 
-Example: Installing allas-cli-utils to a Ubuntu 16.04 server running in cPouta:
+Example: Installing allas-cli-utils and sd-lock-util to a Ubuntu 24.04 server running in cPouta:
 
 ```text
-#install pip and openstack client
-sudo apt install python-pip python-dev
-sudo apt-get install python-setuptools
-pip install --upgrade pip
-pip install python-openstackclient
-pip install crypt4gh
-pip install s3cmd
+#install Pyhton openstack
+sudo apt install python3-pip python3-dev
+sudo apt-get install python3-setuptools
+sudo apt install python3-openstackclient
 
-#install swift client
-sudo apt install python3-swiftclient
+#install rclone
 curl https://rclone.org/install.sh | sudo bash
+
+#install restic
+sudo apt install restic
+
+#Python-swift cleint is only needed for legacy data
+#sudo apt install python3-swiftclient
+
+#install s3cmd
+sudo apt install python3.12-venv
+python3 -m venv $HOME/python-venv
+source $HOME/python-venv/bin/activate
+pip3 install s3cmd
+
+#download allas-cli-utils and install sd-lock-util
 git clone https://github.com/CSCfi/allas-cli-utils
 cd  allas-cli-utils/
 export PATH=${PATH}:$(pwd)
+cd ..
+
+git clone https://github.com/CSCfi/sd-lock-util.git
+cd sd-lock-util
+pip3 install -r requirements.txt
+pip3 install .
+export PATH=${PATH}:$(pwd)
+cd ..
 ```
 
 Example: Installing allas-cli-utils to Ubuntu 18.04 so that conda is used in the installation of dependencies.
