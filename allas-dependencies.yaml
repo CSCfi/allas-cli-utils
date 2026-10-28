@@ -4,13 +4,13 @@ channels:
   - defaults
 dependencies:
   - zstd
-  - python
+  - python=3.14
   - pip
   - s3cmd
   - rclone
   - restic
   - pip:
-    - python-openstackclient
+    - python-openstackclient==8.3.0
     - python-swiftclient
     - python-rclone
     - crypt4gh
