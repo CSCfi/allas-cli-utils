@@ -41,6 +41,8 @@ sdc=0
 meta_message=""
 check_mode=0
 max_files=1000000
+rclone_copy_options=""
+#rclone_copy_options="--multi-thread-streams=1"
 
 #read static variables
 inst_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -254,7 +256,17 @@ do
                    if [[ $input_def == "" ]]; then
                       input_def=("$1")
                       num_inputs=1
-                   else
+                   else 
+                     if [[ ! -e "$1" ]] ; then
+                            echo "File or directory $1 does not exist!"
+                            echo ""
+                            echo "If $1 is the target location where to you want to upload the data,"
+                            echo "then you should add option -b in front of it in the command line:"
+                            echo ""
+                            echo "   -b $1 "
+                            echo ""
+                            exit 1
+                     fi 
                       input_def=("$input_def $1")
                       (( num_inputs = num_inputs + 1 ))
                    fi
@@ -1217,20 +1229,20 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
   #upload with rclone
   if [[ $silent -eq 0 ]] ; then
      if [[ $compression -eq 1 ]] ; then  
-        rclone copy --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        rclone copy $rclone_copy_options --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?     
      else  
         #echo "rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}"
-        rclone copy -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+        rclone copy $rclone_copy_options -L --progress ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
         exitcode=$?
      fi
   else
       if [[ $compression -eq 1 ]] ; then
-         rclone copy ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+         rclone copy $rclone_copy_options ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          exitcode=$?
       else
          #echo "rclone copy -L ${file_path} ${storage_server}:${bucket_name}/${partial_path}"
-         rclone copy -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
+         rclone copy $rclone_copy_options -L ${tmp_dir}/$tmp_file ${storage_server}:${bucket_name}/${partial_path}
          exitcode=$?
       fi    
   fi
@@ -1328,15 +1340,15 @@ dmku3fKA/wrOpWntUTkkoQvknjZDisdmSwU4oFk/on0=
           echo "      names contain sensitive data."
           echo "      You can use option --no-ameta to skip the creation of the meta data file." 
           echo ""
-       fi
+       fi 
      fi
      #echo "rclone copy ./${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
      if [[ $mode == "swift" ]]||[[ $mode == "s3cmd" ]]||[[ $mode == "lumi" ]] ; then
          if [[ $silent -eq 0 ]] ; then
              #echo "rclone copy  -L  --progress ${tmp_dir}/${tmp_file}_ameta ${storage_server}:${bucket_name}/${partial_path}"
-             rclone copy -L --progress ${ameta_file} ${storage_server}:${bucket_name}/${partial_path}
+             rclone copy $rclone_copy_options -L --progress ${ameta_file} ${storage_server}:${bucket_name}/${partial_path}
          else
-             rclone copy -L ${ameta_file} ${storage_server}:${bucket_name}/${partial_path} > /dev/null
+             rclone copy $rclone_copy_options -L ${ameta_file} ${storage_server}:${bucket_name}/${partial_path} > /dev/null
          fi 
      fi
   fi   
