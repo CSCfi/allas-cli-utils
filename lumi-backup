@@ -369,7 +369,7 @@ then
   if [[ $RESTIC_PASSWORD != "" ]]; then 
      restic restore --repo $repository --overwrite if-newer $input --target $target $options
   else
-     restic restore --repo $repository --overwrite if-newer -p $HOME/.backup_passwd_${project_label} $input --target $target $options
+     restic restore --repo $repository --overwrite if-newer -p $HOME/.backup_passwd_${bucket_name} $input --target $target $options
   fi   
 fi
 
