@@ -248,7 +248,7 @@ do
                  ;;
 	 
              *)
-                  if [[ ${1::1 } == "-" ]]; then 
+                  if [[ ${1::1} == "-" ]]; then 
                       echo  "Unknown option $1"
                      exit 1
                   fi
@@ -258,7 +258,7 @@ do
                       num_inputs=1
                    else 
                      if [[ ! -e "$1" ]] ; then
-                            echo "File or directory $1 does not exist!"
+                            echo "File or directory: $1 does not exist!"
                             echo ""
                             echo "If $1 is the target location where to you want to upload the data,"
                             echo "then you should add option -b in front of it in the command line:"

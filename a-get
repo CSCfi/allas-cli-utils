@@ -23,7 +23,7 @@ start_time=$(date +%s)
 encrypt=""
 secret_key=""
 sdc=0
-rclone_copy_options="-P"
+rclone_copy_options="--multi-thread-streams=1"
 
 
 #read static variables
@@ -131,7 +131,7 @@ do
                   shift
               ;;
              *)
-                   if [[ ${1::1 } == "-" ]]; then 
+                   if [[ ${1::1} == "-" ]]; then 
                       echo  "Unknown option $1"
                       exit 1
                    fi 
